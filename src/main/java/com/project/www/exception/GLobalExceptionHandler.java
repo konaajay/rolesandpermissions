@@ -29,6 +29,8 @@ public class GLobalExceptionHandler {
             RuntimeException ex
     ) {
 
+        ex.printStackTrace();
+
         Map<String, Object> response =
                 new HashMap<>();
 
@@ -36,7 +38,7 @@ public class GLobalExceptionHandler {
                 LocalDateTime.now());
 
         response.put("message",
-                ex.getMessage());
+                ex.getMessage() + " | Stack: " + java.util.Arrays.toString(ex.getStackTrace()));
 
         response.put("status",
                 HttpStatus.BAD_REQUEST.value());

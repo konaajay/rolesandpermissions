@@ -45,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
     private final jakarta.servlet.http.HttpServletRequest servletRequest;
     private final TenantService tenantService;
     private final TenantModuleRepository tenantModuleRepository;
+    private final com.project.www.repository.PermissionRepository permissionRepository;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -188,6 +189,45 @@ public class AuthServiceImpl implements AuthService {
                                 .replace("{YYYY}", String.valueOf(currentYear))
                                 .replace("{SEQ}", String.format("%03d", nextVal))
                         : String.format("EMP-%s-%d-%03d", tenant.getCode(), currentYear, nextVal);
+
+                java.util.List<String[]> defaultPermsInfo = java.util.Arrays.asList(
+                        new String[] { "USER", "CREATE", "Ability to create new users" },
+                        new String[] { "USER", "VIEW", "Ability to view users" },
+                        new String[] { "USER", "UPDATE", "Ability to update users" },
+                        new String[] { "USER", "DELETE", "Ability to delete users" },
+                        new String[] { "ROLE", "CREATE", "Ability to create new roles" },
+                        new String[] { "ROLE", "UPDATE", "Ability to update roles" },
+                        new String[] { "ROLE", "DISABLE", "Ability to disable roles" },
+                        new String[] { "ROLE", "ENABLE", "Ability to enable roles" },
+                        new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
+                        new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
+                        new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
+                        new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
+                        new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
+                        new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
+                        new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" }
+                );
+
+                java.util.List<com.project.www.entity.Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());
+                java.util.Map<String, com.project.www.entity.Permission> permMap = existingPerms.stream()
+                        .collect(java.util.stream.Collectors.toMap(com.project.www.entity.Permission::getPermissionKey, java.util.function.Function.identity()));
+
+                java.util.List<com.project.www.entity.Permission> permsToSave = new java.util.ArrayList<>();
+                for (String[] permInfo : defaultPermsInfo) {
+                    String key = (permInfo[0] + "_" + permInfo[1]).toUpperCase();
+                    if (!permMap.containsKey(key)) {
+                        permsToSave.add(com.project.www.entity.Permission.builder()
+                                .tenantId(tenant.getId())
+                                .module(permInfo[0])
+                                .action(permInfo[1])
+                                .description(permInfo[2])
+                                .active(true)
+                                .build());
+                    }
+                }
+                if (!permsToSave.isEmpty()) {
+                    permissionRepository.saveAll(permsToSave);
+                }
 
                 user = User.builder()
                         .tenantId(tenant.getId())

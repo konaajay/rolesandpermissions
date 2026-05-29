@@ -51,4 +51,10 @@ public final class CorePermissions {
     public static final String PERMISSION_CREATE  = "PERMISSION_CREATE";
     public static final String PERMISSION_ENABLE  = "PERMISSION_ENABLE";
     public static final String PERMISSION_DISABLE = "PERMISSION_DISABLE";
+
+    // ── Settings management ───────────────────────────────────────────────────
+    public static final String COMPANY_PROFILE_VIEW   = "COMPANY_PROFILE_VIEW";
+    public static final String COMPANY_PROFILE_UPDATE = "COMPANY_PROFILE_UPDATE";
+    public static final String SETTINGS_MANAGE_TEMPLATES = "SETTINGS_MANAGE_TEMPLATES";
+    public static final String SETTINGS_MANAGE_ONBOARDING = "SETTINGS_MANAGE_ONBOARDING";
 }

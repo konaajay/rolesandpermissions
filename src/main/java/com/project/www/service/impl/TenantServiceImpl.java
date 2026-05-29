@@ -39,6 +39,7 @@ public class TenantServiceImpl implements TenantService {
     private final DataSource masterDataSource;
     private final PlatformTransactionManager transactionManager;
     private final PipelineStageRepository pipelineStageRepository;
+    private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
 
     @Override
     public TenantResponse createTenant(CreateTenantRequest request) {
@@ -129,17 +130,11 @@ public class TenantServiceImpl implements TenantService {
                             new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
                             new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
                             new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
-                            // Dummy Module View Permissions for testing UI
-                            new String[] { "LEAD", "VIEW", "Ability to view Leads" },
-                            new String[] { "COURSE", "VIEW", "Ability to view Courses" },
-                            new String[] { "EMPLOYEE", "VIEW", "Ability to view Employees" },
-                            new String[] { "HRMS", "VIEW", "Ability to view HRMS" },
-                            new String[] { "PAYROLL", "VIEW", "Ability to view Payroll" },
-                            new String[] { "ATTENDANCE", "VIEW", "Ability to view Attendance" },
-                            new String[] { "LMS", "VIEW", "Ability to view LMS" },
-                            new String[] { "AFFILIATE", "VIEW", "Ability to view Affiliate" },
-                            new String[] { "MARKETING", "VIEW", "Ability to view Marketing" },
-                            new String[] { "CRM", "VIEW", "Ability to view CRM" });
+                            new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
+                            new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
+                            new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
+                            new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" }
+                    );
 
                     List<Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());
                     java.util.Map<String, Permission> permMap = existingPerms.stream()
@@ -212,8 +207,11 @@ public class TenantServiceImpl implements TenantService {
                     adminUser.setRole(adminRole);
                     userRepository.save(adminUser);
 
-                    // Seed default pipeline stages for new tenant
-                    seedDefaultPipelineStages(tenant.getId());
+                    // Seed default system templates
+                    List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()
+                            .map(com.project.www.entity.TemplateDefinition::getTemplateCode)
+                            .collect(Collectors.toList());
+                    templateDefinitionService.importSystemTemplates(sysCodes);
                 });
 
             } finally {
@@ -310,68 +308,4 @@ public class TenantServiceImpl implements TenantService {
         }
     }
 
-    private void seedDefaultPipelineStages(Long tenantId) {
-        if (pipelineStageRepository.findAllByTenantIdOrderByOrderIndexAsc(tenantId).isEmpty()) {
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("NEW")
-                    .label("New Lead")
-                    .color("#3b82f6")
-                    .analyticBucket("UNASSIGNED")
-                    .orderIndex(1)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("CONTACTED")
-                    .label("Contacted")
-                    .color("#f59e0b")
-                    .analyticBucket("ENGAGED")
-                    .orderIndex(2)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("INTERESTED")
-                    .label("Interested")
-                    .color("#10b981")
-                    .analyticBucket("ENGAGED")
-                    .orderIndex(3)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("UNDER_REVIEW")
-                    .label("Under Review")
-                    .color("#8b5cf6")
-                    .analyticBucket("ENGAGED")
-                    .orderIndex(4)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("CONVERTED")
-                    .label("Converted")
-                    .color("#10b981")
-                    .analyticBucket("WON")
-                    .orderIndex(5)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("LOST")
-                    .label("Lost")
-                    .color("#ef4444")
-                    .analyticBucket("LOST")
-                    .orderIndex(6)
-                    .active(true)
-
-                    .build());
-        }
-    }
 }

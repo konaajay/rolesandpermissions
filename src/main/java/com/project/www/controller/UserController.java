@@ -42,6 +42,12 @@ public class UserController {
         return userService.getSupervisorsForRole(roleId, roleCode);
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_VIEW)")
+    public UserResponse getUserById(@PathVariable Long id) {
+        return userService.getUserById(id);
+    }
+
     @GetMapping("/tenant/{tenantId}")
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).USER_VIEW)")
     public List<UserResponse> getUsersByTenant(
@@ -62,8 +68,16 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_DELETE)")
     public String deleteUser(@PathVariable Long id) {
+        // Soft-deactivates. Physical deletion is not permitted.
         userService.deleteUser(id);
-        return "User Deleted Successfully";
+        return "User deactivated successfully";
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_UPDATE)")
+    public String deactivateUser(@PathVariable Long id) {
+        userService.deactivateUser(id);
+        return "User deactivated successfully";
     }
 
     @PostMapping("/{id}/reset-password")

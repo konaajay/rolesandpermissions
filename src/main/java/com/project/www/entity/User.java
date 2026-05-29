@@ -9,12 +9,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(
-    name = "users",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"tenantId", "email"})
-    }
-)
+@Table(name = "users", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "tenantId", "email" })
+})
 public class User extends Auditable {
 
     @Id
@@ -52,18 +49,17 @@ public class User extends Auditable {
 
     @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private java.util.Set<Role> roles = new java.util.HashSet<>();
 
     @Column(name = "employee_id")
     private String employeeId;
 
+    @Column(name = "lead_id")
+    private String leadId;
+
     private String department;
-    
+
     private String designation;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -73,15 +69,20 @@ public class User extends Auditable {
     public OfficeLocation getAssignedOffice() {
         return this.assignedOffice;
     }
-    
+
     public java.time.LocalDate getJoiningDate() {
         return getCreatedAt().toLocalDate();
     }
-    
+
     public String getName() {
         return getFirstName() + " " + getLastName();
     }
-    
-    public User getManager() { return null; }
-    public User getSupervisor() { return null; }
+
+    public User getManager() {
+        return null;
+    }
+
+    public User getSupervisor() {
+        return null;
+    }
 }

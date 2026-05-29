@@ -20,5 +20,6 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
 
     Optional<Role> findByIdAndTenantId(Long id, Long tenantId);
 
-    List<Role> findAllByTenantId(Long tenantId);
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT r FROM Role r LEFT JOIN FETCH r.permissions WHERE r.tenantId = :tenantId")
+    List<Role> findAllByTenantId(@org.springframework.data.repository.query.Param("tenantId") Long tenantId);
 }

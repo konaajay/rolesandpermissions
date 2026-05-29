@@ -149,6 +149,10 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleRepository.findByIdAndTenantId(roleId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Role not found or does not belong to this tenant"));
 
+        if ("SUPER_ADMIN".equals(role.getName())) {
+            throw new RuntimeException("The SUPER_ADMIN role is system protected and cannot be disabled.");
+        }
+
         role.setActive(false);
         roleRepository.save(role);
     }
@@ -186,6 +190,10 @@ public class RoleServiceImpl implements RoleService {
 
         Role role = roleRepository.findByIdAndTenantId(roleId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Role not found or does not belong to this tenant"));
+
+        if ("SUPER_ADMIN".equals(role.getName()) && (request.getPermissionIds() == null || request.getPermissionIds().isEmpty())) {
+            throw new RuntimeException("Cannot remove all permissions from the SUPER_ADMIN role.");
+        }
 
         Set<Permission> permissions = new HashSet<>();
         if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {

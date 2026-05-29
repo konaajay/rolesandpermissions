@@ -94,8 +94,15 @@ public class DataSourceConfig {
 
             String hostAndPort = (pathStart != -1) ? masterUrl.substring(schemeEnd, pathStart)
                     : masterUrl.substring(schemeEnd);
-            String queryParams = (queryStart != -1) ? masterUrl.substring(queryStart)
-                    : "?createDatabaseIfNotExist=true";
+            String queryParams = (queryStart != -1) ? masterUrl.substring(queryStart) : "";
+            
+            if (queryParams.contains("createDatabaseIfNotExist=true")) {
+                queryParams = queryParams.replace("createDatabaseIfNotExist=true", "");
+                queryParams = queryParams.replace("?&", "?").replace("&&", "&");
+                if (queryParams.endsWith("?") || queryParams.endsWith("&")) {
+                    queryParams = queryParams.substring(0, queryParams.length() - 1);
+                }
+            }
 
             tenantUrl = "jdbc:mysql://" + hostAndPort + "/" + dbName + queryParams;
         }

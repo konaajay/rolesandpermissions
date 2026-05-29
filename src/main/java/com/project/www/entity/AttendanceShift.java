@@ -60,8 +60,9 @@ public class AttendanceShift {
     @Column(name = "long_break_end_time")
     private LocalTime longBreakEndTime;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "office_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private OfficeLocation office;
 
     @Column(name = "tenant_id", nullable = false)

@@ -36,6 +36,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final DataSource routingDataSource;
     private final DataSource masterDataSource;
     private final PipelineStageRepository pipelineStageRepository;
+    private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -67,114 +68,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                 } catch (Exception e) {}
             } catch (Exception e) {
                 log.warn("Failed to patch tenant_modules: " + e.getMessage());
-            }
-            
-            // Patch existing tenant databases to add missing columns to tenant_settings
-            try (java.sql.Statement stmt = conn.createStatement();
-                 java.sql.ResultSet rs = stmt.executeQuery("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%'")) {
-                java.util.List<String> dbs = new java.util.ArrayList<>();
-                while (rs.next()) {
-                    dbs.add(rs.getString(1));
-                }
-                for (String db : dbs) {
-                    try {
-                        stmt.executeUpdate("ALTER TABLE `" + db + "`.tenant_settings ADD COLUMN employee_sequence BIGINT DEFAULT 0");
-                        log.info("Patched employee_sequence for " + db);
-                    } catch (Exception e) {}
-                    try {
-                        stmt.executeUpdate("ALTER TABLE `" + db + "`.tenant_settings ADD COLUMN lead_sequence BIGINT DEFAULT 0");
-                        log.info("Patched lead_sequence for " + db);
-                    } catch (Exception e) {}
-                    try {
-                        stmt.executeUpdate("ALTER TABLE `" + db + "`.tenant_settings ADD COLUMN lead_id_format VARCHAR(255)");
-                        log.info("Patched lead_id_format for " + db);
-                    } catch (Exception e) {}
-                    try {
-                        stmt.executeUpdate("ALTER TABLE `" + db + "`.users ADD COLUMN lead_id VARCHAR(255)");
-                        log.info("Patched lead_id for users table in " + db);
-                    } catch (Exception e) {}
-                    try {
-                        stmt.executeUpdate("RENAME TABLE `" + db + "`.student_profiles TO `" + db + "`.lead_profiles");
-                        log.info("Renamed student_profiles to lead_profiles in " + db);
-                    } catch (Exception e) {}
-                    try {
-                        stmt.executeUpdate("ALTER TABLE `" + db + "`.lead_profiles CHANGE COLUMN student_id lead_id VARCHAR(255) NOT NULL");
-                        log.info("Renamed student_id to lead_id in lead_profiles in " + db);
-                    } catch (Exception e) {}
-                    try {
-                        stmt.executeUpdate("CREATE TABLE IF NOT EXISTS `" + db + "`.office_locations (" +
-                            "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
-                            "tenant_id BIGINT NOT NULL, " +
-                            "name VARCHAR(100) NOT NULL, " +
-                            "latitude DECIMAL(10, 7) NOT NULL, " +
-                            "longitude DECIMAL(10, 7) NOT NULL, " +
-                            "radius_meters DOUBLE NOT NULL DEFAULT 30.0, " +
-                            "tracking_interval_sec INT NOT NULL DEFAULT 300, " +
-                            "max_accuracy_meters INT NOT NULL DEFAULT 100, " +
-                            "max_idle_minutes INT NOT NULL DEFAULT 30, " +
-                            "created_at DATETIME NOT NULL, " +
-                            "updated_at DATETIME, " +
-                            "KEY idx_office_location_name (name), " +
-                            "KEY idx_office_location_tenant (tenant_id)" +
-                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        log.info("Created office_locations table in " + db);
-                    } catch (Exception e) {
-                        log.warn("Error creating office_locations in " + db + ": " + e.getMessage());
-                    }
-                    try {
-                        stmt.executeUpdate("CREATE TABLE IF NOT EXISTS `" + db + "`.attendance_shifts (" +
-                            "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
-                            "name VARCHAR(100) NOT NULL, " +
-                            "start_time TIME NOT NULL, " +
-                            "end_time TIME NOT NULL, " +
-                            "grace_minutes INT NOT NULL DEFAULT 15, " +
-                            "min_half_day_minutes INT NOT NULL DEFAULT 240, " +
-                            "min_full_day_minutes INT NOT NULL DEFAULT 480, " +
-                            "short_break_start_time TIME, " +
-                            "short_break_end_time TIME, " +
-                            "long_break_start_time TIME, " +
-                            "long_break_end_time TIME, " +
-                            "office_id BIGINT NOT NULL, " +
-                            "tenant_id BIGINT NOT NULL, " +
-                            "created_at DATETIME NOT NULL, " +
-                            "updated_at DATETIME, " +
-                            "FOREIGN KEY (office_id) REFERENCES `" + db + "`.office_locations(id) ON DELETE CASCADE, " +
-                            "KEY idx_shift_name (name), " +
-                            "KEY idx_shift_tenant (tenant_id), " +
-                            "KEY idx_shift_office (office_id)" +
-                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        log.info("Created attendance_shifts table in " + db);
-                    } catch (Exception e) {
-                        log.warn("Error creating attendance_shifts in " + db + ": " + e.getMessage());
-                    }
-                    try {
-                        stmt.executeUpdate("CREATE TABLE IF NOT EXISTS `" + db + "`.pipeline_stages (" +
-                            "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
-                            "tenant_id BIGINT NOT NULL, " +
-                            "status_value VARCHAR(255) NOT NULL, " +
-                            "label VARCHAR(255) NOT NULL, " +
-                            "color VARCHAR(50), " +
-                            "analytic_bucket VARCHAR(255), " +
-                            "order_index INT NOT NULL, " +
-                            "active BOOLEAN NOT NULL DEFAULT TRUE, " +
-
-                            "require_note BOOLEAN NOT NULL DEFAULT FALSE, " +
-                            "require_date BOOLEAN NOT NULL DEFAULT FALSE, " +
-                            "create_task BOOLEAN NOT NULL DEFAULT FALSE, " +
-                            "created_at DATETIME NOT NULL, " +
-                            "updated_at DATETIME, " +
-                            "created_by VARCHAR(255), " +
-                            "updated_by VARCHAR(255), " +
-                            "KEY idx_pipeline_tenant (tenant_id), " +
-                            "KEY idx_pipeline_order (tenant_id, order_index)" +
-                        ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        log.info("Created pipeline_stages table in " + db);
-                    } catch (Exception e) {
-                        log.warn("Error creating pipeline_stages in " + db + ": " + e.getMessage());
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Failed to patch databases: " + e.getMessage());
             }
         } catch (Exception e) {
             log.warn("Failed to execute master-schema.sql: " + e.getMessage());
@@ -271,11 +164,122 @@ public class DatabaseSeeder implements CommandLineRunner {
             throw e;
         }
 
+        // Apply schema to ALL existing tenants to ensure missing tables (like id_format_settings) are created
+        log.info("Applying schema.sql to all existing tenant databases...");
+        java.util.List<Tenant> allTenants = tenantRepository.findAll();
+        for (Tenant t : allTenants) {
+            if (t.getDbName() == null || t.getDbName().isEmpty()) continue;
+            try {
+                DataSource ds;
+                if (rds.containsDataSource(t.getCode())) {
+                    ds = rds.getDataSource(t.getCode());
+                } else {
+                    ds = dataSourceConfig.createTenantDataSource(t.getDbName(), null, null);
+                    rds.addDataSource(t.getCode(), ds);
+                }
+                ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+                populator.addScript(new ClassPathResource("schema.sql"));
+                populator.execute(ds);
+                
+                // Also explicitly patch any tables that might have been created with incorrect column types earlier
+                try (java.sql.Connection tConn = ds.getConnection();
+                     java.sql.Statement tStmt = tConn.createStatement()) {
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
+                        tStmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
+                    } catch (Exception ex) {
+                        // ignore if table doesn't exist
+                    }
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE");
+                    } catch (Exception ex) {
+                        // ignore if column already exists
+                    }
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'");
+                        tStmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7");
+                        tStmt.executeUpdate("ALTER TABLE id_format_settings DROP COLUMN format_string");
+                    } catch (Exception ex) {
+                        // ignore if already updated
+                    }
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE");
+                        tStmt.executeUpdate("ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE");
+                    } catch (Exception ex) {
+                        // ignore if already updated
+                    }
+                }
+                
+                log.info("Successfully applied schema.sql and patches to tenant: {}", t.getCode());
+
+                // Also ensure the tenant has the new Settings permissions
+                try {
+                    TenantContext.setCurrentTenant(t.getId());
+                    TenantContext.setCurrentTenantCode(t.getCode());
+                    
+                    java.util.List<String[]> newSettingsPerms = java.util.Arrays.asList(
+                            new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
+                            new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
+                            new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
+                            new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" }
+                    );
+                    
+                    java.util.List<Permission> existingTenantPerms = permissionRepository.findAllByTenantId(t.getId());
+                    java.util.Map<String, Permission> permMap = existingTenantPerms.stream()
+                            .collect(java.util.stream.Collectors.toMap(Permission::getPermissionKey, java.util.function.Function.identity()));
+
+                    java.util.List<Permission> permsToSave = new java.util.ArrayList<>();
+                    for (String[] permInfo : newSettingsPerms) {
+                        String key = (permInfo[0] + "_" + permInfo[1]).toUpperCase();
+                        if (!permMap.containsKey(key)) {
+                            permsToSave.add(Permission.builder()
+                                    .tenantId(t.getId())
+                                    .module(permInfo[0])
+                                    .action(permInfo[1])
+                                    .description(permInfo[2])
+                                    .active(true)
+                                    .build());
+                        }
+                    }
+                    if (!permsToSave.isEmpty()) {
+                        java.util.List<Permission> saved = permissionRepository.saveAll(permsToSave);
+                        roleRepository.findByNameAndTenantId("SUPER_ADMIN", t.getId()).ifPresent(role -> {
+                            Set<Permission> updatedPerms = new HashSet<>(role.getPermissions());
+                            updatedPerms.addAll(saved);
+                            role.setPermissions(updatedPerms);
+                            roleRepository.save(role);
+                        });
+                        log.info("Patched missing Settings permissions for tenant: {}", t.getCode());
+                    }
+                    
+                    // Seed missing system templates for existing tenants
+                    java.util.List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()
+                            .map(com.project.www.entity.TemplateDefinition::getTemplateCode)
+                            .collect(java.util.stream.Collectors.toList());
+                    templateDefinitionService.importSystemTemplates(sysCodes);
+                    log.info("Patched system templates for tenant: {}", t.getCode());
+                    
+                } finally {
+                    TenantContext.clear();
+                }
+
+            } catch (Exception e) {
+                log.warn("Failed to apply schema to tenant {}: {}", t.getCode(), e.getMessage());
+            }
+        }
+
         // 4. Switch context to System Tenant and seed roles/permissions/user in
         // tenant_sys
         try {
             TenantContext.setCurrentTenant(systemTenantId);
             TenantContext.setCurrentTenantCode(systemTenantCode);
+            
+            // Pre-load roles into cache
+            java.util.Map<String, Role> cachedRoles = new java.util.HashMap<>();
+            roleRepository.findAllByTenantId(systemTenantId).forEach(r -> {
+                cachedRoles.put(r.getCode(), r);
+                cachedRoles.put(r.getName(), r);
+            });
 
             // Define all required permissions for system / super-admin
             java.util.List<String[]> requiredPermsInfo = java.util.Arrays.asList(
@@ -340,27 +344,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             superAdminRole.setPermissions(superAdminPermissions);
             superAdminRole = roleRepository.save(superAdminRole);
 
-            // Seed LEAD, TEACHER, EMPLOYEE roles and fields for demonstration/testing
-            seedRoleAndFields(systemTenantId, "LEAD", "Lead", "Lead role", java.util.Arrays.asList(
-                    new FieldSeed("rollNo", "Roll Number", "TEXT", true, null, 1),
-                    new FieldSeed("course", "Course", "DROPDOWN", false, "[\"CSE\",\"ECE\",\"ME\",\"CE\"]", 2)
-            ));
-            seedRoleAndFields(systemTenantId, "TEACHER", "Teacher", "Teacher role", java.util.Arrays.asList(
-                    new FieldSeed("subject", "Subject", "TEXT", true, null, 1)
-            ));
-            seedRoleAndFields(systemTenantId, "EMPLOYEE", "Employee", "Employee role", java.util.Arrays.asList(
-                    new FieldSeed("employeeId", "Employee ID", "TEXT", true, null, 1)
-            ));
 
-            // Seed BDAN, TEAM_LEAD, MANAGER roles and fields
-            seedRoleAndFields(systemTenantId, "BDAN", "BDAN", "Business Development Associate", java.util.Collections.emptyList());
-            seedRoleAndFields(systemTenantId, "TEAM_LEAD", "Team Lead", "Team Leader", java.util.Collections.emptyList());
-            seedRoleAndFields(systemTenantId, "MANAGER", "Manager", "Manager role", java.util.Collections.emptyList());
-
-            // Seed Role Hierarchies
-            seedRoleHierarchy(systemTenantId, "BDAN", "TEAM_LEAD");
-            seedRoleHierarchy(systemTenantId, "TEAM_LEAD", "MANAGER");
-            seedRoleHierarchy(systemTenantId, "MANAGER", "SUPER_ADMIN");
 
             // Ensure sequence exists
             int currentYear = java.time.LocalDate.now().getYear();
@@ -395,228 +379,9 @@ public class DatabaseSeeder implements CommandLineRunner {
                         "System seeding updated. Super Admin user 'superadmin@system.com' mapped to updated SUPER_ADMIN role.");
             }
 
-            // Seed reporting hierarchy users
-            Role managerRole = roleRepository.findByCodeAndTenantId("MANAGER", systemTenantId).get();
-            Role teamLeadRole = roleRepository.findByCodeAndTenantId("TEAM_LEAD", systemTenantId).get();
-            Role bdanRole = roleRepository.findByCodeAndTenantId("BDAN", systemTenantId).get();
-
-            User manager = null;
-            if (!userRepository.existsByEmailAndTenantId("manager@system.com", systemTenantId)) {
-                manager = User.builder()
-                        .tenantId(systemTenantId)
-                        .firstName("Manager")
-                        .lastName("One")
-                        .email("manager@system.com")
-                        .password(passwordEncoder.encode("manager"))
-                        .active(true)
-                        .role(managerRole)
-                        .build();
-                manager = userRepository.save(manager);
-                
-                // Set reports to Super Admin
-                userReportingRepository.save(UserReporting.builder()
-                        .tenantId(systemTenantId)
-                        .user(manager)
-                        .supervisorUser(userRepository.findByEmailAndTenantId("superadmin@system.com", systemTenantId).get())
-                        .build());
-            } else {
-                manager = userRepository.findByEmailAndTenantId("manager@system.com", systemTenantId).get();
-            }
-
-            User teamLead = null;
-            if (!userRepository.existsByEmailAndTenantId("teamlead@system.com", systemTenantId)) {
-                teamLead = User.builder()
-                        .tenantId(systemTenantId)
-                        .firstName("Team")
-                        .lastName("Lead")
-                        .email("teamlead@system.com")
-                        .password(passwordEncoder.encode("teamlead"))
-                        .active(true)
-                        .role(teamLeadRole)
-                        .build();
-                teamLead = userRepository.save(teamLead);
-
-                // Set reports to Manager
-                userReportingRepository.save(UserReporting.builder()
-                        .tenantId(systemTenantId)
-                        .user(teamLead)
-                        .supervisorUser(manager)
-                        .build());
-            } else {
-                teamLead = userRepository.findByEmailAndTenantId("teamlead@system.com", systemTenantId).get();
-            }
-
-            if (!userRepository.existsByEmailAndTenantId("bdan@system.com", systemTenantId)) {
-                User bdan = User.builder()
-                        .tenantId(systemTenantId)
-                        .firstName("BDAN")
-                        .lastName("User")
-                        .email("bdan@system.com")
-                        .password(passwordEncoder.encode("bdan"))
-                        .active(true)
-                        .role(bdanRole)
-                        .build();
-                bdan = userRepository.save(bdan);
-
-                // Set reports to Team Lead
-                userReportingRepository.save(UserReporting.builder()
-                        .tenantId(systemTenantId)
-                        .user(bdan)
-                        .supervisorUser(teamLead)
-                        .build());
-            }
-
-            // Seed default pipeline stages for system tenant
-            seedDefaultPipelineStages(systemTenantId);
         } finally {
             TenantContext.clear();
         }
     }
 
-    private void seedDefaultPipelineStages(Long tenantId) {
-        if (pipelineStageRepository.findAllByTenantIdOrderByOrderIndexAsc(tenantId).isEmpty()) {
-            log.info("Seeding default pipeline stages for tenant: " + tenantId);
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("NEW")
-                    .label("New Lead")
-                    .color("#3b82f6")
-                    .analyticBucket("UNASSIGNED")
-                    .orderIndex(1)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("CONTACTED")
-                    .label("Contacted")
-                    .color("#f59e0b")
-                    .analyticBucket("ENGAGED")
-                    .orderIndex(2)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("INTERESTED")
-                    .label("Interested")
-                    .color("#10b981")
-                    .analyticBucket("ENGAGED")
-                    .orderIndex(3)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("UNDER_REVIEW")
-                    .label("Under Review")
-                    .color("#8b5cf6")
-                    .analyticBucket("ENGAGED")
-                    .orderIndex(4)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("CONVERTED")
-                    .label("Converted")
-                    .color("#10b981")
-                    .analyticBucket("WON")
-                    .orderIndex(5)
-                    .active(true)
-
-                    .build());
-            pipelineStageRepository.save(PipelineStage.builder()
-                    .tenantId(tenantId)
-                    .statusValue("LOST")
-                    .label("Lost")
-                    .color("#ef4444")
-                    .analyticBucket("LOST")
-                    .orderIndex(6)
-                    .active(true)
-
-                    .build());
-        }
-    }
-
-    private static class FieldSeed {
-        String name;
-        String label;
-        String type;
-        boolean required;
-        String optionsJson;
-        int order;
-
-        FieldSeed(String name, String label, String type, boolean required, String optionsJson, int order) {
-            this.name = name;
-            this.label = label;
-            this.type = type;
-            this.required = required;
-            this.optionsJson = optionsJson;
-            this.order = order;
-        }
-    }
-
-    private void seedRoleAndFields(Long tenantId, String code, String name, String desc, java.util.List<FieldSeed> fields) {
-        Role role = roleRepository.findByCodeAndTenantId(code, tenantId)
-                .or(() -> roleRepository.findByNameAndTenantId(code, tenantId))
-                .orElseGet(() -> {
-                    Role r = Role.builder()
-                            .tenantId(tenantId)
-                            .name(name)
-                            .code(code)
-                            .description(desc)
-                            .active(true)
-                            .build();
-                    return roleRepository.save(r);
-                });
-
-        for (FieldSeed fs : fields) {
-            if (!roleExtraFieldRepository.findByRoleIdAndFieldNameAndTenantId(role.getId(), fs.name, tenantId).isPresent()) {
-                RoleExtraField ref = RoleExtraField.builder()
-                        .tenantId(tenantId)
-                        .role(role)
-                        .fieldName(fs.name)
-                        .fieldLabel(fs.label)
-                        .fieldType(fs.type)
-                        .required(fs.required)
-                        .optionsJson(fs.optionsJson)
-                        .displayOrder(fs.order)
-                        .active(true)
-                        .build();
-                roleExtraFieldRepository.save(ref);
-            }
-        }
-    }
-
-    private void seedRoleHierarchy(Long tenantId, String childCode, String parentCode) {
-        Role child = roleRepository.findByCodeAndTenantId(childCode, tenantId)
-                .or(() -> roleRepository.findByNameAndTenantId(childCode, tenantId))
-                .orElseGet(() -> roleRepository.save(Role.builder()
-                        .tenantId(tenantId)
-                        .name(childCode)
-                        .code(childCode)
-                        .description(childCode + " role")
-                        .active(true)
-                        .build()));
-
-        Role parent = roleRepository.findByCodeAndTenantId(parentCode, tenantId)
-                .or(() -> roleRepository.findByNameAndTenantId(parentCode, tenantId))
-                .orElseGet(() -> roleRepository.save(Role.builder()
-                        .tenantId(tenantId)
-                        .name(parentCode)
-                        .code(parentCode)
-                        .description(parentCode + " role")
-                        .active(true)
-                        .build()));
-
-        if (!roleHierarchyRepository.findByRoleIdAndReportsToRoleIdAndTenantId(child.getId(), parent.getId(), tenantId).isPresent()) {
-            RoleHierarchy rh = RoleHierarchy.builder()
-                    .tenantId(tenantId)
-                    .role(child)
-                    .reportsToRole(parent)
-                    .build();
-            roleHierarchyRepository.save(rh);
-        }
-    }
 }

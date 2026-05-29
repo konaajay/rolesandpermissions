@@ -13,6 +13,9 @@ public class UserResponse {
 
     private Long id;
     private Long tenantId;
+    
+    private String employeeId;
+    private String leadId;
 
     private String firstName;
     private String lastName;

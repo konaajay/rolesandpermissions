@@ -230,3 +230,86 @@ CREATE TABLE IF NOT EXISTS pipeline_stages (
   KEY idx_pipeline_tenant (tenant_id),
   KEY idx_pipeline_order (tenant_id, order_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS id_format_settings (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    prefix VARCHAR(50) NOT NULL,
+    padding_length INT NOT NULL DEFAULT 7,
+    next_sequence BIGINT NOT NULL DEFAULT 1,
+    include_year BOOLEAN NOT NULL DEFAULT FALSE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    UNIQUE KEY uk_id_format_tenant_entity (tenant_id, entity_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS template_definitions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    template_type VARCHAR(50) NOT NULL,
+    template_code VARCHAR(100) NOT NULL,
+    template_name VARCHAR(255) NOT NULL,
+    content_html TEXT NOT NULL,
+    background_image_url VARCHAR(500),
+    is_system_template BOOLEAN NOT NULL DEFAULT FALSE,
+    is_editable BOOLEAN NOT NULL DEFAULT TRUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    UNIQUE KEY uk_template_tenant_code (tenant_id, template_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS onboarding_configs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    auto_generate_id BOOLEAN NOT NULL DEFAULT TRUE,
+    send_welcome_email BOOLEAN NOT NULL DEFAULT TRUE,
+    generate_document BOOLEAN NOT NULL DEFAULT FALSE,
+    document_template_id BIGINT,
+    generate_certificate BOOLEAN NOT NULL DEFAULT FALSE,
+    certificate_template_id BIGINT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    UNIQUE KEY uk_onboard_tenant_role (tenant_id, role_id),
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (document_template_id) REFERENCES template_definitions(id) ON DELETE SET NULL,
+    FOREIGN KEY (certificate_template_id) REFERENCES template_definitions(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS company_profiles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL UNIQUE,
+    company_name VARCHAR(255) NOT NULL,
+    company_code VARCHAR(100) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(255),
+    website VARCHAR(255),
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100),
+    pincode VARCHAR(50),
+    gst_number VARCHAR(100),
+    pan_number VARCHAR(100),
+    registration_number VARCHAR(100),
+    logo_url VARCHAR(500),
+    favicon_url VARCHAR(500),
+    timezone VARCHAR(100),
+    currency VARCHAR(50),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

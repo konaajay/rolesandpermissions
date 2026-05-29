@@ -25,6 +25,7 @@ public class UserServiceImpl implements UserService {
     private final LeadProfileRepository leadProfileRepository;
     private final OfficeLocationRepository officeLocationRepository;
     private final TenantSettingsRepository tenantSettingsRepository;
+    private final IdFormatSettingRepository idFormatSettingRepository;
     private final com.project.www.service.RoleExtraFieldService roleExtraFieldService;
     private final RoleHierarchyRepository roleHierarchyRepository;
     private final UserReportingRepository userReportingRepository;
@@ -96,28 +97,34 @@ public class UserServiceImpl implements UserService {
         String designation = null;
         OfficeLocation location = null;
 
-        TenantSettings settings = tenantSettingsRepository.findByTenantId(tenantId)
-                .orElseGet(() -> {
-                    TenantSettings newSettings = TenantSettings.builder()
-                            .tenantId(tenantId)
-                            .employeeSequence(0L)
-                            .leadSequence(0L)
-                            .build();
-                    return tenantSettingsRepository.save(newSettings);
-                });
-
         if (!"LEAD".equalsIgnoreCase(role.getName())) {
-            settings.setEmployeeSequence(settings.getEmployeeSequence() + 1);
-            long nextVal = settings.getEmployeeSequence();
+            String roleName = role.getName().toUpperCase();
+            final String finalPrefix;
+            if ("SUPER_ADMIN".equals(roleName)) { finalPrefix = "ADM"; }
+            else if ("EMPLOYEE".equals(roleName)) { finalPrefix = "EMP"; }
+            else { finalPrefix = roleName.length() >= 3 ? roleName.substring(0, 3) : roleName; }
 
-            if (settings.getEmployeeIdFormat() != null && !settings.getEmployeeIdFormat().trim().isEmpty()) {
-                employeeId = settings.getEmployeeIdFormat()
-                        .replace("{TENANT}", tenantCode)
-                        .replace("{YYYY}", String.valueOf(currentYear))
-                        .replace("{SEQ}", String.format("%03d", nextVal));
+            IdFormatSetting employeeFormat = idFormatSettingRepository.findByTenantIdAndEntityType(tenantId, roleName)
+                    .orElseGet(() -> IdFormatSetting.builder()
+                            .tenantId(tenantId)
+                            .entityType(roleName)
+                            .prefix(finalPrefix)
+                            .paddingLength(7)
+                            .nextSequence(1L)
+                            .includeYear(false)
+                            .active(true)
+                            .build());
+
+            long nextVal = employeeFormat.getNextSequence();
+            if (Boolean.TRUE.equals(employeeFormat.getIncludeYear())) {
+                employeeId = employeeFormat.getPrefix() + currentYear + String.format("%0" + employeeFormat.getPaddingLength() + "d", nextVal);
             } else {
-                employeeId = String.format("EMP-%s-%d-%03d", tenantCode, currentYear, nextVal);
+                employeeId = employeeFormat.getPrefix() + String.format("%0" + employeeFormat.getPaddingLength() + "d", nextVal);
             }
+            
+            employeeFormat.setNextSequence(nextVal + 1);
+            idFormatSettingRepository.save(employeeFormat);
+
             if (request.getProfileData() != null) {
                 department = (String) request.getProfileData().get("department");
                 designation = (String) request.getProfileData().get("designation");
@@ -161,18 +168,28 @@ public class UserServiceImpl implements UserService {
 
         // Create profile based on role
         if ("LEAD".equalsIgnoreCase(role.getName())) {
-            settings.setLeadSequence(settings.getLeadSequence() + 1);
-            long nextVal = settings.getLeadSequence();
+            IdFormatSetting leadFormat = idFormatSettingRepository.findByTenantIdAndEntityType(tenantId, "LEAD")
+                    .orElseGet(() -> IdFormatSetting.builder()
+                            .tenantId(tenantId)
+                            .entityType("LEAD")
+                            .prefix("LEA")
+                            .paddingLength(7)
+                            .nextSequence(1L)
+                            .includeYear(false)
+                            .active(true)
+                            .build());
 
+            long nextVal = leadFormat.getNextSequence();
             String leadId;
-            if (settings.getLeadIdFormat() != null && !settings.getLeadIdFormat().trim().isEmpty()) {
-                leadId = settings.getLeadIdFormat()
-                        .replace("{TENANT}", tenantCode)
-                        .replace("{YYYY}", String.valueOf(currentYear))
-                        .replace("{SEQ}", String.format("%03d", nextVal));
+            if (Boolean.TRUE.equals(leadFormat.getIncludeYear())) {
+                leadId = leadFormat.getPrefix() + currentYear + String.format("%0" + leadFormat.getPaddingLength() + "d", nextVal);
             } else {
-                leadId = String.format("LEA-%s-%d-%03d", tenantCode, currentYear, nextVal);
+                leadId = leadFormat.getPrefix() + String.format("%0" + leadFormat.getPaddingLength() + "d", nextVal);
             }
+            
+            leadFormat.setNextSequence(nextVal + 1);
+            idFormatSettingRepository.save(leadFormat);
+
             LeadProfile profile = LeadProfile.builder()
                     .user(user)
                     .tenantId(tenantId)
@@ -184,8 +201,6 @@ public class UserServiceImpl implements UserService {
                     .build();
             leadProfileRepository.save(profile);
         }
-
-        tenantSettingsRepository.save(settings);
 
         // Send email to user
         try {
@@ -232,6 +247,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public UserResponse getUserById(Long id) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        if (tenantId == null) {
+            throw new RuntimeException("No active tenant context found");
+        }
+        User user = userRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("User not found in this tenant"));
+        return mapToResponse(user);
+    }
+
+    @Override
     @Transactional
     public UserResponse updateUser(Long id, CreateUserRequest request) {
         Long tenantId = TenantContext.getCurrentTenant();
@@ -273,6 +300,23 @@ public class UserServiceImpl implements UserService {
             user.setRole(primaryRole);
         }
 
+        // --- SUPER ADMIN PROTECTION: PREVENT DEMOTION ---
+        boolean wasSuperAdmin = user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName());
+        boolean isNowSuperAdmin = primaryRole != null && "SUPER_ADMIN".equals(primaryRole.getName());
+
+        if (wasSuperAdmin && !isNowSuperAdmin) {
+            // Cannot demote the platform admin
+            if (user.getTenantId() == 1L && "admin@lms.com".equalsIgnoreCase(user.getEmail())) {
+                throw new RuntimeException("System Protected Account cannot be demoted.");
+            }
+            // Cannot demote the last active tenant super admin
+            long activeSuperAdmins = userRepository.countByRoleNameAndTenantIdAndActiveTrue("SUPER_ADMIN", tenantId);
+            if (activeSuperAdmins <= 1) {
+                throw new RuntimeException("At least one active Super Admin must exist for this tenant.");
+            }
+        }
+        // ------------------------------------------------
+
         User updated = userRepository.save(user);
         roleExtraFieldService.saveUserExtraFieldValues(updated, request.getProfileData());
 
@@ -293,18 +337,41 @@ public class UserServiceImpl implements UserService {
         return mapToResponse(updated);
     }
 
+    /**
+     * Soft-deactivates a user. Physical deletion is not permitted to preserve audit history
+     * and reporting hierarchy integrity.
+     */
     @Override
     @Transactional
     public void deleteUser(Long id) {
+        deactivateUser(id);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateUser(Long id) {
         Long tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) {
             throw new RuntimeException("No active tenant context found");
         }
-
         User user = userRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new RuntimeException("User not found in this tenant"));
+        
+        // --- SUPER ADMIN PROTECTION: PREVENT DEACTIVATION ---
+        if (user.getTenantId() == 1L && "admin@lms.com".equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("System Protected Account cannot be deactivated.");
+        }
+        
+        if (user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName())) {
+            long activeSuperAdmins = userRepository.countByRoleNameAndTenantIdAndActiveTrue("SUPER_ADMIN", tenantId);
+            if (activeSuperAdmins <= 1) {
+                throw new RuntimeException("At least one active Super Admin must exist for this tenant.");
+            }
+        }
+        // ---------------------------------------------------
 
-        userRepository.delete(user);
+        user.setActive(false);
+        userRepository.save(user);
     }
 
     @Override
@@ -357,6 +424,8 @@ public class UserServiceImpl implements UserService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
+                .employeeId(user.getEmployeeId())
+                .leadId(user.getLeadId())
                 .gender(user.getGender())
                 .phoneNumber(user.getPhoneNumber())
                 .profileData(mergedProfile)
