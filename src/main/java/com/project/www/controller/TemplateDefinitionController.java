@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -59,5 +60,40 @@ public class TemplateDefinitionController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).SETTINGS_MANAGE_TEMPLATES)")
     public ResponseEntity<List<TemplateDefinition>> importSystemTemplates(@RequestBody List<String> templateCodes) {
         return ResponseEntity.ok(service.importSystemTemplates(templateCodes));
+    }
+
+    @PostMapping("/upload-background")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).SETTINGS_MANAGE_TEMPLATES)")
+    public ResponseEntity<java.util.Map<String, String>> uploadBackground(@RequestParam("file") MultipartFile file) {
+        String url = service.uploadBackgroundImage(file);
+        return ResponseEntity.ok(java.util.Map.of("url", url));
+    }
+    @GetMapping("/{id}/sample-pdf")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).SETTINGS_MANAGE_TEMPLATES)")
+    public ResponseEntity<byte[]> downloadSamplePdf(@PathVariable Long id) {
+        try {
+            byte[] pdfBytes = service.generateSamplePdf(id);
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sample.pdf")
+                    .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/{id}/generate")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).SETTINGS_MANAGE_TEMPLATES)")
+    public ResponseEntity<byte[]> generateDocumentForEmployee(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        try {
+            String employeeId = payload.get("employeeId");
+            byte[] pdfBytes = service.generateDocumentPdf(id, employeeId);
+            return ResponseEntity.ok()
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=document.pdf")
+                    .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

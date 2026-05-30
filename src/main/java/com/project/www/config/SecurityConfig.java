@@ -50,6 +50,8 @@ public class SecurityConfig {
                                 "/app.js",
                                 "/favicon.ico",
                                 "/auth/**",
+                                "/public/**",
+                                "/uploads/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"

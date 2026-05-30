@@ -80,6 +80,13 @@ public class UserController {
         return "User deactivated successfully";
     }
 
+    @PatchMapping("/{id}/toggle-active")
+    @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_UPDATE)")
+    public String toggleUserActiveStatus(@PathVariable Long id) {
+        userService.toggleUserActiveStatus(id);
+        return "User active status toggled successfully";
+    }
+
     @PostMapping("/{id}/reset-password")
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_UPDATE)")
     public String resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest request) {

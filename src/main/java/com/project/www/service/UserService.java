@@ -14,6 +14,7 @@ public interface UserService {
     UserResponse updateUser(Long id, CreateUserRequest request);
     void deleteUser(Long id);         // soft-deactivates, does not physically delete
     void deactivateUser(Long id);
+    void toggleUserActiveStatus(Long id);
     void resetPassword(Long id, ResetPasswordRequest request);
     List<com.project.www.dto.SupervisorResponse> getSupervisorsForRole(Long roleId, String roleCode);
 }

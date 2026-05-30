@@ -305,6 +305,10 @@ CREATE TABLE IF NOT EXISTS company_profiles (
     registration_number VARCHAR(100),
     logo_url VARCHAR(500),
     favicon_url VARCHAR(500),
+    stamp_url VARCHAR(500),
+    signature_url VARCHAR(500),
+    header_image_url VARCHAR(500),
+    footer_image_url VARCHAR(500),
     timezone VARCHAR(100),
     currency VARCHAR(50),
     active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -312,4 +316,23 @@ CREATE TABLE IF NOT EXISTS company_profiles (
     updated_at DATETIME,
     created_by VARCHAR(255),
     updated_by VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS employee_certificates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    certificate_no VARCHAR(255) NOT NULL,
+    tenant_id BIGINT NOT NULL,
+    employee_id VARCHAR(255) NOT NULL,
+    template_id BIGINT NOT NULL,
+    issued_date DATETIME NOT NULL,
+    expiry_date DATETIME,
+    verification_token VARCHAR(255) NOT NULL UNIQUE,
+    pdf_url VARCHAR(500),
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    UNIQUE KEY uk_cert_tenant_no (tenant_id, certificate_no),
+    FOREIGN KEY (template_id) REFERENCES template_definitions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

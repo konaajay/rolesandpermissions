@@ -53,19 +53,23 @@ public class DatabaseSeeder implements CommandLineRunner {
                 try {
                     stmt.executeUpdate("ALTER TABLE rbac_db.tenant_modules ADD COLUMN amount DOUBLE");
                     log.info("Patched amount for tenant_modules");
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
                 try {
                     stmt.executeUpdate("ALTER TABLE rbac_db.tenant_modules ADD COLUMN payment_method VARCHAR(255)");
                     log.info("Patched payment_method for tenant_modules");
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
                 try {
                     stmt.executeUpdate("ALTER TABLE rbac_db.tenant_modules ADD COLUMN special_requirements TEXT");
                     log.info("Patched special_requirements for tenant_modules");
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
                 try {
                     stmt.executeUpdate("ALTER TABLE rbac_db.tenant_modules ADD COLUMN extra_charges DOUBLE");
                     log.info("Patched extra_charges for tenant_modules");
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             } catch (Exception e) {
                 log.warn("Failed to patch tenant_modules: " + e.getMessage());
             }
@@ -164,11 +168,13 @@ public class DatabaseSeeder implements CommandLineRunner {
             throw e;
         }
 
-        // Apply schema to ALL existing tenants to ensure missing tables (like id_format_settings) are created
+        // Apply schema to ALL existing tenants to ensure missing tables (like
+        // id_format_settings) are created
         log.info("Applying schema.sql to all existing tenant databases...");
         java.util.List<Tenant> allTenants = tenantRepository.findAll();
         for (Tenant t : allTenants) {
-            if (t.getDbName() == null || t.getDbName().isEmpty()) continue;
+            if (t.getDbName() == null || t.getDbName().isEmpty())
+                continue;
             try {
                 DataSource ds;
                 if (rds.containsDataSource(t.getCode())) {
@@ -180,10 +186,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                 ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
                 populator.addScript(new ClassPathResource("schema.sql"));
                 populator.execute(ds);
-                
-                // Also explicitly patch any tables that might have been created with incorrect column types earlier
+
+                // Also explicitly patch any tables that might have been created with incorrect
+                // column types earlier
                 try (java.sql.Connection tConn = ds.getConnection();
-                     java.sql.Statement tStmt = tConn.createStatement()) {
+                        java.sql.Statement tStmt = tConn.createStatement()) {
                     try {
                         tStmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
                         tStmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
@@ -191,74 +198,113 @@ public class DatabaseSeeder implements CommandLineRunner {
                         // ignore if table doesn't exist
                     }
                     try {
-                        tStmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE");
+                        tStmt.executeUpdate(
+                                "ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE");
                     } catch (Exception ex) {
                         // ignore if column already exists
                     }
                     try {
-                        tStmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'");
-                        tStmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7");
+                        tStmt.executeUpdate(
+                                "ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'");
+                        tStmt.executeUpdate(
+                                "ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7");
                         tStmt.executeUpdate("ALTER TABLE id_format_settings DROP COLUMN format_string");
                     } catch (Exception ex) {
                         // ignore if already updated
                     }
                     try {
-                        tStmt.executeUpdate("ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE");
-                        tStmt.executeUpdate("ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE");
+                        tStmt.executeUpdate(
+                                "ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE");
+                        tStmt.executeUpdate(
+                                "ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE");
                     } catch (Exception ex) {
                         // ignore if already updated
                     }
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN stamp_url VARCHAR(500)");
+                    } catch (Exception ex) {}
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN signature_url VARCHAR(500)");
+                    } catch (Exception ex) {}
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN header_image_url VARCHAR(500)");
+                    } catch (Exception ex) {}
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN footer_image_url VARCHAR(500)");
+                    } catch (Exception ex) {}
                 }
-                
+
                 log.info("Successfully applied schema.sql and patches to tenant: {}", t.getCode());
 
                 // Also ensure the tenant has the new Settings permissions
                 try {
                     TenantContext.setCurrentTenant(t.getId());
                     TenantContext.setCurrentTenantCode(t.getCode());
-                    
+
                     java.util.List<String[]> newSettingsPerms = java.util.Arrays.asList(
                             new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
                             new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
                             new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
-                            new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" }
-                    );
-                    
+                            new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" });
+
                     java.util.List<Permission> existingTenantPerms = permissionRepository.findAllByTenantId(t.getId());
                     java.util.Map<String, Permission> permMap = existingTenantPerms.stream()
-                            .collect(java.util.stream.Collectors.toMap(Permission::getPermissionKey, java.util.function.Function.identity()));
+                            .collect(java.util.stream.Collectors.toMap(Permission::getPermissionKey,
+                                    java.util.function.Function.identity()));
 
                     java.util.List<Permission> permsToSave = new java.util.ArrayList<>();
                     for (String[] permInfo : newSettingsPerms) {
                         String key = (permInfo[0] + "_" + permInfo[1]).toUpperCase();
                         if (!permMap.containsKey(key)) {
-                            permsToSave.add(Permission.builder()
+                            Permission p = Permission.builder()
                                     .tenantId(t.getId())
                                     .module(permInfo[0])
                                     .action(permInfo[1])
                                     .description(permInfo[2])
                                     .active(true)
-                                    .build());
+                                    .build();
+                            permsToSave.add(p);
                         }
                     }
                     if (!permsToSave.isEmpty()) {
                         java.util.List<Permission> saved = permissionRepository.saveAll(permsToSave);
-                        roleRepository.findByNameAndTenantId("SUPER_ADMIN", t.getId()).ifPresent(role -> {
-                            Set<Permission> updatedPerms = new HashSet<>(role.getPermissions());
-                            updatedPerms.addAll(saved);
-                            role.setPermissions(updatedPerms);
-                            roleRepository.save(role);
-                        });
-                        log.info("Patched missing Settings permissions for tenant: {}", t.getCode());
+                        for (Permission s : saved) {
+                            permMap.put(s.getPermissionKey(), s);
+                        }
                     }
-                    
+
+                    // Assign these permissions to SUPER_ADMIN and TENANT_ADMIN if they don't have
+                    // them
+                    Set<String> keysToAssign = newSettingsPerms.stream()
+                            .map(info -> (info[0] + "_" + info[1]).toUpperCase())
+                            .collect(java.util.stream.Collectors.toSet());
+
+                    for (String roleName : new String[] { "SUPER_ADMIN", "TENANT_ADMIN" }) {
+                        roleRepository.findByNameAndTenantId(roleName, t.getId()).ifPresent(role -> {
+                            Set<Permission> updatedPerms = new HashSet<>(role.getPermissions());
+                            boolean changed = false;
+                            for (String key : keysToAssign) {
+                                Permission p = permMap.get(key);
+                                if (p != null && !updatedPerms.contains(p)) {
+                                    updatedPerms.add(p);
+                                    changed = true;
+                                }
+                            }
+                            if (changed) {
+                                role.setPermissions(updatedPerms);
+                                roleRepository.save(role);
+                            }
+                        });
+                    }
+                    log.info("Patched missing Settings permissions for tenant: {}", t.getCode());
+
                     // Seed missing system templates for existing tenants
                     java.util.List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()
                             .map(com.project.www.entity.TemplateDefinition::getTemplateCode)
                             .collect(java.util.stream.Collectors.toList());
                     templateDefinitionService.importSystemTemplates(sysCodes);
                     log.info("Patched system templates for tenant: {}", t.getCode());
-                    
+
                 } finally {
                     TenantContext.clear();
                 }
@@ -273,7 +319,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         try {
             TenantContext.setCurrentTenant(systemTenantId);
             TenantContext.setCurrentTenantCode(systemTenantCode);
-            
+
             // Pre-load roles into cache
             java.util.Map<String, Role> cachedRoles = new java.util.HashMap<>();
             roleRepository.findAllByTenantId(systemTenantId).forEach(r -> {
@@ -298,6 +344,10 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
                     new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
                     new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
+                    new String[] { "SETTINGS", "MANAGE_TEMPLATES", "Ability to manage document templates" },
+                    new String[] { "SETTINGS", "MANAGE_ID_FORMATS", "Ability to manage ID generation formats" },
+                    new String[] { "COMPANY_PROFILE", "VIEW", "Ability to view company profile" },
+                    new String[] { "COMPANY_PROFILE", "UPDATE", "Ability to update company profile" },
                     // Dummy Module View Permissions for testing UI
                     new String[] { "LEAD", "VIEW", "Ability to view Leads" },
                     new String[] { "COURSE", "VIEW", "Ability to view Courses" },
@@ -343,8 +393,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                             .build());
             superAdminRole.setPermissions(superAdminPermissions);
             superAdminRole = roleRepository.save(superAdminRole);
-
-
 
             // Ensure sequence exists
             int currentYear = java.time.LocalDate.now().getYear();

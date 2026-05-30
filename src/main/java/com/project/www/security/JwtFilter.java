@@ -35,6 +35,9 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // Always clear context at the start of a request to prevent thread contamination
+        TenantContext.clear();
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String email;

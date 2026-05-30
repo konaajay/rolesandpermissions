@@ -376,6 +376,35 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void toggleUserActiveStatus(Long id) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        if (tenantId == null) {
+            throw new RuntimeException("No active tenant context found");
+        }
+        User user = userRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("User not found in this tenant"));
+        
+        // --- SUPER ADMIN PROTECTION: PREVENT DEACTIVATION ---
+        if (user.getActive()) {
+            if (user.getTenantId() == 1L && "admin@lms.com".equalsIgnoreCase(user.getEmail())) {
+                throw new RuntimeException("System Protected Account cannot be deactivated.");
+            }
+            
+            if (user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName())) {
+                long activeSuperAdmins = userRepository.countByRoleNameAndTenantIdAndActiveTrue("SUPER_ADMIN", tenantId);
+                if (activeSuperAdmins <= 1) {
+                    throw new RuntimeException("At least one active Super Admin must exist for this tenant.");
+                }
+            }
+        }
+        // ---------------------------------------------------
+
+        user.setActive(!user.getActive());
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
     public void resetPassword(Long id, ResetPasswordRequest request) {
         Long tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) {

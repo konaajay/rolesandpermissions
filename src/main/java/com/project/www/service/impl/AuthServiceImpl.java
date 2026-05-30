@@ -114,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
                 modules = new HashSet<>();
             }
 
-            java.util.List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION");
+            java.util.List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION", "COMPANY_PROFILE", "SETTINGS");
             final Set<String> activeModules = modules; // for lambda
 
             Set<String> permissions = user.getRole().getPermissions().stream()
@@ -123,6 +123,7 @@ public class AuthServiceImpl implements AuthService {
                     .collect(Collectors.toSet());
 
             String token = jwtService.generateToken(user.getEmail(), user.getTenantId(), tenant.getCode());
+            System.out.println("DEBUG - Tenant ID: " + tenant.getId() + " - Modules fetched: " + modules);
             return new AuthResponse(token, permissions, modules);
         } finally {
             TenantContext.clear();

@@ -187,7 +187,7 @@ public class MultiTenantRbacIntegrationTests {
         assertNotNull(managerUser);
         assertEquals("MANAGER", managerUser.getRole().getName());
         assertNotNull(managerUser.getEmployeeId());
-        assertTrue(managerUser.getEmployeeId().endsWith("-002"));
+        assertEquals("MAN0000001", managerUser.getEmployeeId());
 
         // 6. Test Tenant Isolation: attempt to get users of TenantA using a separate tenant request or wrong context
         // Ensure user list can be fetched with USER_VIEW authority

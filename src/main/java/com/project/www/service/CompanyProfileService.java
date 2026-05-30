@@ -12,6 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Service
@@ -111,11 +118,16 @@ public class CompanyProfileService {
     @Transactional
     public CompanyProfileDTO uploadLogo(MultipartFile file) {
         Long tenantId = TenantContext.getCurrentTenant();
-        CompanyProfile profile = repository.findByTenantId(tenantId)
-                .orElseThrow(() -> new RuntimeException("Company profile not found. Please save profile first."));
+        CompanyProfile profile = repository.findByTenantId(tenantId).orElseGet(() -> {
+            CompanyProfile newProfile = new CompanyProfile();
+            newProfile.setTenantId(tenantId);
+            newProfile.setCreatedBy(getCurrentUsername());
+            newProfile.setCompanyName("New Company");
+            newProfile.setCompanyCode("TEMP_" + System.currentTimeMillis());
+            return newProfile;
+        });
         
-        // Mocking file upload: in real scenario, upload to S3/Blob Storage
-        String fileUrl = "https://example-storage.com/logos/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String fileUrl = saveFileLocally(file, "logos");
         profile.setLogoUrl(fileUrl);
         profile.setUpdatedBy(getCurrentUsername());
         
@@ -125,12 +137,55 @@ public class CompanyProfileService {
     @Transactional
     public CompanyProfileDTO uploadFavicon(MultipartFile file) {
         Long tenantId = TenantContext.getCurrentTenant();
-        CompanyProfile profile = repository.findByTenantId(tenantId)
-                .orElseThrow(() -> new RuntimeException("Company profile not found. Please save profile first."));
+        CompanyProfile profile = repository.findByTenantId(tenantId).orElseGet(() -> {
+            CompanyProfile newProfile = new CompanyProfile();
+            newProfile.setTenantId(tenantId);
+            newProfile.setCreatedBy(getCurrentUsername());
+            newProfile.setCompanyName("New Company");
+            newProfile.setCompanyCode("TEMP_" + System.currentTimeMillis());
+            return newProfile;
+        });
         
-        // Mocking file upload
-        String fileUrl = "https://example-storage.com/favicons/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String fileUrl = saveFileLocally(file, "favicons");
         profile.setFaviconUrl(fileUrl);
+        profile.setUpdatedBy(getCurrentUsername());
+        
+        return mapToDto(repository.save(profile));
+    }
+
+    @Transactional
+    public CompanyProfileDTO uploadStamp(MultipartFile file) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        CompanyProfile profile = repository.findByTenantId(tenantId).orElseGet(() -> {
+            CompanyProfile newProfile = new CompanyProfile();
+            newProfile.setTenantId(tenantId);
+            newProfile.setCreatedBy(getCurrentUsername());
+            newProfile.setCompanyName("New Company");
+            newProfile.setCompanyCode("TEMP_" + System.currentTimeMillis());
+            return newProfile;
+        });
+        
+        String fileUrl = saveFileLocally(file, "stamps");
+        profile.setStampUrl(fileUrl);
+        profile.setUpdatedBy(getCurrentUsername());
+        
+        return mapToDto(repository.save(profile));
+    }
+
+    @Transactional
+    public CompanyProfileDTO uploadSignature(MultipartFile file) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        CompanyProfile profile = repository.findByTenantId(tenantId).orElseGet(() -> {
+            CompanyProfile newProfile = new CompanyProfile();
+            newProfile.setTenantId(tenantId);
+            newProfile.setCreatedBy(getCurrentUsername());
+            newProfile.setCompanyName("New Company");
+            newProfile.setCompanyCode("TEMP_" + System.currentTimeMillis());
+            return newProfile;
+        });
+        
+        String fileUrl = saveFileLocally(file, "signatures");
+        profile.setSignatureUrl(fileUrl);
         profile.setUpdatedBy(getCurrentUsername());
         
         return mapToDto(repository.save(profile));
@@ -155,8 +210,35 @@ public class CompanyProfileService {
         dto.setRegistrationNumber(entity.getRegistrationNumber());
         dto.setLogoUrl(entity.getLogoUrl());
         dto.setFaviconUrl(entity.getFaviconUrl());
+        dto.setStampUrl(entity.getStampUrl());
+        dto.setSignatureUrl(entity.getSignatureUrl());
+        dto.setHeaderImageUrl(entity.getHeaderImageUrl());
+        dto.setFooterImageUrl(entity.getFooterImageUrl());
         dto.setTimezone(entity.getTimezone());
         dto.setCurrency(entity.getCurrency());
         return dto;
+    }
+
+    private String saveFileLocally(MultipartFile file, String folder) {
+        try {
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String fileName = UUID.randomUUID().toString() + extension;
+            
+            Path uploadPath = Paths.get("uploads", folder);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            
+            return "http://localhost:8080/uploads/" + folder + "/" + fileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store file", e);
+        }
     }
 }

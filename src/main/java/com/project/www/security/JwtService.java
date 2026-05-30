@@ -16,7 +16,7 @@ public class JwtService {
             "mysecretkeymysecretkeymysecretkey12345";
 
     private static final long ACCESS_EXPIRATION =
-            1000L * 60 * 15; // 15 minutes
+            1000L * 60 * 60 * 24; // 24 hours
 
     private static final long REFRESH_EXPIRATION =
             1000L * 60 * 60 * 24 * 7; // 7 days

@@ -66,6 +66,18 @@ public class CompanyProfile {
     @Column(name = "favicon_url", length = 500)
     private String faviconUrl;
 
+    @Column(name = "stamp_url", length = 500)
+    private String stampUrl;
+
+    @Column(name = "signature_url", length = 500)
+    private String signatureUrl;
+
+    @Column(name = "header_image_url", length = 500)
+    private String headerImageUrl;
+
+    @Column(name = "footer_image_url", length = 500)
+    private String footerImageUrl;
+
     @Column(name = "timezone", length = 100)
     private String timezone;
 

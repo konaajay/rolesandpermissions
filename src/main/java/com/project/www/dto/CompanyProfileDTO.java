@@ -21,6 +21,12 @@ public class CompanyProfileDTO {
     private String registrationNumber;
     private String logoUrl;
     private String faviconUrl;
+    private String stampUrl;
+    private String signatureUrl;
+    private String headerImageUrl;
+    private String footerImageUrl;
     private String timezone;
     private String currency;
+    private String industryType;
+    private String businessType;
 }
