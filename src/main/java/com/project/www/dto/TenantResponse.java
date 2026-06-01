@@ -16,4 +16,10 @@ public class TenantResponse {
     private String dbName;
     private Boolean active;
     private String adminEmail;
+    private String superAdminName;
+    private String phone;
+    private String status;
+    private String subscriptionType;
+    private java.time.LocalDate subscriptionStartDate;
+    private java.time.LocalDate subscriptionEndDate;
 }

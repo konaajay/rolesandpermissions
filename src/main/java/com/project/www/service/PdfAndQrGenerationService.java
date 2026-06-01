@@ -8,6 +8,9 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.springframework.stereotype.Service;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 import java.util.HashMap;
@@ -41,7 +44,12 @@ public class PdfAndQrGenerationService {
                           + htmlContent + "</body></html>";
         }
         
-        builder.withHtmlContent(htmlContent, null);
+        // Use JSoup to parse the HTML and output strictly valid XML/XHTML
+        Document document = Jsoup.parse(htmlContent);
+        document.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        String xhtmlContent = document.html();
+        
+        builder.withHtmlContent(xhtmlContent, null);
         builder.toStream(outputStream);
         builder.run();
         

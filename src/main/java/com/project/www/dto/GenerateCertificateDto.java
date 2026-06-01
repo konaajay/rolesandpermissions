@@ -9,4 +9,6 @@ public class GenerateCertificateDto {
     private Long templateId;
     private LocalDateTime issuedDate;
     private LocalDateTime expiryDate;
+    private String customHtml;
+    private Boolean sendEmail;
 }

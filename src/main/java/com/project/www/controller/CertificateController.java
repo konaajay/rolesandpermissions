@@ -26,6 +26,13 @@ public class CertificateController {
         return ResponseEntity.ok(certificateService.generateCertificate(tenantId, dto));
     }
 
+    @PostMapping("/preview")
+    public ResponseEntity<String> previewCertificate(
+            @RequestBody GenerateCertificateDto dto) throws Exception {
+        Long tenantId = TenantContext.getCurrentTenant();
+        return ResponseEntity.ok(certificateService.previewCertificateHtml(tenantId, dto));
+    }
+
     @GetMapping
     public ResponseEntity<List<EmployeeCertificate>> getAllCertificates() {
         Long tenantId = TenantContext.getCurrentTenant();

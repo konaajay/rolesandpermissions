@@ -16,4 +16,5 @@ public interface CertificateService {
     
     // Public verification
     Object verifyCertificate(String identifier);
+    String previewCertificateHtml(Long tenantId, GenerateCertificateDto dto) throws Exception;
 }

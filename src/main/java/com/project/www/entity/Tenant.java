@@ -34,6 +34,24 @@ public class Tenant extends Auditable {
     @Column(name = "db_password")
     private String dbPassword;
 
+    @Column(name = "super_admin_name")
+    private String superAdminName;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "status")
+    private String status; // TRIAL, ACTIVE, EXPIRED
+
+    @Column(name = "subscription_type")
+    private String subscriptionType;
+
+    @Column(name = "subscription_start_date")
+    private java.time.LocalDate subscriptionStartDate;
+
+    @Column(name = "subscription_end_date")
+    private java.time.LocalDate subscriptionEndDate;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;

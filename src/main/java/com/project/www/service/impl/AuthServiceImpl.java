@@ -60,9 +60,12 @@ public class AuthServiceImpl implements AuthService {
             }
 
             if (tenant == null) {
-                String tenantCode = tenantResolver.resolveTenantCode(servletRequest);
-                if (tenantCode != null) {
-                    tenant = tenantRepository.findByCode(tenantCode).orElse(null);
+                String code = request.getTenantCode();
+                if (code == null || code.trim().isEmpty()) {
+                    code = tenantResolver.resolveTenantCode(servletRequest);
+                }
+                if (code != null) {
+                    tenant = tenantRepository.findByCode(code).orElse(null);
                 }
             }
             
@@ -79,11 +82,32 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (tenant == null) {
-            throw new RuntimeException("Tenant not found or not specified");
+            throw new RuntimeException("Invalid Workspace / Tenant Code provided.");
+        }
+
+        // ==========================================
+        // PHASE 3: SaaS Paywall & Trial Enforcement
+        // ==========================================
+        if ("TRIAL".equalsIgnoreCase(tenant.getStatus()) && tenant.getSubscriptionEndDate() != null) {
+            if (java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
+                tenant.setStatus("EXPIRED");
+                tenant.setActive(false);
+                // Update in master DB
+                String ogCode = TenantContext.getCurrentTenantCode();
+                try {
+                    TenantContext.clear();
+                    tenantRepository.save(tenant);
+                } finally {
+                    TenantContext.setCurrentTenantCode(ogCode);
+                }
+                throw new RuntimeException("PAYMENT_REQUIRED: Your 15-day free trial has expired. Please upgrade your subscription to continue.");
+            }
+        } else if ("EXPIRED".equalsIgnoreCase(tenant.getStatus())) {
+            throw new RuntimeException("PAYMENT_REQUIRED: Your subscription has expired. Please renew your plan to continue.");
         }
 
         if (!tenant.getActive()) {
-            throw new RuntimeException("Tenant is inactive");
+            throw new RuntimeException("This workspace has been disabled by the system administrator.");
         }
 
         // Set tenant context for authentication loading

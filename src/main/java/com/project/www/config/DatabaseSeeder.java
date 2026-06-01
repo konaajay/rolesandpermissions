@@ -48,8 +48,17 @@ public class DatabaseSeeder implements CommandLineRunner {
             masterPopulator.execute(masterDataSource);
             log.info("Successfully executed master-schema.sql on rbac_db");
 
-            // Patch existing tenant_modules in master database to add missing columns
+            // Patch existing tables in master database to add missing columns
             try (java.sql.Statement stmt = conn.createStatement()) {
+                // Patch tenants table
+                try { stmt.executeUpdate("ALTER TABLE rbac_db.tenants ADD COLUMN super_admin_name VARCHAR(255)"); } catch (Exception e) {}
+                try { stmt.executeUpdate("ALTER TABLE rbac_db.tenants ADD COLUMN phone VARCHAR(255)"); } catch (Exception e) {}
+                try { stmt.executeUpdate("ALTER TABLE rbac_db.tenants ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE'"); } catch (Exception e) {}
+                try { stmt.executeUpdate("ALTER TABLE rbac_db.tenants ADD COLUMN subscription_type VARCHAR(50)"); } catch (Exception e) {}
+                try { stmt.executeUpdate("ALTER TABLE rbac_db.tenants ADD COLUMN subscription_start_date DATE"); } catch (Exception e) {}
+                try { stmt.executeUpdate("ALTER TABLE rbac_db.tenants ADD COLUMN subscription_end_date DATE"); } catch (Exception e) {}
+
+                // Patch tenant_modules
                 try {
                     stmt.executeUpdate("ALTER TABLE rbac_db.tenant_modules ADD COLUMN amount DOUBLE");
                     log.info("Patched amount for tenant_modules");
@@ -231,6 +240,9 @@ public class DatabaseSeeder implements CommandLineRunner {
                     } catch (Exception ex) {}
                     try {
                         tStmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN footer_image_url VARCHAR(500)");
+                    } catch (Exception ex) {}
+                    try {
+                        tStmt.executeUpdate("ALTER TABLE employee_certificates ADD COLUMN custom_html TEXT");
                     } catch (Exception ex) {}
                 }
 

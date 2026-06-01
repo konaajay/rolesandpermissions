@@ -107,6 +107,12 @@ public class TenantServiceImpl implements TenantService {
                         .code(finalTenantCode)
                         .dbName(dbName)
                         .adminEmail(request.getAdminEmail())
+                        .superAdminName(request.getAdminFirstName() + " " + request.getAdminLastName())
+                        .phone(request.getPhone())
+                        .status("TRIAL")
+                        .subscriptionType("TRIAL")
+                        .subscriptionStartDate(java.time.LocalDate.now())
+                        .subscriptionEndDate(java.time.LocalDate.now().plusDays(15))
                         .active(true)
                         .build();
                 return tenantRepository.save(t);
@@ -250,6 +256,12 @@ public class TenantServiceImpl implements TenantService {
                 .code(t.getCode())
                 .dbName(t.getDbName())
                 .adminEmail(t.getAdminEmail())
+                .superAdminName(t.getSuperAdminName())
+                .phone(t.getPhone())
+                .status(t.getStatus())
+                .subscriptionType(t.getSubscriptionType())
+                .subscriptionStartDate(t.getSubscriptionStartDate())
+                .subscriptionEndDate(t.getSubscriptionEndDate())
                 .active(t.getActive())
                 .build();
     }

@@ -40,6 +40,9 @@ public class EmployeeCertificate {
     @Column(name = "pdf_url")
     private String pdfUrl;
 
+    @Column(name = "custom_html", columnDefinition = "TEXT")
+    private String customHtml;
+
     @Column(nullable = false)
     private String status = "ACTIVE"; // ACTIVE, REVOKED
 

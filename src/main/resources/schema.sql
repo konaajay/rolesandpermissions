@@ -328,6 +328,7 @@ CREATE TABLE IF NOT EXISTS employee_certificates (
     expiry_date DATETIME,
     verification_token VARCHAR(255) NOT NULL UNIQUE,
     pdf_url VARCHAR(500),
+    custom_html TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     created_at DATETIME NOT NULL,
     updated_at DATETIME,

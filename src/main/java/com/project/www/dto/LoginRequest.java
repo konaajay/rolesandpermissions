@@ -8,6 +8,7 @@ import lombok.Data;
 public class LoginRequest {
 
     private Long tenantId;
+    private String tenantCode;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")

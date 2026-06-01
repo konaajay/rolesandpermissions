@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.project.www.service.TenantService tenantService;
 
     @PostMapping("/login")
     public AuthResponse login(
@@ -29,5 +30,12 @@ public class AuthController {
             @RequestBody RegisterRequest request
     ) {
         return authService.register(request);
+    }
+
+    @PostMapping("/register-company")
+    public org.springframework.http.ResponseEntity<com.project.www.dto.TenantResponse> registerCompany(
+            @jakarta.validation.Valid @RequestBody com.project.www.dto.CreateTenantRequest request
+    ) {
+        return org.springframework.http.ResponseEntity.ok(tenantService.createTenant(request));
     }
 }

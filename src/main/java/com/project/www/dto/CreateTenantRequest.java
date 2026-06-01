@@ -28,4 +28,6 @@ public class CreateTenantRequest {
     @com.fasterxml.jackson.annotation.JsonAlias({"adminPassword", "password"})
     @NotBlank(message = "Admin password is required")
     private String adminPassword;
+
+    private String phone;
 }

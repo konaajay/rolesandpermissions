@@ -10,6 +10,7 @@ import com.project.www.repository.EmployeeCertificateRepository;
 import com.project.www.repository.TemplateDefinitionRepository;
 import com.project.www.repository.UserRepository;
 import com.project.www.service.CertificateService;
+import com.project.www.service.EmailService;
 import com.project.www.service.PdfAndQrGenerationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +39,9 @@ public class CertificateServiceImpl implements CertificateService {
     @Autowired
     private PdfAndQrGenerationService pdfAndQrService;
 
+    @Autowired
+    private EmailService emailService;
+
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
@@ -64,9 +68,24 @@ public class CertificateServiceImpl implements CertificateService {
         certificate.setIssuedDate(dto.getIssuedDate() != null ? dto.getIssuedDate() : LocalDateTime.now());
         certificate.setExpiryDate(dto.getExpiryDate());
         certificate.setVerificationToken(verificationToken);
+        certificate.setCustomHtml(dto.getCustomHtml());
         certificate.setStatus("ACTIVE");
 
-        return certificateRepository.save(certificate);
+        EmployeeCertificate savedCert = certificateRepository.save(certificate);
+
+        if (Boolean.TRUE.equals(dto.getSendEmail())) {
+            try {
+                byte[] pdfBytes = downloadCertificatePdf(tenantId, savedCert.getId());
+                String subject = "Your " + template.getTemplateName();
+                String text = "Dear " + employee.getFirstName() + ",\n\nPlease find attached your " + template.getTemplateName() + ".\n\nBest Regards,\nHR Team";
+                emailService.sendEmailWithAttachment(employee.getEmail(), subject, text, template.getTemplateName() + ".pdf", pdfBytes);
+            } catch (Exception e) {
+                // Ignore email error for now
+                System.err.println("Failed to send email: " + e.getMessage());
+            }
+        }
+
+        return savedCert;
     }
 
     private String generateCertificateNumber(Long tenantId) {
@@ -103,7 +122,7 @@ public class CertificateServiceImpl implements CertificateService {
         String qrCodeBase64 = pdfAndQrService.generateQrCodeBase64(verificationUrl);
         String qrImageTag = "<img src=\"" + qrCodeBase64 + "\" width=\"100\" height=\"100\" />";
 
-        String htmlContent = cert.getTemplate().getContentHtml();
+        String htmlContent = cert.getCustomHtml() != null && !cert.getCustomHtml().isBlank() ? cert.getCustomHtml() : cert.getTemplate().getContentHtml();
         
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
 
@@ -154,6 +173,58 @@ public class CertificateServiceImpl implements CertificateService {
 
         boolean isLandscape = "CERTIFICATE".equalsIgnoreCase(cert.getTemplate().getTemplateType());
         return pdfAndQrService.generatePdfFromHtml(htmlContent, isLandscape);
+    }
+
+    @Override
+    public String previewCertificateHtml(Long tenantId, GenerateCertificateDto dto) throws Exception {
+        User employee = userRepository.findByTenantIdAndEmployeeId(tenantId, dto.getEmployeeId())
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        TemplateDefinition template = templateRepository.findById(dto.getTemplateId())
+                .orElseThrow(() -> new RuntimeException("Template not found"));
+
+        String htmlContent = template.getContentHtml();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+
+        var companyProfileOpt = companyProfileRepository.findByTenantId(tenantId);
+        String companyName = companyProfileOpt.isPresent() && companyProfileOpt.get().getCompanyName() != null ? companyProfileOpt.get().getCompanyName() : "Enterprise SaaS Pvt Ltd";
+        String companyAddress = companyProfileOpt.isPresent() && companyProfileOpt.get().getAddressLine1() != null ? companyProfileOpt.get().getAddressLine1() : "Default Address";
+        String companyLogo = companyProfileOpt.isPresent() && companyProfileOpt.get().getLogoUrl() != null && !companyProfileOpt.get().getLogoUrl().isBlank() ? "<img src=\"" + companyProfileOpt.get().getLogoUrl() + "\" height=\"50\" />" : "<b>" + companyName + "</b>";
+        String companyStamp = companyProfileOpt.isPresent() && companyProfileOpt.get().getStampUrl() != null && !companyProfileOpt.get().getStampUrl().isBlank() ? "<img src=\"" + companyProfileOpt.get().getStampUrl() + "\" height=\"80\" />" : "<div style=\"width: 80px; height: 80px; border: 2px dashed #ccc; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #ccc; font-weight: bold; font-size: 12px;\">STAMP</div>";
+        String companySignature = companyProfileOpt.isPresent() && companyProfileOpt.get().getSignatureUrl() != null && !companyProfileOpt.get().getSignatureUrl().isBlank() ? "<img src=\"" + companyProfileOpt.get().getSignatureUrl() + "\" height=\"40\" />" : "";
+
+        LocalDateTime issueDate = dto.getIssuedDate() != null ? dto.getIssuedDate() : LocalDateTime.now();
+
+        return htmlContent
+                .replace("{{COMPANY_NAME}}", companyName)
+                .replace("{{COMPANY_LOGO}}", companyLogo)
+                .replace("{{COMPANY_SIGNATURE}}", companySignature)
+                .replace("{{COMPANY_STAMP}}", companyStamp)
+                .replace("{{COMPANY_ADDRESS}}", companyAddress)
+                .replace("{{employeeName}}", employee.getFirstName() + " " + employee.getLastName())
+                .replace("{{EMPLOYEE_NAME}}", employee.getFirstName() + " " + employee.getLastName())
+                .replace("{{FIRST_NAME}}", employee.getFirstName() != null ? employee.getFirstName() : "")
+                .replace("{{LAST_NAME}}", employee.getLastName() != null ? employee.getLastName() : "")
+                .replace("{{EMPLOYEE_ID}}", employee.getEmployeeId())
+                .replace("{{employeeId}}", employee.getEmployeeId() != null ? employee.getEmployeeId() : "N/A")
+                .replace("{{EMPLOYEE_ADDRESS}}", "Registered Address on File")
+                .replace("{{DESIGNATION}}", employee.getDesignation() != null ? employee.getDesignation() : "N/A")
+                .replace("{{designation}}", employee.getDesignation() != null ? employee.getDesignation() : "N/A")
+                .replace("{{DEPARTMENT}}", employee.getDepartment() != null ? employee.getDepartment() : "N/A")
+                .replace("{{department}}", employee.getDepartment() != null ? employee.getDepartment() : "N/A")
+                .replace("{{WORK_LOCATION}}", employee.getAssignedOffice() != null ? employee.getAssignedOffice().getName() : "Head Office")
+                .replace("{{JOINING_DATE}}", employee.getJoiningDate() != null ? employee.getJoiningDate().format(formatter) : issueDate.format(formatter))
+                .replace("{{EMPLOYMENT_TYPE}}", "Full-Time")
+                .replace("{{PROBATION_PERIOD}}", "6 Months")
+                .replace("{{ANNUAL_CTC}}", "Not Disclosed")
+                .replace("{{REPORTING_MANAGER}}", employee.getManager() != null ? employee.getManager().getName() : "HR Department")
+                .replace("{{ISSUE_DATE}}", issueDate.format(formatter))
+                .replace("{{issueDate}}", issueDate.format(formatter))
+                .replace("{{START_DATE}}", issueDate.format(formatter))
+                .replace("{{END_DATE}}", dto.getExpiryDate() != null ? dto.getExpiryDate().format(formatter) : "Present")
+                .replace("{{EXPIRY_DATE}}", dto.getExpiryDate() != null ? dto.getExpiryDate().format(formatter) : "Present")
+                .replace("{{SIGNATORY_NAME}}", "Authorized Signatory")
+                .replace("{{SIGNATORY_DESIGNATION}}", "HR Manager");
     }
 
     @Override
