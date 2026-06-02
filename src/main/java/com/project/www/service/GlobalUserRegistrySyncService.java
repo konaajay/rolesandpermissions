@@ -73,7 +73,7 @@ public class GlobalUserRegistrySyncService {
             try {
                 TenantContext.setCurrentTenant(tenant.getId());
                 TenantContext.setCurrentTenantCode(tenant.getCode());
-                java.util.List<User> users = userRepository.findAll();
+                java.util.List<User> users = userRepository.findAllByTenantId(tenant.getId());
                 
                 for (User user : users) {
                     try {
