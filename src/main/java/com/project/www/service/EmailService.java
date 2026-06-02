@@ -15,6 +15,14 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    public void sendEmail(String toEmail, String subject, String text) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject(subject);
+        message.setText(text);
+        mailSender.send(message);
+    }
+
     public void sendCredentialsEmail(String toEmail, String firstName, String loginId, String password, String loginUrl, String tenantCode) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
