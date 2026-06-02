@@ -1,6 +1,7 @@
 package com.project.www.service.impl;
 
 import com.project.www.dto.RequirementRequest;
+import com.project.www.dto.RequirementResponseDto;
 import com.project.www.entity.Requirement;
 import com.project.www.entity.RequirementItem;
 import com.project.www.entity.Vendor;
@@ -25,7 +26,7 @@ public class RequirementServiceImpl implements RequirementService {
     private final EmailService emailService;
 
     @Override
-    public Requirement createRequirement(RequirementRequest request) {
+    public RequirementResponseDto createRequirement(RequirementRequest request) {
         Vendor vendor = vendorRepository.findById(request.getVendorId())
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
 
@@ -33,6 +34,7 @@ public class RequirementServiceImpl implements RequirementService {
                 .description(request.getDescription())
                 .vendor(vendor)
                 .requiredDate(request.getRequiredDate())
+                .requirementType(request.getRequirementType())
                 .status("CREATED")
                 .items(new ArrayList<>())
                 .build();
@@ -83,30 +85,74 @@ public class RequirementServiceImpl implements RequirementService {
         );
 
         if (vendor.getEmail() != null && !vendor.getEmail().isEmpty()) {
-            emailService.sendEmail(vendor.getEmail(), "New Requirement Assigned", emailBody);
-            log.info("Email sent to vendor {} for requirement {}", vendor.getEmail(), savedRequirement.getId());
+            try {
+                emailService.sendEmail(vendor.getEmail(), "New Requirement Assigned", emailBody);
+                log.info("Email sent to vendor {} for requirement {}", vendor.getEmail(), savedRequirement.getId());
+            } catch (Exception e) {
+                log.error("Failed to send email to vendor {}: {}", vendor.getEmail(), e.getMessage());
+                // Don't fail the entire transaction just because email failed
+            }
         } else {
             log.warn("Vendor {} has no email address, could not send requirement notification.", vendor.getId());
         }
 
-        return savedRequirement;
+        return mapToDto(savedRequirement);
     }
 
     @Override
-    public Requirement updateRequirementStatus(Long id, String status) {
+    public RequirementResponseDto updateRequirementStatus(Long id, String status) {
         Requirement requirement = requirementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Requirement not found"));
         requirement.setStatus(status);
-        return requirementRepository.save(requirement);
+        return mapToDto(requirementRepository.save(requirement));
     }
 
     @Override
-    public List<Requirement> getAllRequirements() {
-        return requirementRepository.findAll();
+    public List<RequirementResponseDto> getAllRequirements() {
+        return requirementRepository.findAll().stream()
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Override
-    public List<Requirement> getRequirementsByVendor(Long vendorId) {
-        return requirementRepository.findByVendorId(vendorId);
+    public List<RequirementResponseDto> getRequirementsByVendor(Long vendorId) {
+        return requirementRepository.findByVendorId(vendorId).stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+    
+    private RequirementResponseDto mapToDto(Requirement req) {
+        RequirementResponseDto.VendorDto vendorDto = null;
+        if (req.getVendor() != null) {
+            vendorDto = RequirementResponseDto.VendorDto.builder()
+                    .id(req.getVendor().getId())
+                    .vendorName(req.getVendor().getVendorName())
+                    .companyName(req.getVendor().getCompanyName())
+                    .email(req.getVendor().getEmail())
+                    .build();
+        }
+        
+        List<RequirementResponseDto.RequirementItemDto> itemsDto = new ArrayList<>();
+        if (req.getItems() != null) {
+            itemsDto = req.getItems().stream()
+                    .map(item -> RequirementResponseDto.RequirementItemDto.builder()
+                            .id(item.getId())
+                            .itemName(item.getItemName())
+                            .brand(item.getBrand())
+                            .quantity(item.getQuantity())
+                            .unit(item.getUnit())
+                            .build())
+                    .toList();
+        }
+
+        return RequirementResponseDto.builder()
+                .id(req.getId())
+                .description(req.getDescription())
+                .requirementType(req.getRequirementType())
+                .status(req.getStatus())
+                .requiredDate(req.getRequiredDate())
+                .vendor(vendorDto)
+                .items(itemsDto)
+                .build();
     }
 }

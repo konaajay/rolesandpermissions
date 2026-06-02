@@ -131,6 +131,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
                         new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
                         new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
+                        new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
                         new String[] { "VENDOR", "CREATE", "Create Vendors" },
                         new String[] { "VENDOR", "VIEW", "View Vendors" },
                         new String[] { "VENDOR", "UPDATE", "Update Vendors" },

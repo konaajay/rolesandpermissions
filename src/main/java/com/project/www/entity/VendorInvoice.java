@@ -28,6 +28,10 @@ public class VendorInvoice extends Auditable {
     @JoinColumn(name = "vendor_id", nullable = false)
     private Vendor vendor;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requirement_id")
+    private Requirement requirement;
+
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
@@ -46,7 +50,7 @@ public class VendorInvoice extends Auditable {
     @Builder.Default
     @Column(nullable = false)
     private Boolean deleted = false;
-    
+
     @Column(columnDefinition = "TEXT")
     private String receiptUrl;
 }

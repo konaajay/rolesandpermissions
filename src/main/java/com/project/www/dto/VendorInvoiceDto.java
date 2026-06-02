@@ -21,6 +21,8 @@ public class VendorInvoiceDto {
     private Long vendorId;
     
     private String vendorName;
+    
+    private Long requirementId;
 
     private BigDecimal amountValue;
     private String amount; // formatted e.g. "$12,000"

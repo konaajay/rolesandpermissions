@@ -33,11 +33,12 @@ public class TenantServiceImpl implements TenantService {
     private final TenantSettingsRepository tenantSettingsRepository;
     private final TenantModuleRepository tenantModuleRepository;
     private final PasswordEncoder passwordEncoder;
-    
+
     private final PlatformTransactionManager transactionManager;
     private final PipelineStageRepository pipelineStageRepository;
     private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
     private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
+    private final com.project.www.service.TenantDatabaseService tenantDatabaseService;
 
     @Override
     public TenantResponse createTenant(CreateTenantRequest request) {
@@ -99,6 +100,8 @@ public class TenantServiceImpl implements TenantService {
                 TenantContext.setCurrentTenant(tenant.getId());
                 TenantContext.setCurrentTenantCode(finalTenantCode);
 
+                // Provision Isolated Database dynamically
+                tenantDatabaseService.provisionTenantDatabase(finalTenantCode, dbName);
                 transactionTemplate.executeWithoutResult(status -> {
                     List<String[]> defaultPermsInfo = Arrays.asList(
                             new String[] { "USER", "CREATE", "Ability to create new users" },
@@ -141,8 +144,7 @@ public class TenantServiceImpl implements TenantService {
                             new String[] { "PO", "VIEW", "View Purchase Orders" },
                             new String[] { "PO", "UPDATE", "Update Purchase Orders" },
                             new String[] { "PO", "DELETE", "Delete Purchase Orders" },
-                            new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" }
-                    );
+                            new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" });
 
                     List<Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());
                     java.util.Map<String, Permission> permMap = existingPerms.stream()

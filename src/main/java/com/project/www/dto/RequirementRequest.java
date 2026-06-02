@@ -9,5 +9,6 @@ public class RequirementRequest {
     private String description;
     private Long vendorId;
     private LocalDate requiredDate;
+    private String requirementType;
     private List<RequirementItemRequest> items;
 }

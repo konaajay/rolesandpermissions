@@ -231,7 +231,8 @@ public class AuthServiceImpl implements AuthService {
                         new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
                         new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
                         new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
-                        new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" }
+                        new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
+                        new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" }
                 );
 
                 java.util.List<com.project.www.entity.Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());

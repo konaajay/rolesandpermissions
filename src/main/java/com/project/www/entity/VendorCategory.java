@@ -1,5 +1,6 @@
 package com.project.www.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,6 +13,7 @@ import lombok.*;
 @Table(name = "vendor_categories", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"tenantId", "name"})
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class VendorCategory extends Auditable {
 
     @Id

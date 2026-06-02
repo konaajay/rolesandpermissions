@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "tenants")
+@Table(name = "tenants", catalog = "rbac_db")
 public class Tenant extends Auditable {
 
     @Id

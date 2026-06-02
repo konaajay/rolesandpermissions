@@ -12,6 +12,7 @@ public interface VendorInvoiceMapper {
 
     @Mapping(source = "vendor.id", target = "vendorId")
     @Mapping(source = "vendor.vendorName", target = "vendorName")
+    @Mapping(source = "requirement.id", target = "requirementId")
     @Mapping(source = "amount", target = "amountValue")
     @Mapping(source = "invoiceDate", target = "date")
     @Mapping(target = "id", source = "id")
@@ -19,11 +20,13 @@ public interface VendorInvoiceMapper {
     VendorInvoiceDto toDto(VendorInvoice entity);
 
     @Mapping(target = "vendor", ignore = true)
+    @Mapping(target = "requirement", ignore = true)
     @Mapping(source = "amountValue", target = "amount")
     @Mapping(source = "date", target = "invoiceDate")
     VendorInvoice toEntity(VendorInvoiceDto dto);
 
     @Mapping(target = "vendor", ignore = true)
+    @Mapping(target = "requirement", ignore = true)
     @Mapping(source = "amountValue", target = "amount")
     @Mapping(source = "date", target = "invoiceDate")
     void updateEntityFromDto(VendorInvoiceDto dto, @MappingTarget VendorInvoice entity);

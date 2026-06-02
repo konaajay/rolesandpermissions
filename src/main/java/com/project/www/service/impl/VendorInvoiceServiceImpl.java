@@ -6,6 +6,8 @@ import com.project.www.entity.VendorInvoice;
 import com.project.www.mapper.VendorInvoiceMapper;
 import com.project.www.repository.VendorInvoiceRepository;
 import com.project.www.repository.VendorRepository;
+import com.project.www.repository.RequirementRepository;
+import com.project.www.entity.Requirement;
 import com.project.www.service.VendorInvoiceService;
 import com.project.www.util.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class VendorInvoiceServiceImpl implements VendorInvoiceService {
 
     private final VendorInvoiceRepository repository;
     private final VendorRepository vendorRepository;
+    private final RequirementRepository requirementRepository;
     private final VendorInvoiceMapper mapper;
     private final com.project.www.service.PdfGenerationService pdfGenerationService;
 
@@ -38,6 +41,12 @@ public class VendorInvoiceServiceImpl implements VendorInvoiceService {
 
         VendorInvoice entity = mapper.toEntity(dto);
         entity.setVendor(vendor);
+        
+        if (dto.getRequirementId() != null) {
+            Requirement req = requirementRepository.findById(dto.getRequirementId()).orElse(null);
+            entity.setRequirement(req);
+        }
+        
         entity.setTenantId(tenantId);
         entity.setDeleted(false);
         entity.setInvoiceNumber(UUID.randomUUID().toString()); // Placeholder, mapper will use ID to inv
@@ -61,6 +70,13 @@ public class VendorInvoiceServiceImpl implements VendorInvoiceService {
             Vendor vendor = vendorRepository.findByIdAndTenantIdAndDeletedFalse(dto.getVendorId(), tenantId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
             entity.setVendor(vendor);
+        }
+        
+        if (dto.getRequirementId() != null) {
+            Requirement req = requirementRepository.findById(dto.getRequirementId()).orElse(null);
+            entity.setRequirement(req);
+        } else {
+            entity.setRequirement(null);
         }
         
         entity.setAmount(parseAmount(dto.getAmount()));
