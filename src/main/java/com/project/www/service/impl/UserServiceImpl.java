@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
 
-    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:5173}")
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
     private String frontendUrl;
 
     @Override

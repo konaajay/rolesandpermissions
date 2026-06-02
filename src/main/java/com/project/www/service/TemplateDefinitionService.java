@@ -18,6 +18,9 @@ public class TemplateDefinitionService {
     private final com.project.www.repository.UserRepository userRepository;
     private final com.project.www.repository.CompanyProfileRepository companyProfileRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.backend.url:http://localhost:8080}")
+    private String backendUrl;
+
     private String getCurrentUsername() {
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -513,7 +516,7 @@ public class TemplateDefinitionService {
             java.nio.file.Path filePath = uploadPath.resolve(fileName);
             java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             
-            return "http://localhost:8080/uploads/backgrounds/" + fileName;
+            return backendUrl + "/uploads/backgrounds/" + fileName;
         } catch (java.io.IOException e) {
             throw new RuntimeException("Failed to store background image", e);
         }

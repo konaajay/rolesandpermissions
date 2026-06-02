@@ -28,6 +28,9 @@ public class CompanyProfileService {
     private final CompanyProfileRepository repository;
     private final TenantRepository tenantRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.backend.url:http://localhost:8080}")
+    private String backendUrl;
+
     private String getCurrentUsername() {
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -236,7 +239,7 @@ public class CompanyProfileService {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             
-            return "http://localhost:8080/uploads/" + folder + "/" + fileName;
+            return backendUrl + "/uploads/" + folder + "/" + fileName;
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file", e);
         }
