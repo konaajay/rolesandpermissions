@@ -5,8 +5,7 @@ import com.project.www.dto.TenantResponse;
 import com.project.www.entity.*;
 import com.project.www.repository.*;
 import com.project.www.service.TenantService;
-import com.project.www.config.DataSourceConfig;
-import com.project.www.config.TenantRoutingDataSource;
+
 import com.project.www.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,9 +33,7 @@ public class TenantServiceImpl implements TenantService {
     private final TenantSettingsRepository tenantSettingsRepository;
     private final TenantModuleRepository tenantModuleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final DataSourceConfig dataSourceConfig;
-    private final DataSource routingDataSource;
-    private final DataSource masterDataSource;
+    
     private final PlatformTransactionManager transactionManager;
     private final PipelineStageRepository pipelineStageRepository;
     private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
@@ -78,28 +75,6 @@ public class TenantServiceImpl implements TenantService {
             if (exists) {
                 throw new RuntimeException("Tenant name or code already exists");
             }
-
-            // 1. Create database dynamically on master server
-            try (Connection connection = masterDataSource.getConnection();
-                    Statement statement = connection.createStatement()) {
-                statement.executeUpdate("CREATE DATABASE IF NOT EXISTS " + dbName);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to create tenant database: " + e.getMessage(), e);
-            }
-
-            // 2. Build tenant datasource and execute schema script
-            DataSource tenantDs = dataSourceConfig.createTenantDataSource(dbName, null, null);
-            try {
-                ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-                populator.addScript(new ClassPathResource("schema.sql"));
-                populator.execute(tenantDs);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to initialize database schema: " + e.getMessage(), e);
-            }
-
-            // 3. Register dynamic datasource
-            TenantRoutingDataSource rds = (TenantRoutingDataSource) routingDataSource;
-            rds.addDataSource(finalTenantCode, tenantDs);
 
             // 4. Save Tenant Entity (Master)
             Tenant tenant = transactionTemplate.execute(status -> {

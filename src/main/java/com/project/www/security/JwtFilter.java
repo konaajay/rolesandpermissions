@@ -2,7 +2,7 @@ package com.project.www.security;
 
 import com.project.www.util.TenantContext;
 import com.project.www.repository.TenantRepository;
-import com.project.www.config.TenantRoutingDataSource;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +26,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final TenantRepository tenantRepository;
-    private final DataSource routingDataSource;
+    
 
     @Override
     protected void doFilterInternal(
@@ -75,8 +75,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             if (email != null && tenantId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                TenantRoutingDataSource rds = (TenantRoutingDataSource) routingDataSource;
-                if (tenantCode != null && rds.containsDataSource(tenantCode)) {
+                if (tenantCode != null && tenantRepository.existsByCode(tenantCode)) {
                     TenantContext.setCurrentTenant(tenantId);
                     TenantContext.setCurrentTenantCode(tenantCode);
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);

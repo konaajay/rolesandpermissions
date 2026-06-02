@@ -38,7 +38,7 @@ public class GLobalExceptionHandler {
                 LocalDateTime.now());
 
         response.put("message",
-                ex.getMessage() + " | Stack: " + java.util.Arrays.toString(ex.getStackTrace()));
+                ex.getMessage());
 
         response.put("status",
                 HttpStatus.BAD_REQUEST.value());

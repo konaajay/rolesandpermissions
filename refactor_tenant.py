@@ -1,49 +1,67 @@
-package com.project.www.config;
+import os
+import re
 
-import com.project.www.entity.*;
-import com.project.www.repository.*;
-import com.project.www.util.TenantContext;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.core.io.ClassPathResource;
+# 1. Update DataSourceConfig.java
+datasource_config_path = r"src\main\java\com\project\www\config\DataSourceConfig.java"
+datasource_config_content = """package com.project.www.config;
+
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.Statement;
-import java.util.HashSet;
-import java.util.Set;
 
-@Component
-@RequiredArgsConstructor
-@Slf4j
-public class DatabaseSeeder implements CommandLineRunner {
+@Configuration
+public class DataSourceConfig {
 
-    private final TenantRepository tenantRepository;
-    private final TenantModuleRepository tenantModuleRepository;
-    private final PermissionRepository permissionRepository;
-    private final RoleRepository roleRepository;
-    private final RoleExtraFieldRepository roleExtraFieldRepository;
-    private final RoleHierarchyRepository roleHierarchyRepository;
-    private final UserReportingRepository userReportingRepository;
-    private final UserRepository userRepository;
-    private final TenantSequenceRepository tenantSequenceRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final DataSource dataSource;
-    private final PipelineStageRepository pipelineStageRepository;
-    private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
-    private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
+    @Value("${spring.datasource.url}")
+    private String masterUrl;
 
-    @Override
-    public void run(String... args) throws Exception {
+    @Value("${spring.datasource.username}")
+    private String masterUsername;
+
+    @Value("${spring.datasource.password}")
+    private String masterPassword;
+
+    @Value("${spring.datasource.driver-class-name}")
+    private String driverClassName;
+
+    @Bean
+    @Primary
+    public DataSource dataSource() {
+        HikariDataSource ds = new HikariDataSource();
+        ds.setDriverClassName(driverClassName);
+        ds.setJdbcUrl(masterUrl);
+        ds.setUsername(masterUsername);
+        ds.setPassword(masterPassword);
+        ds.setMaximumPoolSize(20);
+        ds.setMinimumIdle(5);
+        return ds;
+    }
+}
+"""
+with open(datasource_config_path, "w", encoding="utf-8") as f:
+    f.write(datasource_config_content)
+
+# 2. Update DatabaseSeeder.java
+seeder_path = r"src\main\java\com\project\www\config\DatabaseSeeder.java"
+with open(seeder_path, "r", encoding="utf-8") as f:
+    seeder_content = f.read()
+
+# Replace dependencies
+seeder_content = re.sub(r"private final DataSourceConfig dataSourceConfig;.*?private final DataSource masterDataSource;", 
+                        "private final DataSource dataSource;", 
+                        seeder_content, flags=re.DOTALL)
+
+# Find run method
+run_start = seeder_content.find("public void run(String... args) throws Exception {")
+new_run_content = """public void run(String... args) throws Exception {
         log.info("Starting database seeding check...");
 
         try (java.sql.Connection conn = dataSource.getConnection()) {
             ResourceDatabasePopulator masterPopulator = new ResourceDatabasePopulator();
-            masterPopulator.setContinueOnError(true);
             masterPopulator.addScript(new ClassPathResource("master-schema.sql"));
             masterPopulator.execute(dataSource);
             log.info("Successfully executed master-schema.sql on database");
@@ -308,7 +326,33 @@ public class DatabaseSeeder implements CommandLineRunner {
             TenantContext.clear();
         }
 
-        java.util.List<Tenant> everyTenant = tenantRepository.findAll();
         globalUserRegistrySyncService.syncAllTenants(everyTenant, userRepository);
     }
-}
+"""
+
+final_seeder_content = seeder_content[:run_start] + new_run_content + "}\n"
+# Also fix everyTenant variable in globalUserRegistrySyncService
+final_seeder_content = final_seeder_content.replace("globalUserRegistrySyncService.syncAllTenants(everyTenant, userRepository);", "java.util.List<Tenant> everyTenant = tenantRepository.findAll();\n        globalUserRegistrySyncService.syncAllTenants(everyTenant, userRepository);")
+
+with open(seeder_path, "w", encoding="utf-8") as f:
+    f.write(final_seeder_content)
+
+# 3. Update TenantServiceImpl.java
+tenant_service_path = r"src\main\java\com\project\www\service\impl\TenantServiceImpl.java"
+with open(tenant_service_path, "r", encoding="utf-8") as f:
+    tenant_service_content = f.read()
+
+# Replace dependencies
+tenant_service_content = re.sub(r"private final DataSourceConfig dataSourceConfig;.*?private final DataSource masterDataSource;", 
+                                "", 
+                                tenant_service_content, flags=re.DOTALL)
+tenant_service_content = re.sub(r"import com.project.www.config.DataSourceConfig;.*?import com.project.www.config.TenantRoutingDataSource;", "", tenant_service_content, flags=re.DOTALL)
+
+# Remove DB creation logic from createTenant
+db_creation_regex = r"// 1\. Create database dynamically.*?// 4\. Save Tenant Entity \(Master\)"
+tenant_service_content = re.sub(db_creation_regex, "// 4. Save Tenant Entity (Master)", tenant_service_content, flags=re.DOTALL)
+
+with open(tenant_service_path, "w", encoding="utf-8") as f:
+    f.write(tenant_service_content)
+
+print("Updated config and service files.")
