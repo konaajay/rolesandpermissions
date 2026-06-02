@@ -50,3 +50,18 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     updated_by VARCHAR(255),
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS global_users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uk_global_email UNIQUE (email),
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_global_users_tenant_id ON global_users(tenant_id);
+CREATE UNIQUE INDEX idx_global_users_email ON global_users(email);

@@ -40,6 +40,7 @@ public class TenantServiceImpl implements TenantService {
     private final PlatformTransactionManager transactionManager;
     private final PipelineStageRepository pipelineStageRepository;
     private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
+    private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
 
     @Override
     public TenantResponse createTenant(CreateTenantRequest request) {
@@ -233,6 +234,7 @@ public class TenantServiceImpl implements TenantService {
                                     .build());
                     adminUser.setRole(adminRole);
                     userRepository.save(adminUser);
+                    globalUserRegistrySyncService.syncUser(adminUser, tenant.getId());
 
                     // Seed default system templates
                     List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()

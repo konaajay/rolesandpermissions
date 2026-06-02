@@ -73,4 +73,24 @@ public class VendorInvoiceController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @PostMapping("/{id}/upload-receipt")
+    @PreAuthorize("hasAuthority('VENDOR_INVOICE_UPDATE')")
+    public ResponseEntity<ApiResponse<VendorInvoiceDto>> uploadReceipt(@PathVariable Long id, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            java.io.File directory = new java.io.File("uploads/receipts");
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+            java.nio.file.Path filePath = java.nio.file.Paths.get("uploads/receipts", fileName);
+            java.nio.file.Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            
+            VendorInvoiceDto invoice = service.getInvoiceById(id);
+            invoice.setReceiptUrl(filePath.toString());
+            return ResponseEntity.ok(ApiResponse.success(service.updateInvoice(id, invoice)));
+        } catch (java.io.IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

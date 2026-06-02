@@ -37,6 +37,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final DataSource masterDataSource;
     private final PipelineStageRepository pipelineStageRepository;
     private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
+    private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -450,6 +451,9 @@ public class DatabaseSeeder implements CommandLineRunner {
         } finally {
             TenantContext.clear();
         }
-    }
 
+        // Run the GlobalUserRegistry Synchronization across all tenants
+        java.util.List<Tenant> everyTenant = tenantRepository.findAll();
+        globalUserRegistrySyncService.syncAllTenants(everyTenant, userRepository);
+    }
 }

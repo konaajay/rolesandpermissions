@@ -46,6 +46,8 @@ public class AuthServiceImpl implements AuthService {
     private final TenantService tenantService;
     private final TenantModuleRepository tenantModuleRepository;
     private final com.project.www.repository.PermissionRepository permissionRepository;
+    private final com.project.www.repository.GlobalUserRegistryRepository globalUserRegistryRepository;
+    private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -55,20 +57,19 @@ public class AuthServiceImpl implements AuthService {
         
         try {
             TenantContext.clear(); // Ensure we query the master database
-            if (request.getTenantId() != null) {
-                tenant = tenantRepository.findById(request.getTenantId()).orElse(null);
+            
+            // 1. Locate user in global registry by email
+            com.project.www.entity.GlobalUserRegistry registryEntry = globalUserRegistryRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+                
+            if (!registryEntry.getActive()) {
+                throw new RuntimeException("User account is inactive.");
             }
 
-            if (tenant == null) {
-                String code = request.getTenantCode();
-                if (code == null || code.trim().isEmpty()) {
-                    code = tenantResolver.resolveTenantCode(servletRequest);
-                }
-                if (code != null) {
-                    tenant = tenantRepository.findByCode(code).orElse(null);
-                }
-            }
-            
+            // 2. Fetch the tenant from the master database
+            tenant = tenantRepository.findById(registryEntry.getTenantId())
+                .orElseThrow(() -> new RuntimeException("Associated workspace not found."));
+
             if (tenant != null) {
                 Set<String> activeModules = tenantModuleRepository.findByTenantIdAndActiveTrue(tenant.getId())
                         .stream()
@@ -79,15 +80,6 @@ public class AuthServiceImpl implements AuthService {
         } finally {
             TenantContext.setCurrentTenant(originalTenantId);
             TenantContext.setCurrentTenantCode(originalTenantCode);
-        }
-
-        if (tenant == null) {
-            String code = request.getTenantCode();
-            if (code != null && !code.trim().isEmpty()) {
-                throw new RuntimeException("Workspace code '" + code + "' is invalid. Please check your tenant code and try again.");
-            } else {
-                throw new RuntimeException("Tenant code does not match.");
-            }
         }
 
         // ==========================================
@@ -120,14 +112,11 @@ public class AuthServiceImpl implements AuthService {
         TenantContext.setCurrentTenantCode(tenant.getCode());
         try {
             User user = userRepository.findByEmailAndTenantId(request.getEmail(), tenant.getId())
-                    .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+                    .orElseThrow(() -> new RuntimeException("No account found with this email address in the tenant workspace."));
 
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 throw new RuntimeException("Incorrect password.");
             }
-
-            // Optional: for extreme security-sensitive environments, throw "Invalid workspace code, email, or password."
-            // But per requirements, throwing specific messages is preferred.
 
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -276,9 +265,8 @@ public class AuthServiceImpl implements AuthService {
                         .active(true)
                         .role(role)
                         .build();
-
                 userRepository.save(user);
-
+                globalUserRegistrySyncService.syncUser(user, tenant.getId());
             } finally {
                 TenantContext.setCurrentTenant(originalTenantId);
                 TenantContext.setCurrentTenantCode(originalTenantCode);

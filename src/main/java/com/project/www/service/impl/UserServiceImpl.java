@@ -32,6 +32,7 @@ public class UserServiceImpl implements UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
 
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -153,6 +154,7 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         user = userRepository.save(user);
+        globalUserRegistrySyncService.syncUser(user, tenantId);
         roleExtraFieldService.saveUserExtraFieldValues(user, request.getProfileData());
 
         if (request.getSupervisorUserId() != null) {
@@ -318,6 +320,7 @@ public class UserServiceImpl implements UserService {
         // ------------------------------------------------
 
         User updated = userRepository.save(user);
+        globalUserRegistrySyncService.syncUser(updated, tenantId);
         roleExtraFieldService.saveUserExtraFieldValues(updated, request.getProfileData());
 
         if (request.getSupervisorUserId() != null) {
@@ -372,6 +375,7 @@ public class UserServiceImpl implements UserService {
 
         user.setActive(false);
         userRepository.save(user);
+        globalUserRegistrySyncService.syncUser(user, tenantId);
     }
 
     @Override
@@ -401,6 +405,7 @@ public class UserServiceImpl implements UserService {
 
         user.setActive(!user.getActive());
         userRepository.save(user);
+        globalUserRegistrySyncService.syncUser(user, tenantId);
     }
 
     @Override
