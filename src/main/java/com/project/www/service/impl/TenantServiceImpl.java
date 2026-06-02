@@ -136,7 +136,12 @@ public class TenantServiceImpl implements TenantService {
                             new String[] { "VENDOR", "AUDIT_CREATE", "Create Vendor Audits" },
                             new String[] { "VENDOR", "AUDIT_VIEW", "View Vendor Audits" },
                             new String[] { "VENDOR", "AUDIT_UPDATE", "Update Vendor Audits" },
-                            new String[] { "VENDOR", "AUDIT_DELETE", "Delete Vendor Audits" }
+                            new String[] { "VENDOR", "AUDIT_DELETE", "Delete Vendor Audits" },
+                            new String[] { "PO", "CREATE", "Create Purchase Orders" },
+                            new String[] { "PO", "VIEW", "View Purchase Orders" },
+                            new String[] { "PO", "UPDATE", "Update Purchase Orders" },
+                            new String[] { "PO", "DELETE", "Delete Purchase Orders" },
+                            new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" }
                     );
 
                     List<Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());

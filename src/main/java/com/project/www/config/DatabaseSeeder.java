@@ -130,7 +130,32 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
                         new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
                         new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
-                        new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" });
+                        new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
+                        new String[] { "VENDOR", "CREATE", "Create Vendors" },
+                        new String[] { "VENDOR", "VIEW", "View Vendors" },
+                        new String[] { "VENDOR", "UPDATE", "Update Vendors" },
+                        new String[] { "VENDOR", "DELETE", "Delete Vendors" },
+                        new String[] { "VENDOR", "INVOICE_CREATE", "Create Vendor Invoices" },
+                        new String[] { "VENDOR", "INVOICE_VIEW", "View Vendor Invoices" },
+                        new String[] { "VENDOR", "INVOICE_UPDATE", "Update Vendor Invoices" },
+                        new String[] { "VENDOR", "INVOICE_DELETE", "Delete Vendor Invoices" },
+                        new String[] { "VENDOR", "CONTRACT_CREATE", "Create Vendor Contracts" },
+                        new String[] { "VENDOR", "CONTRACT_VIEW", "View Vendor Contracts" },
+                        new String[] { "VENDOR", "CONTRACT_UPDATE", "Update Vendor Contracts" },
+                        new String[] { "VENDOR", "CONTRACT_DELETE", "Delete Vendor Contracts" },
+                        new String[] { "VENDOR", "CATEGORY_CREATE", "Create Vendor Categories" },
+                        new String[] { "VENDOR", "CATEGORY_VIEW", "View Vendor Categories" },
+                        new String[] { "VENDOR", "CATEGORY_UPDATE", "Update Vendor Categories" },
+                        new String[] { "VENDOR", "CATEGORY_DELETE", "Delete Vendor Categories" },
+                        new String[] { "VENDOR", "AUDIT_CREATE", "Create Vendor Audits" },
+                        new String[] { "VENDOR", "AUDIT_VIEW", "View Vendor Audits" },
+                        new String[] { "VENDOR", "AUDIT_UPDATE", "Update Vendor Audits" },
+                        new String[] { "VENDOR", "AUDIT_DELETE", "Delete Vendor Audits" },
+                        new String[] { "PO", "CREATE", "Create Purchase Orders" },
+                        new String[] { "PO", "VIEW", "View Purchase Orders" },
+                        new String[] { "PO", "UPDATE", "Update Purchase Orders" },
+                        new String[] { "PO", "DELETE", "Delete Purchase Orders" },
+                        new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" });
 
                 java.util.List<Permission> existingTenantPerms = permissionRepository.findAllByTenantId(t.getId());
                 java.util.Map<String, Permission> permMap = existingTenantPerms.stream()
