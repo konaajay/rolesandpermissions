@@ -82,7 +82,12 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (tenant == null) {
-            throw new RuntimeException("Invalid Workspace / Tenant Code provided.");
+            String code = request.getTenantCode();
+            if (code != null && !code.trim().isEmpty()) {
+                throw new RuntimeException("Workspace code '" + code + "' is invalid. Please check your tenant code and try again.");
+            } else {
+                throw new RuntimeException("Tenant code does not match.");
+            }
         }
 
         // ==========================================
@@ -114,15 +119,22 @@ public class AuthServiceImpl implements AuthService {
         TenantContext.setCurrentTenant(tenant.getId());
         TenantContext.setCurrentTenantCode(tenant.getCode());
         try {
+            User user = userRepository.findByEmailAndTenantId(request.getEmail(), tenant.getId())
+                    .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new RuntimeException("Incorrect password.");
+            }
+
+            // Optional: for extreme security-sensitive environments, throw "Invalid workspace code, email, or password."
+            // But per requirements, throwing specific messages is preferred.
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
                             request.getPassword()
                     )
             );
-
-            User user = userRepository.findByEmailAndTenantId(request.getEmail(), tenant.getId())
-                    .orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
             if (!user.getActive()) {
                 throw new RuntimeException("User account is inactive");
@@ -148,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
 
             String token = jwtService.generateToken(user.getEmail(), user.getTenantId(), tenant.getCode());
             System.out.println("DEBUG - Tenant ID: " + tenant.getId() + " - Modules fetched: " + modules);
-            return new AuthResponse(token, permissions, modules);
+            return new AuthResponse(token, permissions, modules, user.getRole().getName());
         } finally {
             TenantContext.clear();
         }
@@ -288,7 +300,7 @@ public class AuthServiceImpl implements AuthService {
             }
 
             String token = jwtService.generateToken(user.getEmail(), user.getTenantId(), tenant.getCode());
-            return new AuthResponse(token, permissions, modules);
+            return new AuthResponse(token, permissions, modules, role.getName());
 
         } else {
             // ==========================================
@@ -346,7 +358,7 @@ public class AuthServiceImpl implements AuthService {
                 TenantContext.setCurrentTenantCode(originalContextCode);
             }
             
-            return new AuthResponse(token, permissions, modules);
+            return new AuthResponse(token, permissions, modules, "SUPER_ADMIN");
         }
     }
 }

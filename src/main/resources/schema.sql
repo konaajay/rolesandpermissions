@@ -337,3 +337,139 @@ CREATE TABLE IF NOT EXISTS employee_certificates (
     UNIQUE KEY uk_cert_tenant_no (tenant_id, certificate_no),
     FOREIGN KEY (template_id) REFERENCES template_definitions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS vendor_categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    UNIQUE KEY uk_vc_tenant_name (tenant_id, name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS vendors (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    vendor_code VARCHAR(100) NOT NULL,
+    vendor_name VARCHAR(255) NOT NULL,
+    category_id BIGINT,
+    contact_person VARCHAR(255),
+    email VARCHAR(255) NOT NULL,
+    mobile_number VARCHAR(20) NOT NULL,
+    alternate_mobile_number VARCHAR(20),
+    company_name VARCHAR(255),
+    gst_number VARCHAR(50),
+    pan_number VARCHAR(50),
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100),
+    postal_code VARCHAR(20),
+    status VARCHAR(50),
+    rating DOUBLE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    document_url TEXT,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    FOREIGN KEY (category_id) REFERENCES vendor_categories(id) ON DELETE SET NULL,
+    UNIQUE KEY uk_vendor_code (tenant_id, vendor_code),
+    UNIQUE KEY uk_vendor_email (tenant_id, email),
+    UNIQUE KEY uk_vendor_mobile (tenant_id, mobile_number),
+    UNIQUE KEY uk_vendor_gst (tenant_id, gst_number),
+    UNIQUE KEY uk_vendor_pan (tenant_id, pan_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS purchase_orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    po_number VARCHAR(50) NOT NULL,
+    vendor_id BIGINT NOT NULL,
+    total_amount DECIMAL(15,2) NOT NULL,
+    order_date VARCHAR(255),
+    delivery_date VARCHAR(255),
+    status VARCHAR(50) NOT NULL,
+    notes TEXT,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_po_number (po_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    purchase_order_id BIGINT NOT NULL,
+    item_description VARCHAR(255) NOT NULL,
+    brand VARCHAR(100),
+    quantity INT NOT NULL,
+    unit_price DECIMAL(15,2),
+    total_price DECIMAL(15,2),
+    FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS vendor_contracts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    vendor_id BIGINT NOT NULL,
+    amount DECIMAL(15,2),
+    start_date VARCHAR(255),
+    expires VARCHAR(255),
+    status VARCHAR(50) NOT NULL,
+    notes TEXT,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS vendor_invoices (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    invoice_number VARCHAR(50) NOT NULL,
+    vendor_id BIGINT NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    po_ref VARCHAR(255),
+    invoice_date VARCHAR(255),
+    due_date VARCHAR(255),
+    status VARCHAR(50) NOT NULL,
+    notes TEXT,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    receipt_url TEXT,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_invoice_number (invoice_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS vendor_audits (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    vendor_id BIGINT NOT NULL,
+    type VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    audit_date VARCHAR(255),
+    next_audit VARCHAR(255),
+    auditor VARCHAR(255),
+    findings TEXT,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
