@@ -175,8 +175,6 @@ CREATE TABLE IF NOT EXISTS role_extra_fields (
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT NOT NULL,
-  employee_id VARCHAR(255),
-  lead_id VARCHAR(255),
   first_name VARCHAR(255) NOT NULL,
   last_name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL,
@@ -184,8 +182,6 @@ CREATE TABLE IF NOT EXISTS users (
   gender VARCHAR(50),
   active BOOLEAN NOT NULL DEFAULT TRUE,
   role_id BIGINT,
-  department VARCHAR(255),
-  designation VARCHAR(255),
   phone_number VARCHAR(255),
   office_location_id BIGINT,
   created_at DATETIME NOT NULL,
@@ -194,9 +190,7 @@ CREATE TABLE IF NOT EXISTS users (
   updated_by VARCHAR(255),
   FOREIGN KEY (role_id) REFERENCES roles(id),
   FOREIGN KEY (office_location_id) REFERENCES office_locations(id) ON DELETE SET NULL,
-  CONSTRAINT UNIQUE_tenant_email UNIQUE (tenant_id, email),
-  CONSTRAINT UNIQUE_tenant_employee UNIQUE (tenant_id, employee_id),
-  CONSTRAINT UNIQUE_tenant_lead UNIQUE (tenant_id, lead_id)
+  CONSTRAINT UNIQUE_tenant_email UNIQUE (tenant_id, email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS user_roles (
@@ -392,7 +386,7 @@ CREATE TABLE IF NOT EXISTS employee_certificates (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     certificate_no VARCHAR(255) NOT NULL,
     tenant_id BIGINT NOT NULL,
-    employee_id VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL,
     template_id BIGINT NOT NULL,
     issued_date DATETIME NOT NULL,
     expiry_date DATETIME,

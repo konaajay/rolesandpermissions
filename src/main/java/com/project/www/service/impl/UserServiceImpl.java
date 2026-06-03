@@ -33,6 +33,8 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
+    private final com.project.www.repository.GlobalUserRegistryRepository globalUserRegistryRepository;
+    private final com.project.www.repository.TenantRepository tenantRepository;
 
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
     private String frontendUrl;
@@ -48,6 +50,10 @@ public class UserServiceImpl implements UserService {
         boolean emailExists = userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId);
         if (emailExists) {
             throw new RuntimeException("User email already exists under this tenant");
+        }
+        
+        if (globalUserRegistryRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already exists in another workspace. Please use a unique email.");
         }
 
         java.util.Set<Role> roles = new java.util.HashSet<>();
@@ -93,42 +99,10 @@ public class UserServiceImpl implements UserService {
 
         int currentYear = java.time.LocalDate.now().getYear();
 
-        String employeeId = null;
-        String department = null;
-        String designation = null;
         OfficeLocation location = null;
 
         if (!"LEAD".equalsIgnoreCase(role.getName())) {
-            String roleName = role.getName().toUpperCase();
-            final String finalPrefix;
-            if ("SUPER_ADMIN".equals(roleName)) { finalPrefix = "ADM"; }
-            else if ("EMPLOYEE".equals(roleName)) { finalPrefix = "EMP"; }
-            else { finalPrefix = roleName.length() >= 3 ? roleName.substring(0, 3) : roleName; }
-
-            IdFormatSetting employeeFormat = idFormatSettingRepository.findByTenantIdAndEntityType(tenantId, roleName)
-                    .orElseGet(() -> IdFormatSetting.builder()
-                            .tenantId(tenantId)
-                            .entityType(roleName)
-                            .prefix(finalPrefix)
-                            .paddingLength(7)
-                            .nextSequence(1L)
-                            .includeYear(false)
-                            .active(true)
-                            .build());
-
-            long nextVal = employeeFormat.getNextSequence();
-            if (Boolean.TRUE.equals(employeeFormat.getIncludeYear())) {
-                employeeId = employeeFormat.getPrefix() + currentYear + String.format("%0" + employeeFormat.getPaddingLength() + "d", nextVal);
-            } else {
-                employeeId = employeeFormat.getPrefix() + String.format("%0" + employeeFormat.getPaddingLength() + "d", nextVal);
-            }
-            
-            employeeFormat.setNextSequence(nextVal + 1);
-            idFormatSettingRepository.save(employeeFormat);
-
             if (request.getProfileData() != null) {
-                department = (String) request.getProfileData().get("department");
-                designation = (String) request.getProfileData().get("designation");
                 if (request.getProfileData().get("officeLocationId") != null) {
                     Long locId = Long.valueOf(request.getProfileData().get("officeLocationId").toString());
                     location = officeLocationRepository.findById(locId).orElse(null);
@@ -147,9 +121,6 @@ public class UserServiceImpl implements UserService {
                 .active(true)
                 .role(role)
                 .roles(roles)
-                .employeeId(employeeId)
-                .department(department)
-                .designation(designation)
                 .assignedOffice(location)
                 .build();
 
@@ -206,8 +177,25 @@ public class UserServiceImpl implements UserService {
 
         // Send email to user
         try {
-            String loginId = user.getEmail(); // Could also use employeeId
+            String loginId = user.getEmail();
             String loginUrl = frontendUrl + "/login";
+            
+            // Try to find custom domain
+            String customDomain = null;
+            Long originalTenant = TenantContext.getCurrentTenant();
+            String originalCode = TenantContext.getCurrentTenantCode();
+            try {
+                TenantContext.clear();
+                com.project.www.entity.Tenant t = tenantRepository.findById(tenantId).orElse(null);
+                if (t != null && t.getDomain() != null && !t.getDomain().trim().isEmpty()) {
+                    customDomain = t.getDomain();
+                    loginUrl = "http://" + customDomain + ":5173/login";
+                }
+            } finally {
+                TenantContext.setCurrentTenant(originalTenant);
+                TenantContext.setCurrentTenantCode(originalCode);
+            }
+
             emailService.sendCredentialsEmail(user.getEmail(), user.getFirstName(), loginId, request.getPassword(),
                     loginUrl, tenantCode);
         } catch (Exception e) {
@@ -427,12 +415,6 @@ public class UserServiceImpl implements UserService {
         Long tenantId = TenantContext.getCurrentTenant();
         java.util.Map<String, Object> extraFields = roleExtraFieldService.getUserExtraFieldValues(user.getId());
         java.util.Map<String, Object> mergedProfile = new java.util.LinkedHashMap<>(extraFields);
-        if (user.getDepartment() != null) {
-            mergedProfile.put("department", user.getDepartment());
-        }
-        if (user.getDesignation() != null) {
-            mergedProfile.put("designation", user.getDesignation());
-        }
         if (user.getAssignedOffice() != null) {
             mergedProfile.put("officeLocationId", user.getAssignedOffice().getId());
         }
@@ -458,8 +440,6 @@ public class UserServiceImpl implements UserService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .employeeId(user.getEmployeeId())
-                .leadId(user.getLeadId())
                 .gender(user.getGender())
                 .phoneNumber(user.getPhoneNumber())
                 .profileData(mergedProfile)

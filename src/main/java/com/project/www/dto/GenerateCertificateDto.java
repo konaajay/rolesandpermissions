@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class GenerateCertificateDto {
-    private String employeeId;
+    private Long userId;
     private Long templateId;
     private LocalDateTime issuedDate;
     private LocalDateTime expiryDate;

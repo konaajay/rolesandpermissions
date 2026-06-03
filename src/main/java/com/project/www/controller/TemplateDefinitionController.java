@@ -86,8 +86,8 @@ public class TemplateDefinitionController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).SETTINGS_MANAGE_TEMPLATES)")
     public ResponseEntity<byte[]> generateDocumentForEmployee(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
         try {
-            String employeeId = payload.get("employeeId");
-            byte[] pdfBytes = service.generateDocumentPdf(id, employeeId);
+            Long userId = Long.valueOf(payload.get("userId"));
+            byte[] pdfBytes = service.generateDocumentPdf(id, userId);
             return ResponseEntity.ok()
                     .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=document.pdf")
                     .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.springframework.http.MediaType.APPLICATION_PDF_VALUE)

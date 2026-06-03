@@ -21,47 +21,28 @@ public class GlobalUserRegistrySyncService {
      * Note: Must be called with TenantContext.clear() or on a transaction mapped to rbac_db
      * if the caller is inside a tenant context.
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void syncUser(User user, Long tenantId) {
-        String originalTenantCode = TenantContext.getCurrentTenantCode();
-        Long originalTenantId = TenantContext.getCurrentTenant();
+        GlobalUserRegistry registry = registryRepository.findByEmail(user.getEmail())
+                .orElse(GlobalUserRegistry.builder()
+                        .email(user.getEmail())
+                        .build());
         
-        try {
-            TenantContext.clear(); // Ensure we write to master DB
-            
-            GlobalUserRegistry registry = registryRepository.findByEmail(user.getEmail())
-                    .orElse(GlobalUserRegistry.builder()
-                            .email(user.getEmail())
-                            .build());
-            
-            registry.setTenantId(tenantId);
-            registry.setUserId(user.getId());
-            registry.setActive(user.getActive());
-            
-            registryRepository.save(registry);
-            log.debug("Synced user {} to global registry for tenant {}", user.getEmail(), tenantId);
-        } finally {
-            TenantContext.setCurrentTenant(originalTenantId);
-            TenantContext.setCurrentTenantCode(originalTenantCode);
-        }
+        registry.setTenantId(tenantId);
+        registry.setUserId(user.getId());
+        registry.setActive(user.getActive());
+        
+        registryRepository.save(registry);
+        log.debug("Synced user {} to global registry for tenant {}", user.getEmail(), tenantId);
     }
 
     /**
      * Removes a user from the global registry (e.g. on hard delete).
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void removeUser(String email) {
-        String originalTenantCode = TenantContext.getCurrentTenantCode();
-        Long originalTenantId = TenantContext.getCurrentTenant();
-        
-        try {
-            TenantContext.clear();
-            registryRepository.findByEmail(email).ifPresent(registryRepository::delete);
-            log.debug("Removed user {} from global registry", email);
-        } finally {
-            TenantContext.setCurrentTenant(originalTenantId);
-            TenantContext.setCurrentTenantCode(originalTenantCode);
-        }
+        registryRepository.findByEmail(email).ifPresent(registryRepository::delete);
+        log.debug("Removed user {} from global registry", email);
     }
 
     public void syncAllTenants(java.util.List<com.project.www.entity.Tenant> tenants, com.project.www.repository.UserRepository userRepository) {

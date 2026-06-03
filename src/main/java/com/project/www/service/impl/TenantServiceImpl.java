@@ -21,9 +21,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
@@ -32,13 +34,17 @@ public class TenantServiceImpl implements TenantService {
     private final PermissionRepository permissionRepository;
     private final TenantSettingsRepository tenantSettingsRepository;
     private final TenantModuleRepository tenantModuleRepository;
+    private final com.project.www.repository.GlobalUserRegistryRepository globalUserRegistryRepository;
     private final PasswordEncoder passwordEncoder;
-
     private final PlatformTransactionManager transactionManager;
     private final PipelineStageRepository pipelineStageRepository;
     private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
     private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
     private final com.project.www.service.TenantDatabaseService tenantDatabaseService;
+    private final com.project.www.service.EmailService emailService;
+    
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Override
     public TenantResponse createTenant(CreateTenantRequest request) {
@@ -64,9 +70,15 @@ public class TenantServiceImpl implements TenantService {
         String originalTenantCode = TenantContext.getCurrentTenantCode();
         Long originalTenantId = TenantContext.getCurrentTenant();
 
+        // MUST clear TenantContext before ANY master-DB operation so the
+        // DynamicDataSourceManager routes to the master datasource.
+        TenantContext.clear();
+
         try {
-            // Master Database Operations MUST have clear TenantContext
-            TenantContext.clear();
+            // Guard: email must be globally unique across all tenants (master DB query)
+            if (globalUserRegistryRepository.existsByEmail(request.getAdminEmail())) {
+                throw new RuntimeException("Email already exists in another workspace. Please use a unique email.");
+            }
 
             // Check if tenant already exists in master db
             TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
@@ -83,6 +95,7 @@ public class TenantServiceImpl implements TenantService {
                         .name(request.getTenantName())
                         .code(finalTenantCode)
                         .dbName(dbName)
+                        .domain(request.getDomain())
                         .adminEmail(request.getAdminEmail())
                         .superAdminName(request.getAdminFirstName() + " " + request.getAdminLastName())
                         .phone(request.getPhone())
@@ -194,16 +207,6 @@ public class TenantServiceImpl implements TenantService {
                     settings.setEmployeeSequence(settings.getEmployeeSequence() + 1);
                     tenantSettingsRepository.save(settings);
 
-                    // Create Admin User
-                    String employeeId = settings.getEmployeeIdFormat() != null
-                            && !settings.getEmployeeIdFormat().trim().isEmpty()
-                                    ? settings.getEmployeeIdFormat()
-                                            .replace("{TENANT}", finalTenantCode)
-                                            .replace("{YYYY}", String.valueOf(currentYear))
-                                            .replace("{SEQ}", String.format("%03d", settings.getEmployeeSequence()))
-                                    : String.format("EMP-%s-%d-%03d", finalTenantCode, currentYear,
-                                            settings.getEmployeeSequence());
-
                     User adminUser = userRepository.findByEmailAndTenantId(request.getAdminEmail(), tenant.getId())
                             .orElseGet(() -> User.builder()
                                     .tenantId(tenant.getId())
@@ -211,12 +214,17 @@ public class TenantServiceImpl implements TenantService {
                                     .lastName(request.getAdminLastName())
                                     .email(request.getAdminEmail())
                                     .password(passwordEncoder.encode(request.getAdminPassword()))
-                                    .employeeId(employeeId)
                                     .active(true)
                                     .build());
                     adminUser.setRole(adminRole);
                     userRepository.save(adminUser);
-                    globalUserRegistrySyncService.syncUser(adminUser, tenant.getId());
+                    try {
+                        TenantContext.clear();
+                        globalUserRegistrySyncService.syncUser(adminUser, tenant.getId());
+                    } finally {
+                        TenantContext.setCurrentTenant(tenant.getId());
+                        TenantContext.setCurrentTenantCode(finalTenantCode);
+                    }
 
                     // Seed default system templates
                     List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()
@@ -246,10 +254,25 @@ public class TenantServiceImpl implements TenantService {
                 }
             }
 
+            try {
+                String loginUrl = frontendUrl + "/login";
+                emailService.sendTenantWelcomeEmail(
+                    request.getAdminEmail(),
+                    request.getAdminFirstName(),
+                    request.getTenantName(),
+                    tenant.getDomain(),
+                    request.getAdminPassword(),
+                    loginUrl
+                );
+            } catch (Exception e) {
+                log.error("Failed to send welcome email to tenant admin: {}", request.getAdminEmail(), e);
+            }
+
             return TenantResponse.builder()
                     .id(tenant.getId())
                     .name(tenant.getName())
                     .code(tenant.getCode())
+                    .domain(tenant.getDomain())
                     .active(tenant.getActive())
                     .adminEmail(request.getAdminEmail())
                     .build();
@@ -264,6 +287,7 @@ public class TenantServiceImpl implements TenantService {
                 .id(t.getId())
                 .name(t.getName())
                 .code(t.getCode())
+                .domain(t.getDomain())
                 .dbName(t.getDbName())
                 .adminEmail(t.getAdminEmail())
                 .superAdminName(t.getSuperAdminName())

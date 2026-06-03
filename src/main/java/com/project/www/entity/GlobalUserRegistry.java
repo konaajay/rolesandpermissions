@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "global_users", catalog = "rbac_db", uniqueConstraints = {
+@Table(name = "global_users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "email", name = "uk_global_email")
 })
 public class GlobalUserRegistry {

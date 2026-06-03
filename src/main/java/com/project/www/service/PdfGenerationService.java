@@ -4,6 +4,8 @@ import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import com.project.www.entity.CompanyProfile;
+import com.project.www.repository.CompanyProfileRepository;
 import com.project.www.entity.VendorInvoice;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,11 @@ import java.util.UUID;
 public class PdfGenerationService {
 
     private final String RECEIPT_DIR = "uploads/receipts/";
+    private final CompanyProfileRepository companyProfileRepository;
+
+    public PdfGenerationService(CompanyProfileRepository companyProfileRepository) {
+        this.companyProfileRepository = companyProfileRepository;
+    }
 
     public String generatePaymentReceipt(VendorInvoice invoice) {
         Path uploadPath = Paths.get(RECEIPT_DIR + invoice.getTenantId());
@@ -44,6 +51,21 @@ public class PdfGenerationService {
 
             // Add Header Details
             Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 12);
+            Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+            
+            CompanyProfile companyProfile = companyProfileRepository.findByTenantId(invoice.getTenantId()).orElse(null);
+            
+            if (companyProfile != null) {
+                document.add(new Paragraph(companyProfile.getCompanyName(), boldFont));
+                if (companyProfile.getGstNumber() != null) {
+                    document.add(new Paragraph("GST: " + companyProfile.getGstNumber(), normalFont));
+                }
+                if (companyProfile.getEmail() != null) {
+                    document.add(new Paragraph("Email: " + companyProfile.getEmail(), normalFont));
+                }
+                document.add(new Paragraph(" "));
+            }
+
             document.add(new Paragraph("Date: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")), normalFont));
             document.add(new Paragraph("Receipt No: REC-" + invoice.getId(), normalFont));
             document.add(new Paragraph("Vendor: " + invoice.getVendor().getVendorName(), normalFont));
@@ -68,6 +90,12 @@ public class PdfGenerationService {
             // Table Data
             table.addCell(new Phrase("Payment for Invoice: " + (invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber() : "INV-" + (4000 + invoice.getId()))));
             table.addCell(new Phrase("$" + invoice.getAmount()));
+            
+            table.addCell(new Phrase("Amount Paid"));
+            table.addCell(new Phrase("$" + (invoice.getAmountPaid() != null ? invoice.getAmountPaid() : invoice.getAmount())));
+            
+            table.addCell(new Phrase("Amount Pending"));
+            table.addCell(new Phrase("$" + (invoice.getAmountPending() != null ? invoice.getAmountPending() : "0.00")));
             
             table.addCell(new Phrase("PO Reference"));
             table.addCell(new Phrase(invoice.getPoRef() != null ? invoice.getPoRef() : "N/A"));

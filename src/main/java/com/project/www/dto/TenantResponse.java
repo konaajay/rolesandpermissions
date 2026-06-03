@@ -13,6 +13,7 @@ public class TenantResponse {
     private Long id;
     private String name;
     private String code;
+    private String domain;
     private String dbName;
     private Boolean active;
     private String adminEmail;

@@ -21,6 +21,7 @@ import com.project.www.repository.TenantModuleRepository;
 import com.project.www.entity.TenantModule;
 import com.project.www.util.TenantContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,7 +44,11 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final com.project.www.util.TenantResolver tenantResolver;
     private final jakarta.servlet.http.HttpServletRequest servletRequest;
-    private final TenantService tenantService;
+    
+    @org.springframework.beans.factory.annotation.Autowired
+    @Lazy
+    private TenantService tenantService;
+    
     private final TenantModuleRepository tenantModuleRepository;
     private final com.project.www.repository.PermissionRepository permissionRepository;
     private final com.project.www.repository.GlobalUserRegistryRepository globalUserRegistryRepository;
@@ -262,12 +267,17 @@ public class AuthServiceImpl implements AuthService {
                         .lastName(request.getLastName())
                         .email(request.getEmail())
                         .password(passwordEncoder.encode(request.getPassword()))
-                        .employeeId(employeeId)
                         .active(true)
                         .role(role)
                         .build();
                 userRepository.save(user);
-                globalUserRegistrySyncService.syncUser(user, tenant.getId());
+                try {
+                    TenantContext.clear();
+                    globalUserRegistrySyncService.syncUser(user, tenant.getId());
+                } finally {
+                    TenantContext.setCurrentTenant(tenant.getId());
+                    TenantContext.setCurrentTenantCode(tenant.getCode());
+                }
             } finally {
                 TenantContext.setCurrentTenant(originalTenantId);
                 TenantContext.setCurrentTenantCode(originalTenantCode);

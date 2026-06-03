@@ -160,10 +160,10 @@ public class TemplateDefinitionService {
         return pdfService.generatePdfFromHtml(html, isLandscape);
     }
 
-    public byte[] generateDocumentPdf(Long id, String employeeId) throws Exception {
+    public byte[] generateDocumentPdf(Long id, Long userId) throws Exception {
         Long tenantId = TenantContext.getCurrentTenant();
         TemplateDefinition t = getTemplateById(id);
-        com.project.www.entity.User user = userRepository.findByTenantIdAndEmployeeId(tenantId, employeeId)
+        com.project.www.entity.User user = userRepository.findByIdAndTenantId(userId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         String html = t.getContentHtml();
@@ -180,7 +180,7 @@ public class TemplateDefinitionService {
         html = html.replace("{{COMPANY_NAME}}", companyName)
                    .replace("{{COMPANY_ADDRESS}}", companyAddress)
                    .replace("{{EMPLOYEE_NAME}}", user.getFirstName() + " " + user.getLastName())
-                   .replace("{{EMPLOYEE_ID}}", user.getEmployeeId() != null ? user.getEmployeeId() : "N/A")
+                   .replace("{{EMPLOYEE_ID}}", "EMP-" + user.getId())
                    .replace("{{ISSUE_DATE}}", java.time.LocalDate.now().toString())
                    .replace("{{DOCUMENT_NO}}", "DOC-" + java.time.Year.now().getValue() + "-" + user.getId());
 

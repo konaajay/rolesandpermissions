@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "tenants", catalog = "rbac_db")
+@Table(name = "tenants")
 public class Tenant extends Auditable {
 
     @Id
@@ -24,6 +24,9 @@ public class Tenant extends Auditable {
 
     @Column(name = "db_name", nullable = false)
     private String dbName;
+
+    @Column(name = "domain", unique = true)
+    private String domain;
 
     @Column(name = "admin_email")
     private String adminEmail;

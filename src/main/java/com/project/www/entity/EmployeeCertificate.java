@@ -21,8 +21,8 @@ public class EmployeeCertificate {
     @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
 
-    @Column(name = "employee_id", nullable = false)
-    private String employeeId;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "template_id", nullable = false)

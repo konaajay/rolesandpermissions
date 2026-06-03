@@ -52,16 +52,6 @@ public class User extends Auditable {
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private java.util.Set<Role> roles = new java.util.HashSet<>();
 
-    @Column(name = "employee_id")
-    private String employeeId;
-
-    @Column(name = "lead_id")
-    private String leadId;
-
-    private String department;
-
-    private String designation;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "office_location_id")
     private OfficeLocation assignedOffice;

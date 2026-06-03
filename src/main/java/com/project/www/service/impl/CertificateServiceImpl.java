@@ -47,7 +47,7 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Override
     public EmployeeCertificate generateCertificate(Long tenantId, GenerateCertificateDto dto) throws Exception {
-        User employee = userRepository.findByTenantIdAndEmployeeId(tenantId, dto.getEmployeeId())
+        User employee = userRepository.findByIdAndTenantId(dto.getUserId(), tenantId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         TemplateDefinition template = templateRepository.findById(dto.getTemplateId())
@@ -63,7 +63,7 @@ public class CertificateServiceImpl implements CertificateService {
         EmployeeCertificate certificate = new EmployeeCertificate();
         certificate.setTenantId(tenantId);
         certificate.setCertificateNo(certificateNo);
-        certificate.setEmployeeId(employee.getEmployeeId());
+        certificate.setUserId(employee.getId());
         certificate.setTemplate(template);
         certificate.setIssuedDate(dto.getIssuedDate() != null ? dto.getIssuedDate() : LocalDateTime.now());
         certificate.setExpiryDate(dto.getExpiryDate());
@@ -115,7 +115,7 @@ public class CertificateServiceImpl implements CertificateService {
     public byte[] downloadCertificatePdf(Long tenantId, Long id) throws Exception {
         EmployeeCertificate cert = getCertificateById(tenantId, id);
         
-        User employee = userRepository.findByTenantIdAndEmployeeId(tenantId, cert.getEmployeeId())
+        User employee = userRepository.findByIdAndTenantId(cert.getUserId(), tenantId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         String verificationUrl = frontendUrl + "/verify/" + cert.getVerificationToken();
@@ -147,13 +147,13 @@ public class CertificateServiceImpl implements CertificateService {
                 .replace("{{EMPLOYEE_NAME}}", employee.getFirstName() + " " + employee.getLastName())
                 .replace("{{FIRST_NAME}}", employee.getFirstName() != null ? employee.getFirstName() : "")
                 .replace("{{LAST_NAME}}", employee.getLastName() != null ? employee.getLastName() : "")
-                .replace("{{EMPLOYEE_ID}}", employee.getEmployeeId())
-                .replace("{{employeeId}}", employee.getEmployeeId() != null ? employee.getEmployeeId() : "N/A")
+                .replace("{{EMPLOYEE_ID}}", "EMP-" + employee.getId())
+                .replace("{{employeeId}}", "EMP-" + employee.getId())
                 .replace("{{EMPLOYEE_ADDRESS}}", "Registered Address on File")
-                .replace("{{DESIGNATION}}", employee.getDesignation() != null ? employee.getDesignation() : "N/A")
-                .replace("{{designation}}", employee.getDesignation() != null ? employee.getDesignation() : "N/A")
-                .replace("{{DEPARTMENT}}", employee.getDepartment() != null ? employee.getDepartment() : "N/A")
-                .replace("{{department}}", employee.getDepartment() != null ? employee.getDepartment() : "N/A")
+                .replace("{{DESIGNATION}}", "N/A")
+                .replace("{{designation}}", "N/A")
+                .replace("{{DEPARTMENT}}", "N/A")
+                .replace("{{department}}", "N/A")
                 .replace("{{WORK_LOCATION}}", employee.getAssignedOffice() != null ? employee.getAssignedOffice().getName() : "Head Office")
                 .replace("{{JOINING_DATE}}", employee.getJoiningDate() != null ? employee.getJoiningDate().format(formatter) : cert.getIssuedDate().format(formatter))
                 .replace("{{EMPLOYMENT_TYPE}}", "Full-Time")
@@ -177,7 +177,7 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Override
     public String previewCertificateHtml(Long tenantId, GenerateCertificateDto dto) throws Exception {
-        User employee = userRepository.findByTenantIdAndEmployeeId(tenantId, dto.getEmployeeId())
+        User employee = userRepository.findByIdAndTenantId(dto.getUserId(), tenantId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         TemplateDefinition template = templateRepository.findById(dto.getTemplateId())
@@ -205,13 +205,13 @@ public class CertificateServiceImpl implements CertificateService {
                 .replace("{{EMPLOYEE_NAME}}", employee.getFirstName() + " " + employee.getLastName())
                 .replace("{{FIRST_NAME}}", employee.getFirstName() != null ? employee.getFirstName() : "")
                 .replace("{{LAST_NAME}}", employee.getLastName() != null ? employee.getLastName() : "")
-                .replace("{{EMPLOYEE_ID}}", employee.getEmployeeId())
-                .replace("{{employeeId}}", employee.getEmployeeId() != null ? employee.getEmployeeId() : "N/A")
+                .replace("{{EMPLOYEE_ID}}", "EMP-" + employee.getId())
+                .replace("{{employeeId}}", "EMP-" + employee.getId())
                 .replace("{{EMPLOYEE_ADDRESS}}", "Registered Address on File")
-                .replace("{{DESIGNATION}}", employee.getDesignation() != null ? employee.getDesignation() : "N/A")
-                .replace("{{designation}}", employee.getDesignation() != null ? employee.getDesignation() : "N/A")
-                .replace("{{DEPARTMENT}}", employee.getDepartment() != null ? employee.getDepartment() : "N/A")
-                .replace("{{department}}", employee.getDepartment() != null ? employee.getDepartment() : "N/A")
+                .replace("{{DESIGNATION}}", "N/A")
+                .replace("{{designation}}", "N/A")
+                .replace("{{DEPARTMENT}}", "N/A")
+                .replace("{{department}}", "N/A")
                 .replace("{{WORK_LOCATION}}", employee.getAssignedOffice() != null ? employee.getAssignedOffice().getName() : "Head Office")
                 .replace("{{JOINING_DATE}}", employee.getJoiningDate() != null ? employee.getJoiningDate().format(formatter) : issueDate.format(formatter))
                 .replace("{{EMPLOYMENT_TYPE}}", "Full-Time")
@@ -240,7 +240,7 @@ public class CertificateServiceImpl implements CertificateService {
                     .orElseThrow(() -> new RuntimeException("Certificate Not Found"));
         }
 
-        User employee = userRepository.findByTenantIdAndEmployeeId(cert.getTenantId(), cert.getEmployeeId())
+        User employee = userRepository.findByIdAndTenantId(cert.getUserId(), cert.getTenantId())
                 .orElse(null);
 
         PublicVerificationDto dto = new PublicVerificationDto();

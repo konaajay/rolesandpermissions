@@ -23,8 +23,10 @@ import java.util.List;
 @RequestMapping("/tenants")
 @RequiredArgsConstructor
 public class TenantController {
-
-    private final TenantService tenantService;
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private TenantService tenantService;
+    
     private final TenantModuleService tenantModuleService;
 
     @PostMapping
