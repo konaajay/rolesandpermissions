@@ -108,6 +108,19 @@ public class DatabaseSeeder implements CommandLineRunner {
                 if (!"SYS".equalsIgnoreCase(t.getCode()) && t.getDbName() != null) {
                     log.info("Re-registering existing tenant DB for: " + t.getCode());
                     tenantDatabaseService.registerExistingTenantDatabase(t.getCode(), t.getDbName());
+                    
+                    // PATCH TENANT DATABASE
+                    try (java.sql.Connection tConn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/" + t.getDbName() + "?createDatabaseIfNotExist=true", "root", "root");
+                         java.sql.Statement tStmt = tConn.createStatement()) {
+                        try { tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT"); } catch(Exception ex){}
+                        try { tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)"); } catch(Exception ex){}
+                        try { tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)"); } catch(Exception ex){}
+                        try { tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN requirement_type VARCHAR(255)"); } catch(Exception ex){}
+                        try { tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN return_date DATE"); } catch(Exception ex){}
+                        log.info("Patched tenant database: " + t.getDbName());
+                    } catch (Exception e) {
+                        log.warn("Failed to patch tenant database: " + t.getDbName() + ", error: " + e.getMessage());
+                    }
                 }
             }
         } catch (Exception e) {

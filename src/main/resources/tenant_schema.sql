@@ -442,6 +442,8 @@ CREATE TABLE IF NOT EXISTS vendor_invoices (
     vendor_id BIGINT NOT NULL,
     requirement_id BIGINT,
     amount DECIMAL(15,2) NOT NULL,
+    amount_paid DECIMAL(15,2),
+    amount_pending DECIMAL(15,2),
     po_ref VARCHAR(255),
     invoice_date VARCHAR(255),
     due_date VARCHAR(255),

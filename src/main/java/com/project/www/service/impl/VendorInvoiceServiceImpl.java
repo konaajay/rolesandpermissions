@@ -52,6 +52,16 @@ public class VendorInvoiceServiceImpl implements VendorInvoiceService {
         entity.setInvoiceNumber(UUID.randomUUID().toString()); // Placeholder, mapper will use ID to inv
         
         entity.setAmount(parseAmount(dto.getAmount()));
+        if (dto.getAmountPaid() != null) {
+            entity.setAmountPaid(dto.getAmountPaid());
+        } else {
+            entity.setAmountPaid(BigDecimal.ZERO);
+        }
+        if (dto.getAmountPending() != null) {
+            entity.setAmountPending(dto.getAmountPending());
+        } else {
+            entity.setAmountPending(entity.getAmount());
+        }
         
         VendorInvoice saved = repository.save(entity);
         return enrichDto(mapper.toDto(saved), saved.getAmount(), saved.getReceiptUrl());
@@ -80,6 +90,13 @@ public class VendorInvoiceServiceImpl implements VendorInvoiceService {
         }
         
         entity.setAmount(parseAmount(dto.getAmount()));
+
+        if (dto.getAmountPaid() != null) {
+            entity.setAmountPaid(dto.getAmountPaid());
+        }
+        if (dto.getAmountPending() != null) {
+            entity.setAmountPending(dto.getAmountPending());
+        }
         
         if ("Paid".equalsIgnoreCase(dto.getStatus()) && entity.getReceiptUrl() == null) {
             String receiptUrl = pdfGenerationService.generatePaymentReceipt(entity);

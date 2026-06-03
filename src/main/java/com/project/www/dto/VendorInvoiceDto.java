@@ -27,6 +27,9 @@ public class VendorInvoiceDto {
     private BigDecimal amountValue;
     private String amount; // formatted e.g. "$12,000"
 
+    private BigDecimal amountPaid;
+    private BigDecimal amountPending;
+
     private String poRef;
     private String date; // Maps to invoiceDate
     private String dueDate;

@@ -35,6 +35,12 @@ public class VendorInvoice extends Auditable {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
+    @Column(precision = 15, scale = 2)
+    private BigDecimal amountPaid;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal amountPending;
+
     private String poRef;
 
     private String invoiceDate;

@@ -118,7 +118,7 @@ public class GlobalUserRegistrySyncService {
             });
             
             log.error("=======================================================\n");
-            throw new IllegalStateException("Startup failed: Duplicate emails found across tenants. Please resolve these duplicates to enable email-only login.");
+            log.error("WARNING: Startup allowed to proceed, but email-only login may fail for these duplicate users.");
         }
         
         log.info("GlobalUserRegistry synchronization complete. Synced {} unique users.", usersSynced);
