@@ -37,6 +37,8 @@ public class Requirement {
     private String status;
 
     private LocalDate requiredDate;
+    
+    private LocalDate returnDate;
 
     private String requirementType;
 

@@ -440,6 +440,7 @@ CREATE TABLE IF NOT EXISTS vendor_invoices (
     tenant_id BIGINT NOT NULL,
     invoice_number VARCHAR(50) NOT NULL,
     vendor_id BIGINT NOT NULL,
+    requirement_id BIGINT,
     amount DECIMAL(15,2) NOT NULL,
     po_ref VARCHAR(255),
     invoice_date VARCHAR(255),
@@ -480,6 +481,8 @@ CREATE TABLE IF NOT EXISTS vendor_requirements (
     vendor_id BIGINT NOT NULL,
     description TEXT,
     required_date DATE,
+    return_date DATE,
+    requirement_type VARCHAR(255),
     status VARCHAR(50) NOT NULL,
     created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE

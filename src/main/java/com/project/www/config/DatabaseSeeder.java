@@ -36,6 +36,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final PipelineStageRepository pipelineStageRepository;
     private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
     private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
+    private final com.project.www.service.TenantDatabaseService tenantDatabaseService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -98,6 +99,22 @@ public class DatabaseSeeder implements CommandLineRunner {
                 });
 
         final Long systemTenantId = systemTenant.getId();
+
+        // Load all other tenants into DynamicDataSourceManager so they are available upon restart
+        try {
+            TenantContext.clear();
+            java.util.List<Tenant> allTenants = tenantRepository.findAll();
+            for (Tenant t : allTenants) {
+                if (!"SYS".equalsIgnoreCase(t.getCode()) && t.getDbName() != null) {
+                    log.info("Re-registering existing tenant DB for: " + t.getCode());
+                    tenantDatabaseService.registerExistingTenantDatabase(t.getCode(), t.getDbName());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to load existing tenants into DynamicDataSourceManager: " + e.getMessage());
+        }
+
+        // --- SYSTEM PERMISSIONS SEEDING ---
         final String systemTenantCode = systemTenant.getCode();
 
         // Seed System Modules

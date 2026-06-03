@@ -53,8 +53,6 @@ public class VendorPerformanceServiceImpl implements VendorPerformanceService {
         if (!pos.isEmpty()) {
             long delivered = pos.stream().filter(p -> "Delivered".equalsIgnoreCase(p.getStatus())).count();
             onTimeDelivery = Math.round((delivered * 100.0) / pos.size());
-        } else {
-            onTimeDelivery = 100;
         }
 
         double defectRate = 0;
@@ -63,16 +61,12 @@ public class VendorPerformanceServiceImpl implements VendorPerformanceService {
             long rejected = invoices.stream().filter(i -> "Rejected".equalsIgnoreCase(i.getStatus())).count();
             defectRate = Math.round((rejected * 100.0) / invoices.size() * 10.0) / 10.0; // 1 decimal
             invoiceAccuracy = 100 - defectRate;
-        } else {
-            invoiceAccuracy = 100;
         }
 
         double slaCompliance = 0;
         if (!contracts.isEmpty()) {
             long active = contracts.stream().filter(c -> "Active".equalsIgnoreCase(c.getStatus())).count();
             slaCompliance = Math.round((active * 100.0) / contracts.size());
-        } else {
-            slaCompliance = 100;
         }
 
         List<VendorPerformanceDto.KpiMetric> kpis = List.of(
@@ -83,15 +77,27 @@ public class VendorPerformanceServiceImpl implements VendorPerformanceService {
         );
 
         // Scorecard for top vendor
-        int baseScore = topVendor != null ? 85 : 0;
-        List<VendorPerformanceDto.RadarMetric> scorecard = List.of(
-            new VendorPerformanceDto.RadarMetric("Quality", baseScore + 5, 100),
-            new VendorPerformanceDto.RadarMetric("Delivery", (int)onTimeDelivery > 0 ? (int)onTimeDelivery : baseScore + 10, 100),
-            new VendorPerformanceDto.RadarMetric("Cost", baseScore, 100),
-            new VendorPerformanceDto.RadarMetric("Communication", baseScore + 8, 100),
-            new VendorPerformanceDto.RadarMetric("Compliance", (int)slaCompliance > 0 ? (int)slaCompliance : baseScore, 100),
-            new VendorPerformanceDto.RadarMetric("Innovation", baseScore - 5, 100)
-        );
+        List<VendorPerformanceDto.RadarMetric> scorecard;
+        if (topVendor != null) {
+            int baseScore = 85;
+            scorecard = List.of(
+                new VendorPerformanceDto.RadarMetric("Quality", baseScore + 5, 100),
+                new VendorPerformanceDto.RadarMetric("Delivery", (int)onTimeDelivery > 0 ? (int)onTimeDelivery : baseScore + 10, 100),
+                new VendorPerformanceDto.RadarMetric("Cost", baseScore, 100),
+                new VendorPerformanceDto.RadarMetric("Communication", baseScore + 8, 100),
+                new VendorPerformanceDto.RadarMetric("Compliance", (int)slaCompliance > 0 ? (int)slaCompliance : baseScore, 100),
+                new VendorPerformanceDto.RadarMetric("Innovation", baseScore - 5, 100)
+            );
+        } else {
+            scorecard = List.of(
+                new VendorPerformanceDto.RadarMetric("Quality", 0, 100),
+                new VendorPerformanceDto.RadarMetric("Delivery", 0, 100),
+                new VendorPerformanceDto.RadarMetric("Cost", 0, 100),
+                new VendorPerformanceDto.RadarMetric("Communication", 0, 100),
+                new VendorPerformanceDto.RadarMetric("Compliance", 0, 100),
+                new VendorPerformanceDto.RadarMetric("Innovation", 0, 100)
+            );
+        }
 
         return VendorPerformanceDto.builder()
             .topVendorName(topVendorName)

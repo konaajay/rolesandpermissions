@@ -61,4 +61,19 @@ public class TenantDatabaseService {
             System.err.println("❌ Error generating schema for " + dbName + ": " + e.getMessage());
         }
     }
+
+    public void registerExistingTenantDatabase(String tenantCode, String dbName) {
+        String dbUrl = masterUrl.substring(0, masterUrl.lastIndexOf("/") + 1) + dbName + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+        
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setDriverClassName(driverClassName);
+        dataSource.setJdbcUrl(dbUrl);
+        dataSource.setUsername(dbUsername);
+        dataSource.setPassword(dbPassword);
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setMinimumIdle(2);
+
+        dynamicDataSourceManager.addDataSource(tenantCode, dataSource);
+        System.out.println("✅ Re-registered existing tenant data source for: " + tenantCode + " -> " + dbName);
+    }
 }

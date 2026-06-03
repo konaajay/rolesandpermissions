@@ -17,6 +17,7 @@ public class RequirementResponseDto {
     private String requirementType;
     private String status;
     private LocalDate requiredDate;
+    private LocalDate returnDate;
     
     private VendorDto vendor;
     private List<RequirementItemDto> items;

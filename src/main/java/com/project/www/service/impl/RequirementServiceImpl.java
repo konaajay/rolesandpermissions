@@ -34,6 +34,7 @@ public class RequirementServiceImpl implements RequirementService {
                 .description(request.getDescription())
                 .vendor(vendor)
                 .requiredDate(request.getRequiredDate())
+                .returnDate(request.getReturnDate())
                 .requirementType(request.getRequirementType())
                 .status("CREATED")
                 .items(new ArrayList<>())
@@ -151,6 +152,7 @@ public class RequirementServiceImpl implements RequirementService {
                 .requirementType(req.getRequirementType())
                 .status(req.getStatus())
                 .requiredDate(req.getRequiredDate())
+                .returnDate(req.getReturnDate())
                 .vendor(vendorDto)
                 .items(itemsDto)
                 .build();
