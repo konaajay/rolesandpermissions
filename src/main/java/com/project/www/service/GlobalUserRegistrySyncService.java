@@ -45,6 +45,15 @@ public class GlobalUserRegistrySyncService {
         log.debug("Removed user {} from global registry", email);
     }
 
+    /**
+     * Checks if an email exists globally.
+     * Note: Must be called with TenantContext.clear() before invocation.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, readOnly = true)
+    public boolean existsByEmail(String email) {
+        return registryRepository.existsByEmail(email);
+    }
+
     public void syncAllTenants(java.util.List<com.project.www.entity.Tenant> tenants, com.project.www.repository.UserRepository userRepository) {
         log.info("Starting GlobalUserRegistry synchronization across {} tenants...", tenants.size());
         java.util.Map<String, java.util.List<String>> duplicateEmails = new java.util.HashMap<>();

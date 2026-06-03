@@ -76,7 +76,7 @@ public class TenantServiceImpl implements TenantService {
 
         try {
             // Guard: email must be globally unique across all tenants (master DB query)
-            if (globalUserRegistryRepository.existsByEmail(request.getAdminEmail())) {
+            if (globalUserRegistrySyncService.existsByEmail(request.getAdminEmail())) {
                 throw new RuntimeException("Email already exists in another workspace. Please use a unique email.");
             }
 

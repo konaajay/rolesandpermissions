@@ -51,8 +51,18 @@ public class UserServiceImpl implements UserService {
         if (emailExists) {
             throw new RuntimeException("User email already exists under this tenant");
         }
-        
-        if (globalUserRegistryRepository.existsByEmail(request.getEmail())) {
+        boolean globalEmailExists;
+        String ogCode = TenantContext.getCurrentTenantCode();
+        Long ogId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            globalEmailExists = globalUserRegistrySyncService.existsByEmail(request.getEmail());
+        } finally {
+            TenantContext.setCurrentTenant(ogId);
+            TenantContext.setCurrentTenantCode(ogCode);
+        }
+
+        if (globalEmailExists) {
             throw new RuntimeException("Email already exists in another workspace. Please use a unique email.");
         }
 
