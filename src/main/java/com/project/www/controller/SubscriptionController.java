@@ -19,7 +19,7 @@ public class SubscriptionController {
     private final SubscriptionService subscriptionService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('SUBSCRIPTION_MANAGE')")
+    
     public ResponseEntity<ApiResponse<SubscriptionResponse>> upgradeSubscription(@RequestBody SubscriptionRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
             subscriptionService.upgradeSubscription(request)
@@ -27,7 +27,7 @@ public class SubscriptionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('SUBSCRIPTION_MANAGE')")
+    
     public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getSubscriptionHistory() {
         return ResponseEntity.ok(ApiResponse.success(
             subscriptionService.getSubscriptionHistory()
@@ -35,7 +35,7 @@ public class SubscriptionController {
     }
 
     @GetMapping("/admin/all")
-    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN')")
+    
     public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getAllSubscriptions() {
         return ResponseEntity.ok(ApiResponse.success(
             subscriptionService.getAllSubscriptions()

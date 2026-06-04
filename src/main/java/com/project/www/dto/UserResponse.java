@@ -36,4 +36,8 @@ public class UserResponse {
     private LocalDateTime updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    private java.util.List<String> modules;
+    private java.util.List<String> permissions;
+    private java.util.List<Long> permissionIds;
 }

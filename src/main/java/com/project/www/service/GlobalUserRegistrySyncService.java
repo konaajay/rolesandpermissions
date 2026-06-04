@@ -15,43 +15,74 @@ import org.springframework.transaction.annotation.Transactional;
 public class GlobalUserRegistrySyncService {
 
     private final GlobalUserRegistryRepository registryRepository;
+    private final org.springframework.transaction.PlatformTransactionManager transactionManager;
 
     /**
      * Synchronizes a user record to the global registry.
-     * Note: Must be called with TenantContext.clear() or on a transaction mapped to rbac_db
-     * if the caller is inside a tenant context.
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void syncUser(User user, Long tenantId) {
-        GlobalUserRegistry registry = registryRepository.findByEmail(user.getEmail())
-                .orElse(GlobalUserRegistry.builder()
-                        .email(user.getEmail())
-                        .build());
-        
-        registry.setTenantId(tenantId);
-        registry.setUserId(user.getId());
-        registry.setActive(user.getActive());
-        
-        registryRepository.save(registry);
-        log.debug("Synced user {} to global registry for tenant {}", user.getEmail(), tenantId);
+        String ogCode = TenantContext.getCurrentTenantCode();
+        Long ogId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            org.springframework.transaction.support.TransactionTemplate template = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+            template.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            template.executeWithoutResult(status -> {
+                GlobalUserRegistry registry = registryRepository.findByEmailAndTenantCode(user.getEmail(), ogCode)
+                        .orElse(GlobalUserRegistry.builder()
+                                .email(user.getEmail())
+                                .build());
+                
+                registry.setTenantId(tenantId);
+                registry.setTenantCode(ogCode);
+                registry.setUserId(user.getId());
+                registry.setActive(user.getActive());
+                
+                registryRepository.save(registry);
+            });
+            log.debug("Synced user {} to global registry for tenant {}", user.getEmail(), tenantId);
+        } finally {
+            TenantContext.setCurrentTenant(ogId);
+            TenantContext.setCurrentTenantCode(ogCode);
+        }
     }
 
     /**
      * Removes a user from the global registry (e.g. on hard delete).
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void removeUser(String email) {
-        registryRepository.findByEmail(email).ifPresent(registryRepository::delete);
-        log.debug("Removed user {} from global registry", email);
+        String ogCode = TenantContext.getCurrentTenantCode();
+        Long ogId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            org.springframework.transaction.support.TransactionTemplate template = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+            template.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            template.executeWithoutResult(status -> {
+                registryRepository.findByEmailAndTenantCode(email, ogCode).ifPresent(registryRepository::delete);
+            });
+            log.debug("Removed user {} from global registry", email);
+        } finally {
+            TenantContext.setCurrentTenant(ogId);
+            TenantContext.setCurrentTenantCode(ogCode);
+        }
     }
 
     /**
      * Checks if an email exists globally.
-     * Note: Must be called with TenantContext.clear() before invocation.
      */
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, readOnly = true)
     public boolean existsByEmail(String email) {
-        return registryRepository.existsByEmail(email);
+        String ogCode = TenantContext.getCurrentTenantCode();
+        Long ogId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            org.springframework.transaction.support.TransactionTemplate template = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+            template.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            template.setReadOnly(true);
+            return template.execute(status -> registryRepository.existsByEmail(email));
+        } finally {
+            TenantContext.setCurrentTenant(ogId);
+            TenantContext.setCurrentTenantCode(ogCode);
+        }
     }
 
     public void syncAllTenants(java.util.List<com.project.www.entity.Tenant> tenants, com.project.www.repository.UserRepository userRepository) {
@@ -68,7 +99,7 @@ public class GlobalUserRegistrySyncService {
                 for (User user : users) {
                     try {
                         TenantContext.clear();
-                        java.util.Optional<GlobalUserRegistry> existing = registryRepository.findByEmail(user.getEmail());
+                        java.util.Optional<GlobalUserRegistry> existing = registryRepository.findByEmailAndTenantCode(user.getEmail(), tenant.getCode());
                         if (existing.isPresent() && !existing.get().getTenantId().equals(tenant.getId())) {
                             duplicateEmails.computeIfAbsent(user.getEmail(), k -> new java.util.ArrayList<>())
                                 .add(tenant.getName() + " (ID: " + tenant.getId() + ")");

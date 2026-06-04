@@ -122,12 +122,15 @@ public class TenantServiceImpl implements TenantService {
                             new String[] { "USER", "UPDATE", "Ability to update users" },
                             new String[] { "USER", "DELETE", "Ability to delete users" },
                             new String[] { "ROLE", "CREATE", "Ability to create new roles" },
+                            new String[] { "ROLE", "VIEW", "Ability to view roles" },
                             new String[] { "ROLE", "UPDATE", "Ability to update roles" },
                             new String[] { "ROLE", "DISABLE", "Ability to disable roles" },
                             new String[] { "ROLE", "ENABLE", "Ability to enable roles" },
                             new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
+                            new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
                             new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
                             new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
+                            new String[] { "REPORT", "VIEW", "Ability to view reports" },
                             new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
                             new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
                             new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
@@ -157,7 +160,11 @@ public class TenantServiceImpl implements TenantService {
                             new String[] { "PO", "VIEW", "View Purchase Orders" },
                             new String[] { "PO", "UPDATE", "Update Purchase Orders" },
                             new String[] { "PO", "DELETE", "Delete Purchase Orders" },
-                            new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" });
+                            new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" },
+                            new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
+                            new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
+                            new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
+                            new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
 
                     List<Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());
                     java.util.Map<String, Permission> permMap = existingPerms.stream()
@@ -185,7 +192,7 @@ public class TenantServiceImpl implements TenantService {
                     Set<Permission> adminPermissions = new java.util.HashSet<>(savedPerms);
 
                     // Create default roles: SUPER_ADMIN
-                    Role adminRole = roleRepository.findByNameAndTenantId("SUPER_ADMIN", tenant.getId())
+                    Role superAdminRole = roleRepository.findByNameAndTenantId("SUPER_ADMIN", tenant.getId())
                             .orElseGet(() -> Role.builder()
                                     .tenantId(tenant.getId())
                                     .name("SUPER_ADMIN")
@@ -193,8 +200,60 @@ public class TenantServiceImpl implements TenantService {
                                     .description("Administrator role with all permissions")
                                     .active(true)
                                     .build());
-                    adminRole.setPermissions(adminPermissions);
-                    adminRole = roleRepository.save(adminRole);
+                    superAdminRole.setPermissions(adminPermissions);
+                    superAdminRole = roleRepository.save(superAdminRole);
+
+                    // Create ADMIN
+                    Role adminRole = roleRepository.findByNameAndTenantId("ADMIN", tenant.getId())
+                            .orElseGet(() -> Role.builder()
+                                    .tenantId(tenant.getId())
+                                    .name("ADMIN")
+                                    .code("ADMIN")
+                                    .description("Admin role with limited permissions")
+                                    .active(true)
+                                    .build());
+                    Set<Permission> adminRolePerms = savedPerms.stream()
+                        .filter(p -> 
+                            (p.getModule().equals("USER") && Arrays.asList("CREATE", "VIEW", "UPDATE").contains(p.getAction())) ||
+                            (p.getModule().equals("ROLE") && Arrays.asList("VIEW", "CREATE", "UPDATE").contains(p.getAction())) ||
+                            (p.getModule().equals("PERMISSION") && p.getAction().equals("VIEW"))
+                        ).collect(Collectors.toSet());
+                    adminRole.setPermissions(adminRolePerms);
+                    roleRepository.save(adminRole);
+
+                    // Create MANAGER
+                    Role managerRole = roleRepository.findByNameAndTenantId("MANAGER", tenant.getId())
+                            .orElseGet(() -> Role.builder()
+                                    .tenantId(tenant.getId())
+                                    .name("MANAGER")
+                                    .code("MANAGER")
+                                    .description("Manager role")
+                                    .active(true)
+                                    .build());
+                    Set<Permission> managerRolePerms = savedPerms.stream()
+                        .filter(p -> 
+                            (p.getModule().equals("DASHBOARD") && p.getAction().equals("VIEW")) ||
+                            (p.getModule().equals("USER") && p.getAction().equals("VIEW")) ||
+                            (p.getModule().equals("VENDOR") && p.getAction().equals("VIEW")) ||
+                            (p.getModule().equals("REPORT") && p.getAction().equals("VIEW"))
+                        ).collect(Collectors.toSet());
+                    managerRole.setPermissions(managerRolePerms);
+                    roleRepository.save(managerRole);
+
+                    // Create EMPLOYEE
+                    Role employeeRole = roleRepository.findByNameAndTenantId("EMPLOYEE", tenant.getId())
+                            .orElseGet(() -> Role.builder()
+                                    .tenantId(tenant.getId())
+                                    .name("EMPLOYEE")
+                                    .code("EMPLOYEE")
+                                    .description("Employee role")
+                                    .active(true)
+                                    .build());
+                    Set<Permission> employeeRolePerms = savedPerms.stream()
+                        .filter(p -> p.getModule().equals("DASHBOARD") && p.getAction().equals("VIEW"))
+                        .collect(Collectors.toSet());
+                    employeeRole.setPermissions(employeeRolePerms);
+                    roleRepository.save(employeeRole);
 
                     // Initialize Settings and Sequence for Employee IDs
                     int currentYear = java.time.LocalDate.now().getYear();
@@ -216,7 +275,7 @@ public class TenantServiceImpl implements TenantService {
                                     .password(passwordEncoder.encode(request.getAdminPassword()))
                                     .active(true)
                                     .build());
-                    adminUser.setRole(adminRole);
+                    adminUser.setRole(superAdminRole);
                     userRepository.save(adminUser);
                     try {
                         TenantContext.clear();

@@ -186,7 +186,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "PO", "VIEW", "View Purchase Orders" },
                         new String[] { "PO", "UPDATE", "Update Purchase Orders" },
                         new String[] { "PO", "DELETE", "Delete Purchase Orders" },
-                        new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" });
+                        new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" },
+                        new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
+                        new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
+                        new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
+                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
 
                 java.util.List<Permission> existingTenantPerms = permissionRepository.findAllByTenantId(t.getId());
                 java.util.Map<String, Permission> permMap = existingTenantPerms.stream()
@@ -295,7 +299,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "PO", "VIEW", "View Purchase Orders" },
                     new String[] { "PO", "UPDATE", "Update Purchase Orders" },
                     new String[] { "PO", "DELETE", "Delete Purchase Orders" },
-                    new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" });
+                    new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" },
+                    new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
+                    new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
+                    new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
+                    new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
 
             java.util.List<Permission> existingPerms = permissionRepository.findAllByTenantId(systemTenantId);
             java.util.Map<String, Permission> permMap = existingPerms.stream()

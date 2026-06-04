@@ -62,6 +62,15 @@ public class TenantController {
         return ResponseEntity.ok(tenantModuleService.getModulesForTenant(id));
     }
 
+    @GetMapping("/current/modules")
+    public ResponseEntity<List<TenantModule>> getCurrentTenantModules() {
+        Long tenantId = com.project.www.util.TenantContext.getCurrentTenant();
+        if (tenantId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(tenantModuleService.getModulesForTenant(tenantId));
+    }
+
     @PutMapping("/{id}/modules/{moduleName}/enable")
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_ENABLE)")
     public ResponseEntity<String> enableTenantModule(

@@ -147,14 +147,41 @@ public class AuthServiceImpl implements AuthService {
             java.util.List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION", "COMPANY_PROFILE", "SETTINGS");
             final Set<String> activeModules = modules; // for lambda
 
-            Set<String> permissions = user.getRole().getPermissions().stream()
-                    .filter(p -> coreModules.contains(p.getModule()) || activeModules.contains(p.getModule()))
-                    .map(com.project.www.entity.Permission::getPermissionKey)
-                    .collect(Collectors.toSet());
+            Set<String> permissions = new java.util.HashSet<>();
+            if (user.getRole() != null && user.getRole().getPermissions() != null) {
+                user.getRole().getPermissions().stream()
+                        .filter(com.project.www.entity.Permission::getActive)
+                        .filter(p -> coreModules.contains(p.getModule()) || activeModules.contains(p.getModule()))
+                        .map(com.project.www.entity.Permission::getPermissionKey)
+                        .forEach(permissions::add);
+            }
+            if (user.getPermissions() != null) {
+                user.getPermissions().stream()
+                        .filter(com.project.www.entity.Permission::getActive)
+                        .filter(p -> coreModules.contains(p.getModule()) || activeModules.contains(p.getModule()))
+                        .map(com.project.www.entity.Permission::getPermissionKey)
+                        .forEach(permissions::add);
+            }
+
+            Set<String> finalModules;
+            if (user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName())) {
+                finalModules = activeModules;
+            } else if (user.getModules() != null && !user.getModules().isEmpty()) {
+                finalModules = activeModules.stream()
+                        .filter(m -> user.getModules().contains(m))
+                        .collect(Collectors.toSet());
+            } else {
+                // If they have no user-level modules, they get no non-core modules unless they have permissions for them
+                // But let's just extract modules from their active permissions
+                finalModules = permissions.stream()
+                        .map(p -> p.split("_")[0]) // roughly getting module from permission key
+                        .filter(activeModules::contains)
+                        .collect(Collectors.toSet());
+            }
 
             String token = jwtService.generateToken(user.getEmail(), user.getTenantId(), tenant.getCode());
-            System.out.println("DEBUG - Tenant ID: " + tenant.getId() + " - Modules fetched: " + modules);
-            return new AuthResponse(token, permissions, modules, user.getRole().getName());
+            System.out.println("DEBUG - Tenant ID: " + tenant.getId() + " - Modules fetched: " + finalModules);
+            return new AuthResponse(token, permissions, finalModules, user.getRole() != null ? user.getRole().getName() : null);
         } finally {
             TenantContext.clear();
         }
@@ -237,7 +264,36 @@ public class AuthServiceImpl implements AuthService {
                         new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
                         new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
                         new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
-                        new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" }
+                        new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
+                        new String[] { "VENDOR", "CREATE", "Create Vendors" },
+                        new String[] { "VENDOR", "VIEW", "View Vendors" },
+                        new String[] { "VENDOR", "UPDATE", "Update Vendors" },
+                        new String[] { "VENDOR", "DELETE", "Delete Vendors" },
+                        new String[] { "VENDOR", "INVOICE_CREATE", "Create Vendor Invoices" },
+                        new String[] { "VENDOR", "INVOICE_VIEW", "View Vendor Invoices" },
+                        new String[] { "VENDOR", "INVOICE_UPDATE", "Update Vendor Invoices" },
+                        new String[] { "VENDOR", "INVOICE_DELETE", "Delete Vendor Invoices" },
+                        new String[] { "VENDOR", "CONTRACT_CREATE", "Create Vendor Contracts" },
+                        new String[] { "VENDOR", "CONTRACT_VIEW", "View Vendor Contracts" },
+                        new String[] { "VENDOR", "CONTRACT_UPDATE", "Update Vendor Contracts" },
+                        new String[] { "VENDOR", "CONTRACT_DELETE", "Delete Vendor Contracts" },
+                        new String[] { "VENDOR", "CATEGORY_CREATE", "Create Vendor Categories" },
+                        new String[] { "VENDOR", "CATEGORY_VIEW", "View Vendor Categories" },
+                        new String[] { "VENDOR", "CATEGORY_UPDATE", "Update Vendor Categories" },
+                        new String[] { "VENDOR", "CATEGORY_DELETE", "Delete Vendor Categories" },
+                        new String[] { "VENDOR", "AUDIT_CREATE", "Create Vendor Audits" },
+                        new String[] { "VENDOR", "AUDIT_VIEW", "View Vendor Audits" },
+                        new String[] { "VENDOR", "AUDIT_UPDATE", "Update Vendor Audits" },
+                        new String[] { "VENDOR", "AUDIT_DELETE", "Delete Vendor Audits" },
+                        new String[] { "PO", "CREATE", "Create Purchase Orders" },
+                        new String[] { "PO", "VIEW", "View Purchase Orders" },
+                        new String[] { "PO", "UPDATE", "Update Purchase Orders" },
+                        new String[] { "PO", "DELETE", "Delete Purchase Orders" },
+                        new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" },
+                        new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
+                        new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
+                        new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
+                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" }
                 );
 
                 java.util.List<com.project.www.entity.Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());

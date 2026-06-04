@@ -29,12 +29,14 @@ public class UserServiceImpl implements UserService {
     private final com.project.www.service.RoleExtraFieldService roleExtraFieldService;
     private final RoleHierarchyRepository roleHierarchyRepository;
     private final UserReportingRepository userReportingRepository;
+    private final PermissionRepository permissionRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
     private final com.project.www.repository.GlobalUserRegistryRepository globalUserRegistryRepository;
     private final com.project.www.repository.TenantRepository tenantRepository;
+    private final org.springframework.transaction.PlatformTransactionManager transactionManager;
 
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
     private String frontendUrl;
@@ -56,14 +58,14 @@ public class UserServiceImpl implements UserService {
         Long ogId = TenantContext.getCurrentTenant();
         try {
             TenantContext.clear();
-            globalEmailExists = globalUserRegistrySyncService.existsByEmail(request.getEmail());
+            globalEmailExists = globalUserRegistryRepository.existsByEmailAndTenantCode(request.getEmail(), ogCode);
         } finally {
             TenantContext.setCurrentTenant(ogId);
             TenantContext.setCurrentTenantCode(ogCode);
         }
 
         if (globalEmailExists) {
-            throw new RuntimeException("Email already exists in another workspace. Please use a unique email.");
+            throw new RuntimeException("Email already exists in this workspace.");
         }
 
         java.util.Set<Role> roles = new java.util.HashSet<>();
@@ -120,6 +122,16 @@ public class UserServiceImpl implements UserService {
             }
         }
 
+        java.util.Set<String> modules = new java.util.HashSet<>();
+        if (request.getModules() != null) {
+            modules.addAll(request.getModules());
+        }
+
+        java.util.Set<Permission> permissions = new java.util.HashSet<>();
+        if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {
+            permissions.addAll(permissionRepository.findAllById(request.getPermissionIds()));
+        }
+
         User user = User.builder()
                 .tenantId(tenantId)
                 .firstName(request.getFirstName())
@@ -131,6 +143,8 @@ public class UserServiceImpl implements UserService {
                 .active(true)
                 .role(role)
                 .roles(roles)
+                .permissions(permissions)
+                .modules(modules)
                 .assignedOffice(location)
                 .build();
 
@@ -191,15 +205,23 @@ public class UserServiceImpl implements UserService {
             String loginUrl = frontendUrl + "/login";
             
             // Try to find custom domain
-            String customDomain = null;
+            final String[] customDomainRef = {null};
             Long originalTenant = TenantContext.getCurrentTenant();
             String originalCode = TenantContext.getCurrentTenantCode();
             try {
                 TenantContext.clear();
-                com.project.www.entity.Tenant t = tenantRepository.findById(tenantId).orElse(null);
-                if (t != null && t.getDomain() != null && !t.getDomain().trim().isEmpty()) {
-                    customDomain = t.getDomain();
-                    loginUrl = "http://" + customDomain + ":5173/login";
+                org.springframework.transaction.support.TransactionTemplate template = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+                template.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                template.setReadOnly(true);
+                template.executeWithoutResult(status -> {
+                    com.project.www.entity.Tenant t = tenantRepository.findById(tenantId).orElse(null);
+                    if (t != null && t.getDomain() != null && !t.getDomain().trim().isEmpty()) {
+                        customDomainRef[0] = t.getDomain();
+                    }
+                });
+                
+                if (customDomainRef[0] != null) {
+                    loginUrl = "http://" + customDomainRef[0] + ":5173/login";
                 }
             } finally {
                 TenantContext.setCurrentTenant(originalTenant);
@@ -298,6 +320,13 @@ public class UserServiceImpl implements UserService {
             roles.add(primaryRole);
             user.setRoles(roles);
             user.setRole(primaryRole);
+        }
+
+        if (request.getModules() != null) {
+            user.setModules(new java.util.HashSet<>(request.getModules()));
+        }
+        if (request.getPermissionIds() != null) {
+            user.setPermissions(new java.util.HashSet<>(permissionRepository.findAllById(request.getPermissionIds())));
         }
 
         // --- SUPER ADMIN PROTECTION: PREVENT DEMOTION ---
@@ -470,6 +499,9 @@ public class UserServiceImpl implements UserService {
                 .updatedAt(user.getUpdatedAt())
                 .createdBy(user.getCreatedBy())
                 .updatedBy(user.getUpdatedBy())
+                .modules(user.getModules() != null ? new java.util.ArrayList<>(user.getModules()) : new java.util.ArrayList<>())
+                .permissions(user.getPermissions() != null ? user.getPermissions().stream().map(Permission::getPermissionKey).collect(Collectors.toList()) : new java.util.ArrayList<>())
+                .permissionIds(user.getPermissions() != null ? user.getPermissions().stream().map(Permission::getId).collect(Collectors.toList()) : new java.util.ArrayList<>())
                 .build();
     }
 

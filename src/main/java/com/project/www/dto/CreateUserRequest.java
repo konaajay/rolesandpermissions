@@ -39,4 +39,8 @@ public class CreateUserRequest {
     private Long supervisorUserId;
     
     private java.util.Map<String, Object> profileData;
+
+    private java.util.List<String> modules;
+
+    private java.util.List<Long> permissionIds;
 }

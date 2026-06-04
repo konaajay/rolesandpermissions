@@ -1,30 +1,35 @@
 package com.project.www.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ApiResponse<T> {
-    private boolean success;
+    private String message;
     private T data;
-    private String error;
+
+    public ApiResponse(String m, T d) {
+        this.message = m;
+        this.data = d;
+    }
+
+    public static <T> ApiResponse<T> ok(String m, T d) {
+        return new ApiResponse<>(m, d);
+    }
+
+    public static <T> ApiResponse<T> success(T data, String message) {
+        return new ApiResponse<>(message, data);
+    }
 
     public static <T> ApiResponse<T> success(T data) {
-        return ApiResponse.<T>builder()
-                .success(true)
-                .data(data)
-                .build();
+        return new ApiResponse<>("Success", data);
     }
 
     public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .error(message)
-                .build();
+        return new ApiResponse<>(message, null);
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public T getData() {
+        return data;
     }
 }

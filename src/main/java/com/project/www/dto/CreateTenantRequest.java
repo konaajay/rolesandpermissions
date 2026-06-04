@@ -14,6 +14,7 @@ public class CreateTenantRequest {
     @com.fasterxml.jackson.annotation.JsonAlias({"tenantCode", "companyCode"})
     private String tenantCode;
 
+    @com.fasterxml.jackson.annotation.JsonAlias({"domain", "customDomain"})
     private String domain;
 
     @NotBlank(message = "Admin first name is required")

@@ -17,17 +17,29 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (user.getRole() == null || !user.getRole().getActive()) {
-            return Collections.emptyList();
+        java.util.Set<GrantedAuthority> authorities = new java.util.HashSet<>();
+
+        if (user.getRole() != null && user.getRole().getActive()) {
+            user.getRole().getPermissions().stream()
+                    .filter(Permission::getActive)
+                    .map(Permission::getPermissionKey)
+                    .map(SimpleGrantedAuthority::new)
+                    .forEach(authorities::add);
+
+            if (user.getRole().getName() != null) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()));
+            }
         }
 
-        return user.getRole()
-                .getPermissions()
-                .stream()
-                .filter(Permission::getActive)
-                .map(Permission::getPermissionKey)
-                .map(SimpleGrantedAuthority::new)
-                .toList();
+        if (user.getPermissions() != null) {
+            user.getPermissions().stream()
+                    .filter(Permission::getActive)
+                    .map(Permission::getPermissionKey)
+                    .map(SimpleGrantedAuthority::new)
+                    .forEach(authorities::add);
+        }
+
+        return authorities;
     }
 
     @Override

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Table(name = "global_users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "email", name = "uk_global_email")
+        @UniqueConstraint(columnNames = {"email", "tenant_code"}, name = "uk_email_tenant")
 })
 public class GlobalUserRegistry {
 
@@ -20,7 +20,7 @@ public class GlobalUserRegistry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false, name = "tenant_id")
@@ -28,6 +28,9 @@ public class GlobalUserRegistry {
 
     @Column(name = "user_id")
     private Long userId;
+
+    @Column(name = "tenant_code")
+    private String tenantCode;
 
     @Builder.Default
     @Column(nullable = false)
