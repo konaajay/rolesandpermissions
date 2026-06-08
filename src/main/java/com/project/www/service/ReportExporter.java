@@ -1,8 +1,10 @@
 package com.project.www.service;
 
+import com.project.www.marketing.entity.Campaign;
+
 import com.project.www.enums.*;
 
-import com.project.www.dto.CampaignReportDTO;
+import com.project.www.marketing.dto.CampaignReportDTO;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;

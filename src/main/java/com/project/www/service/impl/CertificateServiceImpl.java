@@ -1,14 +1,19 @@
 package com.project.www.service.impl;
 
+import com.project.www.accessmanagement.repository.UserRepository;
+
+
+
+
 import com.project.www.dto.GenerateCertificateDto;
-import com.project.www.dto.PublicVerificationDto;
-import com.project.www.entity.EmployeeCertificate;
-import com.project.www.entity.TemplateDefinition;
-import com.project.www.entity.User;
-import com.project.www.repository.CompanyProfileRepository;
-import com.project.www.repository.EmployeeCertificateRepository;
-import com.project.www.repository.TemplateDefinitionRepository;
-import com.project.www.repository.UserRepository;
+import com.project.www.accessmanagement.dto.PublicVerificationDto;
+import com.project.www.accessmanagement.entity.EmployeeCertificate;
+import com.project.www.tenant.entity.TemplateDefinition;
+import com.project.www.accessmanagement.entity.User;
+import com.project.www.tenant.repository.CompanyProfileRepository;
+import com.project.www.accessmanagement.repository.EmployeeCertificateRepository;
+import com.project.www.tenant.repository.TemplateDefinitionRepository;
+import com.project.www.accessmanagement.repository.UserRepository;
 import com.project.www.service.CertificateService;
 import com.project.www.service.EmailService;
 import com.project.www.service.PdfAndQrGenerationService;

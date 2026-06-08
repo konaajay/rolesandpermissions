@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.project.www.service.MarketingAnalyticsService;
+import com.project.www.marketing.service.MarketingAnalyticsService;
 
 @RestController
 @RequestMapping("/marketing/admin/analytics")

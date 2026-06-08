@@ -1,5 +1,9 @@
 package com.project.www.config;
 
+import com.project.www.accessmanagement.entity.Role;
+
+import com.project.www.tenant.entity.Tenant;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

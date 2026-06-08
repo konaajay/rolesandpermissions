@@ -1,11 +1,17 @@
 package com.project.www.service;
 
+import com.project.www.marketing.entity.EmailRecipient;
+
+import com.project.www.marketing.entity.EmailCampaign;
+
+import com.project.www.marketing.entity.Campaign;
+
 import com.project.www.enums.*;
 import com.project.www.dto.EmailProviderResult;
-import com.project.www.entity.EmailRecipient;
+import com.project.www.marketing.entity.EmailRecipient;
 import com.project.www.enums.EmailStatus;
-import com.project.www.entity.EmailCampaign;
-import com.project.www.entity.Campaign;
+import com.project.www.marketing.entity.EmailCampaign;
+import com.project.www.marketing.entity.Campaign;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
@@ -17,6 +23,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
+@lombok.extern.slf4j.Slf4j
 public class EmailSenderService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailSenderService.class);

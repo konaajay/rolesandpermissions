@@ -1,7 +1,7 @@
 package com.project.www.security;
 
-import com.project.www.entity.User;
-import com.project.www.repository.UserRepository;
+import com.project.www.accessmanagement.entity.User;
+import com.project.www.accessmanagement.repository.UserRepository;
 import com.project.www.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.*;

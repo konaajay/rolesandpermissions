@@ -1,8 +1,12 @@
 package com.project.www.service;
 
-import com.project.www.entity.User;
+import com.project.www.accessmanagement.repository.UserRepository;
+import com.project.www.accessmanagement.entity.User;
 
-import com.project.www.repository.UserRepository;
+
+import com.project.www.accessmanagement.entity.User;
+
+import com.project.www.accessmanagement.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.project.www.exception.UnauthorizedAccessException;

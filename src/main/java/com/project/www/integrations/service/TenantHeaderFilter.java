@@ -1,5 +1,9 @@
 package com.project.www.integrations.service;
 
+import com.project.www.tenant.entity.Tenant;
+
+import com.project.www.accessmanagement.entity.User;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,7 +1,9 @@
 package com.project.www.security;
 
+import com.project.www.tenant.entity.Tenant;
+
 import com.project.www.util.TenantContext;
-import com.project.www.repository.TenantRepository;
+import com.project.www.tenant.repository.TenantRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -59,7 +61,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 // Fallback: Resolve tenant code from Master Database
                 try {
                     TenantContext.setCurrentTenantCode("master");
-                    Optional<com.project.www.entity.Tenant> t = tenantRepository.findById(tenantId);
+                    Optional<Tenant> t = tenantRepository.findById(tenantId);
                     if (t.isPresent()) {
                         code = t.get().getCode();
                     }

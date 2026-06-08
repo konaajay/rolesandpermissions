@@ -1,7 +1,10 @@
 package com.project.www.security;
 
-import com.project.www.entity.Permission;
-import com.project.www.entity.User;
+import com.project.www.accessmanagement.entity.User;
+
+
+import com.project.www.accessmanagement.entity.Permission;
+import com.project.www.accessmanagement.entity.User;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

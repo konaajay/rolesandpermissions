@@ -1,9 +1,13 @@
 package com.project.www.service;
 
+import com.project.www.marketing.entity.EmailRecipient;
+
+import com.project.www.marketing.entity.EmailCampaign;
+
 import com.project.www.config.MarketingProperties;
 import com.project.www.dto.EmailProviderResult;
-import com.project.www.entity.EmailCampaign;
-import com.project.www.entity.EmailRecipient;
+import com.project.www.marketing.entity.EmailCampaign;
+import com.project.www.marketing.entity.EmailRecipient;
 import com.project.www.enums.EmailStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 
 @Service
+@lombok.extern.slf4j.Slf4j
 public class ResendEmailService {
 
     private static final Logger log = LoggerFactory.getLogger(ResendEmailService.class);

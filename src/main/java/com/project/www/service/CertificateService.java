@@ -1,7 +1,7 @@
 package com.project.www.service;
 
 import com.project.www.dto.GenerateCertificateDto;
-import com.project.www.entity.EmployeeCertificate;
+import com.project.www.accessmanagement.entity.EmployeeCertificate;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 

@@ -1,7 +1,7 @@
 package com.project.www.controller;
 
 import com.project.www.dto.GenerateCertificateDto;
-import com.project.www.entity.EmployeeCertificate;
+import com.project.www.accessmanagement.entity.EmployeeCertificate;
 import com.project.www.service.CertificateService;
 import com.project.www.util.TenantContext;
 import org.springframework.beans.factory.annotation.Autowired;

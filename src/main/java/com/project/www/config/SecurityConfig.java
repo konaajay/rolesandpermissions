@@ -1,5 +1,7 @@
 package com.project.www.config;
 
+import com.project.www.marketing.entity.Content;
+
 import com.project.www.security.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

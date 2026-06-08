@@ -1,5 +1,9 @@
 package com.project.www.service;
 
+import com.project.www.tenant.entity.Tenant;
+
+import com.project.www.accessmanagement.entity.User;
+
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,5 +1,7 @@
 package com.project.www.integrations.service.impl;
 
+import com.project.www.tenant.entity.Tenant;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,5 +1,7 @@
 package com.project.www.entity;
 
+import com.project.www.accessmanagement.entity.User;
+
 /**
  * Biological/social gender field for the User entity.
  * Kept simple and extensible — add more values as needed by specific modules

@@ -1,5 +1,7 @@
 package com.project.www.util;
 
+import com.project.www.tenant.entity.Tenant;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 

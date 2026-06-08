@@ -1,8 +1,10 @@
 package com.project.www.service.email;
 
+import com.project.www.marketing.entity.EmailRecipient;
+
 import com.project.www.enums.*;
 
-import com.project.www.entity.EmailRecipient;
+import com.project.www.marketing.entity.EmailRecipient;
 import com.project.www.dto.EmailProviderResult;
 import com.project.www.service.ResendEmailService;
 import org.springframework.beans.factory.annotation.Autowired;

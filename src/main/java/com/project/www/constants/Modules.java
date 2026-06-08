@@ -1,5 +1,7 @@
 package com.project.www.constants;
 
+import com.project.www.vendor.entity.Vendor;
+
 public final class Modules {
     
     private Modules() {}

@@ -1,21 +1,35 @@
 package com.project.www.config;
 
-import com.project.www.entity.*;
-import com.project.www.repository.*;
-import com.project.www.util.TenantContext;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.core.io.ClassPathResource;
+import java.util.Set;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.Statement;
-import java.util.HashSet;
-import java.util.Set;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import com.project.www.accessmanagement.entity.Permission;
+import com.project.www.accessmanagement.entity.Role;
+import com.project.www.accessmanagement.repository.PermissionRepository;
+import com.project.www.accessmanagement.repository.RoleExtraFieldRepository;
+import com.project.www.accessmanagement.repository.RoleHierarchyRepository;
+import com.project.www.accessmanagement.repository.RoleRepository;
+import com.project.www.marketing.repository.PipelineStageRepository;
+import com.project.www.tenant.entity.Tenant;
+import com.project.www.tenant.entity.TenantModule;
+import com.project.www.tenant.entity.TenantSequence;
+import com.project.www.tenant.repository.TenantModuleRepository;
+import com.project.www.tenant.repository.TenantRepository;
+import com.project.www.tenant.repository.TenantSequenceRepository;
+import com.project.www.accessmanagement.entity.User;
+import com.project.www.accessmanagement.repository.UserReportingRepository;
+import com.project.www.accessmanagement.repository.UserRepository;
+import com.project.www.util.TenantContext;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
@@ -34,9 +48,9 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final DataSource dataSource;
     private final PipelineStageRepository pipelineStageRepository;
-    private final com.project.www.service.TemplateDefinitionService templateDefinitionService;
-    private final com.project.www.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
-    private final com.project.www.service.TenantDatabaseService tenantDatabaseService;
+    private final com.project.www.tenant.service.TemplateDefinitionService templateDefinitionService;
+    private final com.project.www.accessmanagement.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
+    private final com.project.www.tenant.service.TenantDatabaseService tenantDatabaseService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -48,36 +62,110 @@ public class DatabaseSeeder implements CommandLineRunner {
             masterPopulator.addScript(new ClassPathResource("master-schema.sql"));
             masterPopulator.execute(dataSource);
             log.info("Successfully executed master-schema.sql on database");
-            
+
             // Patch existing tables in master database to add missing columns
             try (java.sql.Statement stmt = conn.createStatement()) {
                 // Patch tenants table
-                try { stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN super_admin_name VARCHAR(255)"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN phone VARCHAR(255)"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE'"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_type VARCHAR(50)"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_start_date DATE"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_end_date DATE"); } catch (Exception e) {}
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN super_admin_name VARCHAR(255)");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN phone VARCHAR(255)");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE'");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_type VARCHAR(50)");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_start_date DATE");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_end_date DATE");
+                } catch (Exception e) {
+                }
 
                 // Patch tenant_modules
-                try { stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN amount DOUBLE"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN payment_method VARCHAR(255)"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN special_requirements TEXT"); } catch (Exception e) {}
-                try { stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN extra_charges DOUBLE"); } catch (Exception e) {}
-                
-                try { stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE id_format_settings DROP COLUMN format_string"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN stamp_url VARCHAR(500)"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN signature_url VARCHAR(500)"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN header_image_url VARCHAR(500)"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN footer_image_url VARCHAR(500)"); } catch (Exception ex) {}
-                try { stmt.executeUpdate("ALTER TABLE employee_certificates ADD COLUMN custom_html TEXT"); } catch (Exception ex) {}
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN amount DOUBLE");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN payment_method VARCHAR(255)");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN special_requirements TEXT");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN extra_charges DOUBLE");
+                } catch (Exception e) {
+                }
+
+                try {
+                    stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate(
+                            "ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate(
+                            "ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate(
+                            "ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE id_format_settings DROP COLUMN format_string");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate(
+                            "ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate(
+                            "ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN stamp_url VARCHAR(500)");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN signature_url VARCHAR(500)");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN header_image_url VARCHAR(500)");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN footer_image_url VARCHAR(500)");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE employee_certificates ADD COLUMN custom_html TEXT");
+                } catch (Exception ex) {
+                }
             } catch (Exception e) {
                 log.warn("Failed to patch tables: " + e.getMessage());
             }
@@ -100,7 +188,8 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         final Long systemTenantId = systemTenant.getId();
 
-        // Load all other tenants into DynamicDataSourceManager so they are available upon restart
+        // Load all other tenants into DynamicDataSourceManager so they are available
+        // upon restart
         try {
             TenantContext.clear();
             java.util.List<Tenant> allTenants = tenantRepository.findAll();
@@ -108,15 +197,107 @@ public class DatabaseSeeder implements CommandLineRunner {
                 if (!"SYS".equalsIgnoreCase(t.getCode()) && t.getDbName() != null) {
                     log.info("Re-registering existing tenant DB for: " + t.getCode());
                     tenantDatabaseService.registerExistingTenantDatabase(t.getCode(), t.getDbName());
-                    
+
                     // PATCH TENANT DATABASE
-                    try (java.sql.Connection tConn = java.sql.DriverManager.getConnection("jdbc:mysql://localhost:3306/" + t.getDbName() + "?createDatabaseIfNotExist=true", "root", "root");
-                         java.sql.Statement tStmt = tConn.createStatement()) {
-                        try { tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT"); } catch(Exception ex){}
-                        try { tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)"); } catch(Exception ex){}
-                        try { tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)"); } catch(Exception ex){}
-                        try { tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN requirement_type VARCHAR(255)"); } catch(Exception ex){}
-                        try { tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN return_date DATE"); } catch(Exception ex){}
+                    try (java.sql.Connection tConn = java.sql.DriverManager.getConnection(
+                            "jdbc:mysql://localhost:3306/" + t.getDbName() + "?createDatabaseIfNotExist=true", "root",
+                            "root");
+                            java.sql.Statement tStmt = tConn.createStatement()) {
+                        try {
+                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "ALTER TABLE vendor_invoices ADD COLUMN vendor_contracts ADD COLUMN document_url VARCHAR(500)");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "ALTER TABLE vendor_requirements ADD COLUMN requirement_type VARCHAR(255)");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN return_date DATE");
+                        } catch (Exception ex) {
+                        }
+
+                        // User set-based relationship tables patch
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS user_permissions (user_id BIGINT NOT NULL, permission_id BIGINT NOT NULL, PRIMARY KEY (user_id, permission_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS user_modules (user_id BIGINT NOT NULL, module_name VARCHAR(255) NOT NULL, PRIMARY KEY (user_id, module_name), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+
+                        // Marketing Tables
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS campaigns (campaign_id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_name VARCHAR(150) NOT NULL, subject VARCHAR(200), campaign_type VARCHAR(50), start_date DATE, end_date DATE, budget DECIMAL(19,2) NOT NULL, status VARCHAR(20), description VARCHAR(500), channel VARCHAR(255) NOT NULL, target_audience VARCHAR(255) NOT NULL, audience_filters TEXT, module_type VARCHAR(50), audience_source VARCHAR(50), content TEXT, scheduled_at DATETIME, sent_count INT DEFAULT 0, failed_count INT DEFAULT 0, open_count INT DEFAULT 0, click_count INT DEFAULT 0, archived_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS campaign_recipients (campaign_id BIGINT NOT NULL, email VARCHAR(255), FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS landing_pages (id BIGINT AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE, title VARCHAR(255) NOT NULL, headline VARCHAR(255), subtitle VARCHAR(255), description TEXT, module_type VARCHAR(255), landing_page_type VARCHAR(255), price DECIMAL(19,2), ad_budget DECIMAL(19,2), video_url VARCHAR(255), cta_text VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS landing_page_features (landing_page_id BIGINT NOT NULL, feature VARCHAR(255), FOREIGN KEY (landing_page_id) REFERENCES landing_pages(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS campaign_performance (id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_id BIGINT NOT NULL, impressions INT DEFAULT 0, clicks INT DEFAULT 0, conversions INT DEFAULT 0, spend DECIMAL(19,2), recorded_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS traffic_events (id BIGINT AUTO_INCREMENT PRIMARY KEY, event_type VARCHAR(255) NOT NULL, source VARCHAR(255), medium VARCHAR(255), campaign_name VARCHAR(255), url VARCHAR(255), ip_address VARCHAR(255), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS tracked_links (id BIGINT AUTO_INCREMENT PRIMARY KEY, tracked_link_id VARCHAR(255), landing_slug VARCHAR(255), source VARCHAR(255), medium VARCHAR(255), campaign VARCHAR(255), generated_link VARCHAR(255), ad_budget DECIMAL(19,2), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS email_campaigns (id BIGINT AUTO_INCREMENT PRIMARY KEY, subject VARCHAR(200), body TEXT, status VARCHAR(50), sent_at DATETIME, total_sent INT DEFAULT 0, opened INT DEFAULT 0, clicked INT DEFAULT 0, bounced INT DEFAULT 0, core_campaign_id BIGINT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS coupons (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) NOT NULL, discount_value DOUBLE NOT NULL, discount_cap DOUBLE, expiry_date DATETIME, max_usage INT, used_count INT DEFAULT 0, min_purchase_amount DOUBLE DEFAULT 0.0, per_user_limit INT DEFAULT 1, is_first_order_only BOOLEAN DEFAULT FALSE, auto_apply BOOLEAN DEFAULT FALSE, affiliate_id BIGINT, learner_id BIGINT, status VARCHAR(20), deleted BOOLEAN DEFAULT FALSE, campaign_id BIGINT, created_by VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+
                         log.info("Patched tenant database: " + t.getDbName());
                     } catch (Exception e) {
                         log.warn("Failed to patch tenant database: " + t.getDbName() + ", error: " + e.getMessage());
@@ -162,6 +343,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
                         new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
                         new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
+                        new String[] { "ROLE", "VIEW", "Ability to view roles" },
+                        new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
                         new String[] { "VENDOR", "CREATE", "Create Vendors" },
                         new String[] { "VENDOR", "VIEW", "View Vendors" },
                         new String[] { "VENDOR", "UPDATE", "Update Vendors" },
@@ -190,7 +373,10 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
                         new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
                         new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
-                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
+                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" },
+                        new String[] { "MARKETING", "ANALYTICS_VIEW", "View Marketing Analytics" },
+                        new String[] { "MARKETING", "CAMPAIGN_VIEW", "View Marketing Campaign Analytics" },
+                        new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" });
 
                 java.util.List<Permission> existingTenantPerms = permissionRepository.findAllByTenantId(t.getId());
                 java.util.Map<String, Permission> permMap = existingTenantPerms.stream()
@@ -241,7 +427,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 }
 
                 java.util.List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()
-                        .map(com.project.www.entity.TemplateDefinition::getTemplateCode)
+                        .map(com.project.www.tenant.entity.TemplateDefinition::getTemplateCode)
                         .collect(java.util.stream.Collectors.toList());
                 templateDefinitionService.importSystemTemplates(sysCodes);
 
@@ -263,10 +449,12 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "USER", "VIEW", "Ability to view users" },
                     new String[] { "USER", "UPDATE", "Ability to update users" },
                     new String[] { "USER", "DELETE", "Ability to delete users" },
+                    new String[] { "ROLE", "VIEW", "Ability to view roles" },
                     new String[] { "ROLE", "CREATE", "Ability to create new roles" },
                     new String[] { "ROLE", "UPDATE", "Ability to update roles" },
                     new String[] { "ROLE", "DISABLE", "Ability to disable roles" },
                     new String[] { "ROLE", "ENABLE", "Ability to enable roles" },
+                    new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
                     new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
                     new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
                     new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
@@ -274,6 +462,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "SETTINGS", "MANAGE_ID_FORMATS", "Ability to manage ID generation formats" },
                     new String[] { "COMPANY_PROFILE", "VIEW", "Ability to view company profile" },
                     new String[] { "COMPANY_PROFILE", "UPDATE", "Ability to update company profile" },
+                    new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
                     new String[] { "DASHBOARD", "VIEW", "View Dashboard" },
                     new String[] { "VENDOR", "CREATE", "Create Vendors" },
                     new String[] { "VENDOR", "VIEW", "View Vendors" },
@@ -303,7 +492,10 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
                     new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
                     new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
-                    new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
+                    new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" },
+                    new String[] { "MARKETING", "ANALYTICS_VIEW", "View Marketing Analytics" },
+                    new String[] { "MARKETING", "CAMPAIGN_VIEW", "View Marketing Campaign Analytics" },
+                    new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" });
 
             java.util.List<Permission> existingPerms = permissionRepository.findAllByTenantId(systemTenantId);
             java.util.Map<String, Permission> permMap = existingPerms.stream()

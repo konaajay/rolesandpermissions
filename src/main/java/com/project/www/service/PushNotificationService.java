@@ -1,5 +1,7 @@
 package com.project.www.service;
 
+import com.project.www.tenant.entity.Subscription;
+
 import com.project.www.config.MarketingProperties;
 import com.project.www.entity.PushNotification;
 import com.project.www.entity.PushSubscription;
@@ -16,6 +18,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 @Service
+@lombok.extern.slf4j.Slf4j
 public class PushNotificationService {
     private static final Logger log = LoggerFactory.getLogger(PushNotificationService.class);
 

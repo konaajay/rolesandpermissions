@@ -14,16 +14,16 @@ import java.util.Map;
 @Configuration
 public class DataSourceConfig {
 
-    @Value("${spring.datasource.url}")
+    @Value("${spring.datasource.url:${DB_URL:jdbc:mysql://localhost:3306/rbac_db?createDatabaseIfNotExist=true}}")
     private String masterUrl;
 
-    @Value("${spring.datasource.username}")
+    @Value("${spring.datasource.username:${DB_USERNAME:root}}")
     private String masterUsername;
 
-    @Value("${spring.datasource.password}")
+    @Value("${spring.datasource.password:${DB_PASSWORD:root}}")
     private String masterPassword;
 
-    @Value("${spring.datasource.driver-class-name}")
+    @Value("${spring.datasource.driver-class-name:com.mysql.cj.jdbc.Driver}")
     private String driverClassName;
 
     @Bean(name = "masterDataSource")

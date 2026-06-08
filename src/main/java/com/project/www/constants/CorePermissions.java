@@ -1,5 +1,17 @@
 package com.project.www.constants;
 
+import com.project.www.tenant.service.impl.TenantServiceImpl;
+
+import com.project.www.accessmanagement.service.impl.AuthServiceImpl;
+
+import com.project.www.accessmanagement.entity.Permission;
+
+import com.project.www.accessmanagement.entity.Role;
+
+import com.project.www.tenant.entity.Tenant;
+
+import com.project.www.accessmanagement.entity.User;
+
 /**
  * Core system-level permission keys — single source of truth for @PreAuthorize.
  *

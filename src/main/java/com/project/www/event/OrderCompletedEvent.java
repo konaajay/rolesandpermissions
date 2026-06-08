@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrderCompletedEvent {
     private String orderId;
-    private String referralCode;
+
     private String sessionId;
     private Long studentId;
-    private Long courseId;
+
     private java.math.BigDecimal amount;
 }

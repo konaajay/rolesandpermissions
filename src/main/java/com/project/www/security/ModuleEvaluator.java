@@ -1,6 +1,11 @@
 package com.project.www.security;
 
-import com.project.www.repository.TenantModuleRepository;
+import com.project.www.tenant.repository.TenantModuleRepository;
+
+
+import com.project.www.tenant.entity.TenantModule;
+
+import com.project.www.tenant.repository.TenantModuleRepository;
 import com.project.www.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

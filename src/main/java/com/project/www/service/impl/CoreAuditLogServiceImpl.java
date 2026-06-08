@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service("coreAuditLogService")
+@lombok.extern.slf4j.Slf4j
 public class CoreAuditLogServiceImpl implements AuditLogService {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAuditLogServiceImpl.class);
