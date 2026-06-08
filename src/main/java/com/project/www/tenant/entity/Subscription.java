@@ -23,8 +23,14 @@ public class Subscription extends Auditable {
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
 
+    @Column(name = "plan_id")
+    private Long planId;
+
     @Column(name = "plan_name")
     private String planName;
+
+    @Column(name = "billing_interval")
+    private String billingInterval; // MONTHLY, YEARLY
 
     private Double amount;
 

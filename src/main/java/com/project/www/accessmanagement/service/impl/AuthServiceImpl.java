@@ -116,6 +116,19 @@ public class AuthServiceImpl implements AuthService {
                 }
                 throw new RuntimeException("PAYMENT_REQUIRED: Your 15-day free trial has expired. Please upgrade your subscription to continue.");
             }
+        } else if ("ACTIVE".equalsIgnoreCase(tenant.getStatus()) && tenant.getSubscriptionEndDate() != null) {
+            if (java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
+                tenant.setStatus("EXPIRED");
+                // Do not set active=false immediately, maybe give a grace period or just expire
+                String ogCode = TenantContext.getCurrentTenantCode();
+                try {
+                    TenantContext.clear();
+                    tenantRepository.save(tenant);
+                } finally {
+                    TenantContext.setCurrentTenantCode(ogCode);
+                }
+                throw new RuntimeException("PAYMENT_REQUIRED: Your subscription has expired. Please renew your plan to continue.");
+            }
         } else if ("EXPIRED".equalsIgnoreCase(tenant.getStatus())) {
             throw new RuntimeException("PAYMENT_REQUIRED: Your subscription has expired. Please renew your plan to continue.");
         }

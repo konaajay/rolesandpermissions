@@ -38,14 +38,28 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new RuntimeException("Tenant not found"));
                 
+            // 0. Find the plan if provided
+            com.project.www.tenant.entity.SubscriptionPlan plan = null;
+            if (request.getPlanId() != null) {
+                plan = com.project.www.tenant.repository.SubscriptionPlanRepository.class.cast(org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext(
+                        ((org.springframework.web.context.request.ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()).getRequest().getServletContext()
+                ).getBean(com.project.www.tenant.repository.SubscriptionPlanRepository.class)).findById(request.getPlanId()).orElse(null);
+            }
+                
             LocalDate startDate = LocalDate.now();
-            LocalDate endDate = startDate.plusDays(request.getDurationDays() != null ? request.getDurationDays() : 30);
+            int days = request.getDurationDays() != null ? request.getDurationDays() : 30;
+            if ("YEARLY".equalsIgnoreCase(request.getBillingInterval())) {
+                days = 365;
+            }
+            LocalDate endDate = startDate.plusDays(days);
             
             // 1. Create the History Record
             Subscription subscription = Subscription.builder()
                 .tenant(tenant)
-                .planName(request.getPlanName())
-                .amount(request.getAmount())
+                .planId(plan != null ? plan.getId() : null)
+                .planName(plan != null ? plan.getName() : request.getPlanName())
+                .billingInterval(request.getBillingInterval() != null ? request.getBillingInterval() : "MONTHLY")
+                .amount(request.getAmount() != null ? request.getAmount() : (plan != null ? plan.getMonthlyPrice() : 0.0))
                 .startDate(startDate)
                 .endDate(endDate)
                 .status("ACTIVE")
@@ -55,13 +69,42 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             subscription = subscriptionRepository.save(subscription);
             
             // 2. Update the Tenant Entity itself
-            tenant.setSubscriptionType(request.getPlanName());
+            tenant.setSubscriptionType(subscription.getPlanName());
             tenant.setSubscriptionStartDate(startDate);
             tenant.setSubscriptionEndDate(endDate);
             tenant.setStatus("ACTIVE"); // Removes them from EXPIRED/TRIAL status
             tenant.setActive(true);
             
             tenantRepository.save(tenant);
+            
+            // 3. Update Tenant Modules based on the plan
+            if (plan != null && plan.getModules() != null) {
+                com.project.www.tenant.repository.TenantModuleRepository tmRepo = org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext(
+                        ((org.springframework.web.context.request.ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()).getRequest().getServletContext()
+                ).getBean(com.project.www.tenant.repository.TenantModuleRepository.class);
+                
+                // Keep the CORE modules + the ones from the plan
+                List<com.project.www.tenant.entity.TenantModule> existing = tmRepo.findByTenantId(tenant.getId());
+                // Set all to inactive first
+                for (com.project.www.tenant.entity.TenantModule tm : existing) {
+                    tm.setActive(false);
+                    tmRepo.save(tm);
+                }
+                
+                for (String mod : plan.getModules()) {
+                    com.project.www.tenant.entity.TenantModule tm = tmRepo.findByTenantIdAndModuleName(tenant.getId(), mod).orElse(null);
+                    if (tm == null) {
+                        tmRepo.save(com.project.www.tenant.entity.TenantModule.builder()
+                                .tenantId(tenant.getId())
+                                .moduleName(mod)
+                                .active(true)
+                                .build());
+                    } else {
+                        tm.setActive(true);
+                        tmRepo.save(tm);
+                    }
+                }
+            }
             
             return subscriptionMapper.toDto(subscription);
         } finally {

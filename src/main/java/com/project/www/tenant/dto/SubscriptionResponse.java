@@ -12,8 +12,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class SubscriptionResponse {
     private Long id;
+    private Long planId;
     private String planName;
     private Double amount;
+    private String billingInterval;
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;

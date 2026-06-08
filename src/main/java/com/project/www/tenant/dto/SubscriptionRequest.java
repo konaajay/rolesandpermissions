@@ -11,8 +11,10 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionRequest {
-    private String planName;
+    private Long planId;
+    private String planName; // Only if custom plan
     private Double amount;
-    private Integer durationDays;
+    private String billingInterval; // MONTHLY, YEARLY
+    private Integer durationDays; // Fallback
     private String paymentReference;
 }

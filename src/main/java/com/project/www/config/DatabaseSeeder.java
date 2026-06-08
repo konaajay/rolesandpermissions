@@ -28,6 +28,8 @@ import com.project.www.accessmanagement.repository.UserReportingRepository;
 import com.project.www.accessmanagement.repository.UserRepository;
 import com.project.www.util.TenantContext;
 
+import com.project.www.tenant.entity.SubscriptionPlan;
+import com.project.www.tenant.repository.SubscriptionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,6 +53,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final com.project.www.tenant.service.TemplateDefinitionService templateDefinitionService;
     private final com.project.www.accessmanagement.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
     private final com.project.www.tenant.service.TenantDatabaseService tenantDatabaseService;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -327,6 +330,38 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .active(true)
                         .build());
             }
+        }
+
+        // --- SUBSCRIPTION PLANS SEEDING ---
+        if (subscriptionPlanRepository.count() == 0) {
+            log.info("Seeding default Subscription Plans...");
+            subscriptionPlanRepository.save(SubscriptionPlan.builder()
+                    .name("Starter")
+                    .description("Basic plan for small teams")
+                    .monthlyPrice(29.0)
+                    .yearlyPrice(290.0)
+                    .maxUsers(10)
+                    .modules(Set.of("CRM", "EMPLOYEE"))
+                    .active(true)
+                    .build());
+            subscriptionPlanRepository.save(SubscriptionPlan.builder()
+                    .name("Professional")
+                    .description("Advanced features for growing businesses")
+                    .monthlyPrice(99.0)
+                    .yearlyPrice(990.0)
+                    .maxUsers(50)
+                    .modules(Set.of("CRM", "HRMS", "VENDOR", "EMPLOYEE"))
+                    .active(true)
+                    .build());
+            subscriptionPlanRepository.save(SubscriptionPlan.builder()
+                    .name("Enterprise")
+                    .description("All-inclusive plan for large organizations")
+                    .monthlyPrice(299.0)
+                    .yearlyPrice(2990.0)
+                    .maxUsers(null) // Unlimited
+                    .modules(Set.of("CRM", "HRMS", "VENDOR", "EMPLOYEE", "ADMIN", "MARKETING"))
+                    .active(true)
+                    .build());
         }
 
         // Apply schema to ALL existing tenants to ensure missing tables are created
