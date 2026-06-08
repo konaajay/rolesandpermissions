@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface SubscriptionService {
     SubscriptionResponse upgradeSubscription(SubscriptionRequest request);
+    SubscriptionResponse assignSubscriptionToTenant(Long targetTenantId, SubscriptionRequest request);
     List<SubscriptionResponse> getSubscriptionHistory();
     List<SubscriptionResponse> getAllSubscriptions(); // Platform Admin Only
 }

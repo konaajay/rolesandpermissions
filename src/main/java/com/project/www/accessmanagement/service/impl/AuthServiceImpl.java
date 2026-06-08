@@ -169,7 +169,7 @@ public class AuthServiceImpl implements AuthService {
                 modules = new HashSet<>();
             }
 
-            java.util.List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION", "COMPANY_PROFILE", "SETTINGS", "SETTINGS_MANAGE", "SUBSCRIPTION", "PO", "PERFORMANCE", "MARKETING");
+            java.util.List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION", "COMPANY_PROFILE", "SETTINGS", "SETTINGS_MANAGE", "SUBSCRIPTION");
             final Set<String> activeModules = modules; // for lambda
 
             Set<String> permissions = new java.util.HashSet<>();

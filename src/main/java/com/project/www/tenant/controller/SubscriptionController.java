@@ -26,6 +26,16 @@ public class SubscriptionController {
         ));
     }
 
+    @PostMapping("/admin/assign/{tenantId}")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_UPDATE)")
+    public ResponseEntity<ApiResponse<SubscriptionResponse>> assignSubscriptionToTenant(
+            @PathVariable Long tenantId, 
+            @RequestBody SubscriptionRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+            subscriptionService.assignSubscriptionToTenant(tenantId, request)
+        ));
+    }
+
     @GetMapping
     
     public ResponseEntity<ApiResponse<List<SubscriptionResponse>>> getSubscriptionHistory() {

@@ -29,6 +29,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Transactional
     public SubscriptionResponse upgradeSubscription(SubscriptionRequest request) {
         Long tenantId = TenantContext.getCurrentTenant();
+        return processSubscription(tenantId, request);
+    }
+
+    @Override
+    @Transactional
+    public SubscriptionResponse assignSubscriptionToTenant(Long targetTenantId, SubscriptionRequest request) {
+        return processSubscription(targetTenantId, request);
+    }
+
+    private SubscriptionResponse processSubscription(Long tenantId, SubscriptionRequest request) {
         
         // Temporarily clear context to save against the master db properly
         String ogCode = TenantContext.getCurrentTenantCode();
@@ -47,11 +57,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             }
                 
             LocalDate startDate = LocalDate.now();
-            int days = request.getDurationDays() != null ? request.getDurationDays() : 30;
-            if ("YEARLY".equalsIgnoreCase(request.getBillingInterval())) {
-                days = 365;
+            LocalDate endDate = request.getEndDate();
+            if (endDate == null) {
+                int days = request.getDurationDays() != null ? request.getDurationDays() : 30;
+                if ("YEARLY".equalsIgnoreCase(request.getBillingInterval())) {
+                    days = 365;
+                }
+                endDate = startDate.plusDays(days);
             }
-            LocalDate endDate = startDate.plusDays(days);
             
             // 1. Create the History Record
             Subscription subscription = Subscription.builder()
@@ -77,21 +90,26 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             
             tenantRepository.save(tenant);
             
-            // 3. Update Tenant Modules based on the plan
-            if (plan != null && plan.getModules() != null) {
+            // 3. Update Tenant Modules
+            java.util.Set<String> modulesToAssign = new java.util.HashSet<>();
+            if (request.getCustomModules() != null && !request.getCustomModules().isEmpty()) {
+                modulesToAssign.addAll(request.getCustomModules());
+            } else if (plan != null && plan.getModules() != null) {
+                modulesToAssign.addAll(plan.getModules());
+            }
+
+            if (!modulesToAssign.isEmpty()) {
                 com.project.www.tenant.repository.TenantModuleRepository tmRepo = org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext(
                         ((org.springframework.web.context.request.ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()).getRequest().getServletContext()
                 ).getBean(com.project.www.tenant.repository.TenantModuleRepository.class);
                 
-                // Keep the CORE modules + the ones from the plan
                 List<com.project.www.tenant.entity.TenantModule> existing = tmRepo.findByTenantId(tenant.getId());
-                // Set all to inactive first
                 for (com.project.www.tenant.entity.TenantModule tm : existing) {
                     tm.setActive(false);
                     tmRepo.save(tm);
                 }
                 
-                for (String mod : plan.getModules()) {
+                for (String mod : modulesToAssign) {
                     com.project.www.tenant.entity.TenantModule tm = tmRepo.findByTenantIdAndModuleName(tenant.getId(), mod).orElse(null);
                     if (tm == null) {
                         tmRepo.save(com.project.www.tenant.entity.TenantModule.builder()

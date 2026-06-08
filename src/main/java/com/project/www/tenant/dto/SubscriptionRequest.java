@@ -16,5 +16,7 @@ public class SubscriptionRequest {
     private Double amount;
     private String billingInterval; // MONTHLY, YEARLY
     private Integer durationDays; // Fallback
+    private java.time.LocalDate endDate; // Custom end date
     private String paymentReference;
+    private java.util.Set<String> customModules; // For overriding or custom plans
 }

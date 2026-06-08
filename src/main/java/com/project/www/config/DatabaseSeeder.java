@@ -316,11 +316,8 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // Seed System Modules
         String[] allModules = {
-                com.project.www.constants.Modules.CRM,
-                com.project.www.constants.Modules.HRMS,
-                com.project.www.constants.Modules.ADMIN,
-                com.project.www.constants.Modules.VENDOR,
-                com.project.www.constants.Modules.EMPLOYEE
+                "ADMIN", "AFFILIATE", "ATTENDANCE", "COURSE", "CRM", "EMPLOYEE", 
+                "HRMS", "LEAD", "LMS", "MARKETING", "PAYROLL", "VENDOR", "PO", "PERFORMANCE"
         };
         for (String mod : allModules) {
             if (!tenantModuleRepository.existsByTenantIdAndModuleNameAndActiveTrue(systemTenantId, mod)) {
