@@ -23,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         User user = userRepository
-                .findByEmailAndTenantId(email, tenantId)
+                .findFirstByEmailAndTenantId(email, tenantId)
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with email: " + email + " under tenant: " + tenantId));
 

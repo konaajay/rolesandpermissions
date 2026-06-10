@@ -44,6 +44,7 @@ public final class CorePermissions {
     // ── Tenant management ────────────────────────────────────────────────────
     public static final String TENANT_CREATE      = "TENANT_CREATE";
     public static final String TENANT_VIEW        = "TENANT_VIEW";
+    public static final String TENANT_UPDATE      = "TENANT_UPDATE";
     public static final String TENANT_ENABLE      = "TENANT_ENABLE";
     public static final String TENANT_DISABLE     = "TENANT_DISABLE";
 

@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface GlobalUserRegistryRepository extends JpaRepository<GlobalUserRegistry, Long> {
     List<GlobalUserRegistry> findAllByEmail(String email);
     
-    Optional<GlobalUserRegistry> findByEmail(String email);
+    Optional<GlobalUserRegistry> findFirstByEmail(String email);
     
     Optional<GlobalUserRegistry> findByEmailAndTenantCode(String email, String tenantCode);
     

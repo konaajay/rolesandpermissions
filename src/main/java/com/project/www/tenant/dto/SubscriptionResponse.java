@@ -20,5 +20,8 @@ public class SubscriptionResponse {
     private LocalDate endDate;
     private String status;
     private String paymentReference;
+    private Double amountPaid;
+    private Double amountPending;
+    private String paymentHistory;
     private String createdAt;
 }

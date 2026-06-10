@@ -24,8 +24,8 @@ public class CustomUserDetails implements UserDetails {
 
         if (user.getRole() != null && user.getRole().getActive()) {
             user.getRole().getPermissions().stream()
-                    .filter(Permission::getActive)
-                    .map(Permission::getPermissionKey)
+                    .filter(p -> p != null && p.getActive() && p.getPermissionKey() != null)
+                    .map(p -> p.getPermissionKey().toUpperCase())
                     .map(SimpleGrantedAuthority::new)
                     .forEach(authorities::add);
 
@@ -36,8 +36,8 @@ public class CustomUserDetails implements UserDetails {
 
         if (user.getPermissions() != null) {
             user.getPermissions().stream()
-                    .filter(Permission::getActive)
-                    .map(Permission::getPermissionKey)
+                    .filter(p -> p != null && p.getActive() && p.getPermissionKey() != null)
+                    .map(p -> p.getPermissionKey().toUpperCase())
                     .map(SimpleGrantedAuthority::new)
                     .forEach(authorities::add);
         }

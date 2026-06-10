@@ -3,7 +3,7 @@ package com.project.www.service;
 import com.project.www.tenant.entity.Subscription;
 
 import com.project.www.config.MarketingProperties;
-import com.project.www.entity.PushNotification;
+import com.project.www.marketing.entity.PushNotification;
 import com.project.www.entity.PushSubscription;
 import com.project.www.repository.PushNotificationRepository;
 import com.project.www.repository.PushSubscriptionRepository;

@@ -4,7 +4,7 @@ import com.project.www.marketing.controller.MessengerController;
 
 import com.project.www.enums.*;
 
-import com.project.www.entity.PushNotification;
+import com.project.www.marketing.entity.PushNotification;
 import com.project.www.entity.PushSubscription;
 import com.project.www.service.PushNotificationService;
 import lombok.RequiredArgsConstructor;

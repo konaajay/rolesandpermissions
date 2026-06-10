@@ -1,7 +1,6 @@
-package com.project.www.entity;
+package com.project.www.marketing.entity;
 
 import jakarta.persistence.*;
-import com.project.www.enums.*;
 import java.time.LocalDateTime;
 
 @Entity
@@ -34,35 +33,86 @@ public class PushNotification {
         createdAt = LocalDateTime.now();
     }
 
-    public PushNotification() {}
+    public PushNotification() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getBody() { return body; }
-    public void setBody(String body) { this.body = body; }
+    public String getTitle() {
+        return title;
+    }
 
-    public String getTargetChannel() { return targetChannel; }
-    public void setTargetChannel(String targetChannel) { this.targetChannel = targetChannel; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public int getRecipientsCount() { return recipientsCount; }
-    public void setRecipientsCount(int recipientsCount) { this.recipientsCount = recipientsCount; }
+    public String getBody() {
+        return body;
+    }
 
-    public LocalDateTime getSentAt() { return sentAt; }
-    public void setSentAt(LocalDateTime sentAt) { this.sentAt = sentAt; }
+    public void setBody(String body) {
+        this.body = body;
+    }
 
-    public String getLink() { return link; }
-    public void setLink(String link) { this.link = link; }
+    public String getTargetChannel() {
+        return targetChannel;
+    }
 
-    public LocalDateTime getScheduledAt() { return scheduledAt; }
-    public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
+    public void setTargetChannel(String targetChannel) {
+        this.targetChannel = targetChannel;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public int getRecipientsCount() {
+        return recipientsCount;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setRecipientsCount(int recipientsCount) {
+        this.recipientsCount = recipientsCount;
+    }
+
+    public LocalDateTime getSentAt() {
+        return sentAt;
+    }
+
+    public void setSentAt(LocalDateTime sentAt) {
+        this.sentAt = sentAt;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
+    }
+
+    public LocalDateTime getScheduledAt() {
+        return scheduledAt;
+    }
+
+    public void setScheduledAt(LocalDateTime scheduledAt) {
+        this.scheduledAt = scheduledAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

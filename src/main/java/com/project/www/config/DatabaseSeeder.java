@@ -94,6 +94,44 @@ public class DatabaseSeeder implements CommandLineRunner {
                 } catch (Exception e) {
                 }
 
+                // Patch subscriptions table
+                try {
+                    stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_paid DOUBLE DEFAULT 0.0");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_pending DOUBLE DEFAULT 0.0");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN payment_history TEXT");
+                } catch (Exception e) {
+                }
+
+                // Patch vendor_invoices
+                try {
+                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
+                } catch (Exception e) {
+                }
+                try {
+                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
+                } catch (Exception e) {
+                }
+
+                // Patch vendor_contracts
+                try {
+                    stmt.executeUpdate("ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
+                } catch (Exception e) {
+                }
+
                 // Patch tenant_modules
                 try {
                     stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN amount DOUBLE");
@@ -224,7 +262,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         }
                         try {
                             tStmt.executeUpdate(
-                                    "ALTER TABLE vendor_invoices ADD COLUMN vendor_contracts ADD COLUMN document_url VARCHAR(500)");
+                                    "ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
                         } catch (Exception ex) {
                         }
                         try {
@@ -316,8 +354,9 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // Seed System Modules
         String[] allModules = {
-                "ADMIN", "AFFILIATE", "ATTENDANCE", "COURSE", "CRM", "EMPLOYEE", 
-                "HRMS", "LEAD", "LMS", "MARKETING", "PAYROLL", "VENDOR", "PO", "PERFORMANCE"
+                "ADMIN", "AFFILIATE", "ATTENDANCE", "COURSE", "CRM", "EMPLOYEE",
+                "HRMS", "LEADS", "LMS", "MARKETING", "PAYROLL", "VENDOR", "PO", "PERFORMANCE",
+                "SETTINGS", "LEAVE", "REPORTS", "SUPPORT_TICKETS", "TASKS", "REVENUE"
         };
         for (String mod : allModules) {
             if (!tenantModuleRepository.existsByTenantIdAndModuleNameAndActiveTrue(systemTenantId, mod)) {
@@ -377,6 +416,12 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
                         new String[] { "ROLE", "VIEW", "Ability to view roles" },
                         new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
+                        new String[] { "TENANT", "CREATE", "Create Tenants" },
+                        new String[] { "TENANT", "VIEW", "View Tenants" },
+                        new String[] { "TENANT", "UPDATE", "Update Tenants" },
+                        new String[] { "TENANT", "ENABLE", "Enable Tenants" },
+                        new String[] { "TENANT", "DISABLE", "Disable Tenants" },
+                        new String[] { "DASHBOARD", "VIEW", "View Dashboard" },
                         new String[] { "VENDOR", "CREATE", "Create Vendors" },
                         new String[] { "VENDOR", "VIEW", "View Vendors" },
                         new String[] { "VENDOR", "UPDATE", "Update Vendors" },
@@ -408,7 +453,58 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" },
                         new String[] { "MARKETING", "ANALYTICS_VIEW", "View Marketing Analytics" },
                         new String[] { "MARKETING", "CAMPAIGN_VIEW", "View Marketing Campaign Analytics" },
-                        new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" });
+                        new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" },
+                        new String[] { "ATTENDANCE", "VIEW_ATTENDANCE", "View Own Attendance" },
+                        new String[] { "ATTENDANCE", "VIEW_TEAM_ATTENDANCE", "View Team Attendance" },
+                        new String[] { "ATTENDANCE", "APPROVE_REGULARIZE", "Approve Regularization" },
+
+                        new String[] { "SETTINGS", "MANAGE_SETTINGS", "Manage System Settings" },
+
+                        new String[] { "LEAVE", "VIEW_LEAVE", "View Own Leave" },
+                        new String[] { "LEAVE", "APPLY_LEAVE", "Apply Leave" },
+                        new String[] { "LEAVE", "CANCEL_LEAVE", "Cancel Leave Request" },
+                        new String[] { "LEAVE", "VIEW_ALL_LEAVE", "View All Leave Requests" },
+                        new String[] { "LEAVE", "APPROVE_LEAVE", "Approve Reject Leave" },
+                        new String[] { "LEAVE", "CONFIGURE_LEAVE", "Configure Leave Types" },
+
+                        new String[] { "PAYROLL", "VIEW_SALARY", "View Salary Structures" },
+                        new String[] { "PAYROLL", "CONFIGURE_SALARY", "Create And Edit Salary" },
+                        new String[] { "PAYROLL", "VIEW_PAYROLL", "View Payroll Runs" },
+                        new String[] { "PAYROLL", "PROCESS_PAYROLL", "Create And Process Payroll" },
+                        new String[] { "PAYROLL", "APPROVE_PAYROLL", "Approve And Lock Payroll" },
+                        new String[] { "PAYROLL", "VIEW_PAYSLIP", "View Own Payslip" },
+
+                        new String[] { "REPORTS", "VIEW_REPORTS", "View Reports" },
+                        new String[] { "REPORTS", "SELF_REPORTS", "View Own Reports" },
+                        new String[] { "REPORTS", "EXPORT_REPORTS", "Export Reports" },
+
+                        new String[] { "SUPPORT_TICKETS", "RAISE_SUPPORT_TICKET", "Raise Support Ticket" },
+                        new String[] { "SUPPORT_TICKETS", "VIEW_SUPPORT_TICKETS", "Track Own Support Tickets" },
+                        new String[] { "SUPPORT_TICKETS", "MANAGE_SUPPORT_TICKETS", "Resolve All Support Tickets" },
+                        new String[] { "SUPPORT_TICKETS", "MANAGE_SUPPORT_TICKET_TYPES", "Manage Ticket Issue Types" },
+
+                        new String[] { "AFFILIATE", "VIEW_AFFILIATE", "View Affiliate Dashboard" },
+                        new String[] { "AFFILIATE", "MANAGE_AFFILIATE", "Manage Affiliate Workflow" },
+
+                        new String[] { "LEADS", "VIEW_LEADS", "View Leads" },
+                        new String[] { "LEADS", "CREATE_LEAD", "Create Leads" },
+                        new String[] { "LEADS", "EDIT_LEAD", "Edit Leads" },
+                        new String[] { "LEADS", "DELETE_LEAD", "Delete Leads" },
+                        new String[] { "LEADS", "ASSIGN_LEAD", "Assign Leads To Counselors" },
+                        new String[] { "LEADS", "VIEW_FOLLOWUPS", "View Lead Follow Ups" },
+                        new String[] { "LEADS", "CREATE_FOLLOWUP", "Create Lead Follow Ups" },
+                        new String[] { "LEADS", "MANAGE_LEAD_FORMS", "Manage Lead Intake Forms" },
+                        new String[] { "LEADS", "VIEW_LEAD_ANALYTICS", "View Lead Analytics" },
+
+                        new String[] { "TASKS", "VIEW_TASKS", "View Own Tasks" },
+                        new String[] { "TASKS", "VIEW_TEAM_TASKS", "View Team Tasks" },
+                        new String[] { "TASKS", "CREATE_TASK", "Create Tasks" },
+                        new String[] { "TASKS", "EDIT_TASK", "Edit Tasks" },
+                        new String[] { "TASKS", "DELETE_TASK", "Delete Tasks" },
+                        new String[] { "TASKS", "ASSIGN_TASK", "Assign Tasks To Employees" },
+
+                        new String[] { "REVENUE", "VIEW_REVENUE", "View Revenue Dashboard" },
+                        new String[] { "REVENUE", "MANAGE_REVENUE", "Manage Revenue Records" });
 
                 java.util.List<Permission> existingTenantPerms = permissionRepository.findAllByTenantId(t.getId());
                 java.util.Map<String, Permission> permMap = existingTenantPerms.stream()
@@ -475,6 +571,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             java.util.List<String[]> requiredPermsInfo = java.util.Arrays.asList(
                     new String[] { "TENANT", "CREATE", "Ability to onboard new tenants" },
                     new String[] { "TENANT", "VIEW", "Ability to view tenants" },
+                    new String[] { "TENANT", "UPDATE", "Ability to update tenants" },
                     new String[] { "TENANT", "ENABLE", "Ability to enable tenants" },
                     new String[] { "TENANT", "DISABLE", "Ability to disable tenants" },
                     new String[] { "USER", "CREATE", "Ability to create new users" },
@@ -490,6 +587,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
                     new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
                     new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
+                    new String[] { "TENANT", "CREATE", "Create Tenants" },
+                    new String[] { "TENANT", "VIEW", "View Tenants" },
+                    new String[] { "TENANT", "UPDATE", "Update Tenants" },
+                    new String[] { "TENANT", "ENABLE", "Enable Tenants" },
+                    new String[] { "TENANT", "DISABLE", "Disable Tenants" },
                     new String[] { "SETTINGS", "MANAGE_TEMPLATES", "Ability to manage document templates" },
                     new String[] { "SETTINGS", "MANAGE_ID_FORMATS", "Ability to manage ID generation formats" },
                     new String[] { "COMPANY_PROFILE", "VIEW", "Ability to view company profile" },
@@ -527,7 +629,59 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" },
                     new String[] { "MARKETING", "ANALYTICS_VIEW", "View Marketing Analytics" },
                     new String[] { "MARKETING", "CAMPAIGN_VIEW", "View Marketing Campaign Analytics" },
-                    new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" });
+                    new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" },
+                    new String[] { "MARKETING", "Ajay_SUMMARY", "View ajay Summary" },
+                    new String[] { "ATTENDANCE", "VIEW_ATTENDANCE", "View Own Attendance" },
+                    new String[] { "ATTENDANCE", "VIEW_TEAM_ATTENDANCE", "View Team Attendance" },
+                    new String[] { "ATTENDANCE", "APPROVE_REGULARIZE", "Approve Regularization" },
+
+                    new String[] { "SETTINGS", "MANAGE_SETTINGS", "Manage System Settings" },
+
+                    new String[] { "LEAVE", "VIEW_LEAVE", "View Own Leave" },
+                    new String[] { "LEAVE", "APPLY_LEAVE", "Apply Leave" },
+                    new String[] { "LEAVE", "CANCEL_LEAVE", "Cancel Leave Request" },
+                    new String[] { "LEAVE", "VIEW_ALL_LEAVE", "View All Leave Requests" },
+                    new String[] { "LEAVE", "APPROVE_LEAVE", "Approve Reject Leave" },
+                    new String[] { "LEAVE", "CONFIGURE_LEAVE", "Configure Leave Types" },
+
+                    new String[] { "PAYROLL", "VIEW_SALARY", "View Salary Structures" },
+                    new String[] { "PAYROLL", "CONFIGURE_SALARY", "Create And Edit Salary" },
+                    new String[] { "PAYROLL", "VIEW_PAYROLL", "View Payroll Runs" },
+                    new String[] { "PAYROLL", "PROCESS_PAYROLL", "Create And Process Payroll" },
+                    new String[] { "PAYROLL", "APPROVE_PAYROLL", "Approve And Lock Payroll" },
+                    new String[] { "PAYROLL", "VIEW_PAYSLIP", "View Own Payslip" },
+
+                    new String[] { "REPORTS", "VIEW_REPORTS", "View Reports" },
+                    new String[] { "REPORTS", "SELF_REPORTS", "View Own Reports" },
+                    new String[] { "REPORTS", "EXPORT_REPORTS", "Export Reports" },
+
+                    new String[] { "SUPPORT_TICKETS", "RAISE_SUPPORT_TICKET", "Raise Support Ticket" },
+                    new String[] { "SUPPORT_TICKETS", "VIEW_SUPPORT_TICKETS", "Track Own Support Tickets" },
+                    new String[] { "SUPPORT_TICKETS", "MANAGE_SUPPORT_TICKETS", "Resolve All Support Tickets" },
+                    new String[] { "SUPPORT_TICKETS", "MANAGE_SUPPORT_TICKET_TYPES", "Manage Ticket Issue Types" },
+
+                    new String[] { "AFFILIATE", "VIEW_AFFILIATE", "View Affiliate Dashboard" },
+                    new String[] { "AFFILIATE", "MANAGE_AFFILIATE", "Manage Affiliate Workflow" },
+
+                    new String[] { "LEADS", "VIEW_LEADS", "View Leads" },
+                    new String[] { "LEADS", "CREATE_LEAD", "Create Leads" },
+                    new String[] { "LEADS", "EDIT_LEAD", "Edit Leads" },
+                    new String[] { "LEADS", "DELETE_LEAD", "Delete Leads" },
+                    new String[] { "LEADS", "ASSIGN_LEAD", "Assign Leads To Counselors" },
+                    new String[] { "LEADS", "VIEW_FOLLOWUPS", "View Lead Follow Ups" },
+                    new String[] { "LEADS", "CREATE_FOLLOWUP", "Create Lead Follow Ups" },
+                    new String[] { "LEADS", "MANAGE_LEAD_FORMS", "Manage Lead Intake Forms" },
+                    new String[] { "LEADS", "VIEW_LEAD_ANALYTICS", "View Lead Analytics" },
+
+                    new String[] { "TASKS", "VIEW_TASKS", "View Own Tasks" },
+                    new String[] { "TASKS", "VIEW_TEAM_TASKS", "View Team Tasks" },
+                    new String[] { "TASKS", "CREATE_TASK", "Create Tasks" },
+                    new String[] { "TASKS", "EDIT_TASK", "Edit Tasks" },
+                    new String[] { "TASKS", "DELETE_TASK", "Delete Tasks" },
+                    new String[] { "TASKS", "ASSIGN_TASK", "Assign Tasks To Employees" },
+
+                    new String[] { "REVENUE", "VIEW_REVENUE", "View Revenue Dashboard" },
+                    new String[] { "REVENUE", "MANAGE_REVENUE", "Manage Revenue Records" });
 
             java.util.List<Permission> existingPerms = permissionRepository.findAllByTenantId(systemTenantId);
             java.util.Map<String, Permission> permMap = existingPerms.stream()
@@ -586,7 +740,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 userRepository.save(superAdmin);
                 log.info("System seeding completed. Super Admin user 'superadmin@system.com' created");
             } else {
-                User superAdmin = userRepository.findByEmailAndTenantId("superadmin@system.com", systemTenantId).get();
+                User superAdmin = userRepository.findFirstByEmailAndTenantId("superadmin@system.com", systemTenantId)
+                        .get();
                 superAdmin.setRole(superAdminRole);
                 userRepository.save(superAdmin);
                 log.info("System seeding updated. Super Admin role updated");

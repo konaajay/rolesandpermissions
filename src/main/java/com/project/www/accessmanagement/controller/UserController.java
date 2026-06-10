@@ -60,6 +60,15 @@ public class UserController {
         return userService.getUsersByTenant(tenantId);
     }
 
+    @GetMapping("/by-role/{roleName}")
+    @PreAuthorize("isAuthenticated()")
+    public List<UserResponse> getUsersByRole(@PathVariable String roleName) {
+        return userService.getAllUsers().stream()
+                .filter(u -> u.getRoleName() != null && u.getRoleName().equalsIgnoreCase(roleName) || 
+                             (u.getRoleNames() != null && u.getRoleNames().stream().anyMatch(r -> r.equalsIgnoreCase(roleName))))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_UPDATE)")
     public UserResponse updateUser(

@@ -44,4 +44,13 @@ public class Subscription extends Auditable {
 
     @Column(name = "payment_reference")
     private String paymentReference;
+
+    @Column(name = "amount_paid")
+    private Double amountPaid;
+
+    @Column(name = "amount_pending")
+    private Double amountPending;
+
+    @Column(name = "payment_history", columnDefinition = "TEXT")
+    private String paymentHistory;
 }

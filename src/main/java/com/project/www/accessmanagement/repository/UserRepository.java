@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findByEmailAndTenantId(String email, Long tenantId);
+    Optional<User> findFirstByEmailAndTenantId(String email, Long tenantId);
     
     boolean existsByEmailAndTenantId(String email, Long tenantId);
 
@@ -18,7 +18,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findAllByTenantId(Long tenantId);
 
-    Optional<User> findByEmail(String email);
+    Optional<User> findFirstByEmail(String email);
 
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE r.name = :roleName AND u.tenantId = :tenantId AND u.active = true")

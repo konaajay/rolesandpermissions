@@ -76,7 +76,7 @@ public class AuthServiceImpl implements AuthService {
             TenantContext.clear(); // Ensure we query the master database
             
             // 1. Locate user in global registry by email
-            com.project.www.accessmanagement.entity.GlobalUserRegistry registryEntry = globalUserRegistryRepository.findByEmail(request.getEmail())
+            com.project.www.accessmanagement.entity.GlobalUserRegistry registryEntry = globalUserRegistryRepository.findFirstByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("No account found with this email address."));
                 
             if (!registryEntry.getActive()) {
@@ -141,7 +141,7 @@ public class AuthServiceImpl implements AuthService {
         TenantContext.setCurrentTenant(tenant.getId());
         TenantContext.setCurrentTenantCode(tenant.getCode());
         try {
-            User user = userRepository.findByEmailAndTenantId(request.getEmail(), tenant.getId())
+            User user = userRepository.findFirstByEmailAndTenantId(request.getEmail(), tenant.getId())
                     .orElseThrow(() -> new RuntimeException("No account found with this email address in the tenant workspace."));
 
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -414,7 +414,7 @@ public class AuthServiceImpl implements AuthService {
             try {
                 TenantContext.setCurrentTenant(tenantResponse.getId());
                 TenantContext.setCurrentTenantCode(tenantResponse.getCode());
-                User adminUser = userRepository.findByEmailAndTenantId(tenantResponse.getAdminEmail(), tenantResponse.getId())
+                User adminUser = userRepository.findFirstByEmailAndTenantId(tenantResponse.getAdminEmail(), tenantResponse.getId())
                         .orElse(null);
                 if (adminUser != null && adminUser.getRole() != null) {
                     permissions = adminUser.getRole().getPermissions().stream()

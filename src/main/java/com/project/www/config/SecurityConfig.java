@@ -31,10 +31,11 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
-                    config.setAllowedOrigins(java.util.List.of("*"));
+                    config.setAllowedOriginPatterns(java.util.List.of("*"));
                     config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
                     config.setAllowedHeaders(java.util.List.of("*"));
                     config.setExposedHeaders(java.util.List.of("Content-Disposition"));
+                    config.setAllowCredentials(true);
                     return config;
                 }))
                 .csrf(csrf -> csrf.disable())
@@ -53,13 +54,17 @@ public class SecurityConfig {
                                 "/app.js",
                                 "/favicon.ico",
                                 "/auth/**",
+                                "/api/auth/**",
                                 "/public/**",
                                 "/uploads/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
+                                "/api/auth/validate-token",
+                                "/api/auth/check-permission",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
                         .anyRequest().authenticated()
                 )

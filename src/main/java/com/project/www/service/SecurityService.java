@@ -3,10 +3,6 @@ package com.project.www.service;
 import com.project.www.accessmanagement.repository.UserRepository;
 import com.project.www.accessmanagement.entity.User;
 
-
-import com.project.www.accessmanagement.entity.User;
-
-import com.project.www.accessmanagement.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.project.www.exception.UnauthorizedAccessException;
@@ -31,7 +27,7 @@ public class SecurityService {
             return null;
         }
         String email = auth.getName();
-        return userRepository.findByEmail(email).orElse(null);
+        return userRepository.findFirstByEmail(email).orElse(null);
     }
 
     public Set<Long> getScopedUserIds(User requester, Long managerId, Long teamLeaderId) {

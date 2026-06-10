@@ -77,6 +77,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .endDate(endDate)
                 .status("ACTIVE")
                 .paymentReference(request.getPaymentReference())
+                .amountPaid(request.getAmountPaid() != null ? request.getAmountPaid() : (request.getAmount() != null ? request.getAmount() : (plan != null ? plan.getMonthlyPrice() : 0.0)))
+                .amountPending(request.getAmountPending() != null ? request.getAmountPending() : 0.0)
+                .paymentHistory(request.getPaymentHistory())
                 .build();
                 
             subscription = subscriptionRepository.save(subscription);

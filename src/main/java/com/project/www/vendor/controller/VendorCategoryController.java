@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vendor-categories")
+@RequestMapping({"/api/vendor-categories", "/vendor-categories"})
 @RequiredArgsConstructor
 public class VendorCategoryController {
 

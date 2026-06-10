@@ -18,13 +18,8 @@ public class IntegrationWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/integrations/**")
-                .allowedOrigins(frontendUrl, "http://localhost:5173", "http://localhost:3000")
-                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
-        registry.addMapping("/api/public/**")
-                .allowedOrigins(frontendUrl, "http://localhost:5173", "http://localhost:3000")
+        registry.addMapping("/api/**")
+                .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);

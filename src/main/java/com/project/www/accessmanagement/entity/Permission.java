@@ -9,12 +9,9 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(
-        name = "permissions",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"tenantId", "permission_key"})
-        }
-)
+@Table(name = "permissions", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "tenantId", "permission_key" })
+})
 public class Permission extends Auditable {
 
     @Id

@@ -24,6 +24,13 @@ public class DepartmentController {
         return repository.findByTenantId(tenantId);
     }
 
+    @GetMapping("/active")
+    public List<Department> getActive() {
+        Long tenantId = TenantContext.getCurrentTenant();
+        if (tenantId == null) throw new RuntimeException("No tenant context");
+        return repository.findByTenantIdAndActiveTrue(tenantId);
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).COMPANY_PROFILE_UPDATE)")
     public Department create(@RequestBody Department dept) {

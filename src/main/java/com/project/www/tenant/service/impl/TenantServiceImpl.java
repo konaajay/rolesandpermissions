@@ -243,57 +243,7 @@ public class TenantServiceImpl implements TenantService {
                     superAdminRole.setPermissions(adminPermissions);
                     superAdminRole = roleRepository.save(superAdminRole);
 
-                    // Create ADMIN
-                    Role adminRole = roleRepository.findByNameAndTenantId("ADMIN", tenant.getId())
-                            .orElseGet(() -> Role.builder()
-                                    .tenantId(tenant.getId())
-                                    .name("ADMIN")
-                                    .code("ADMIN")
-                                    .description("Admin role with limited permissions")
-                                    .active(true)
-                                    .build());
-                    Set<Permission> adminRolePerms = savedPerms.stream()
-                        .filter(p -> 
-                            (p.getModule().equals("USER") && Arrays.asList("CREATE", "VIEW", "UPDATE").contains(p.getAction())) ||
-                            (p.getModule().equals("ROLE") && Arrays.asList("VIEW", "CREATE", "UPDATE").contains(p.getAction())) ||
-                            (p.getModule().equals("PERMISSION") && p.getAction().equals("VIEW"))
-                        ).collect(Collectors.toSet());
-                    adminRole.setPermissions(adminRolePerms);
-                    roleRepository.save(adminRole);
 
-                    // Create MANAGER
-                    Role managerRole = roleRepository.findByNameAndTenantId("MANAGER", tenant.getId())
-                            .orElseGet(() -> Role.builder()
-                                    .tenantId(tenant.getId())
-                                    .name("MANAGER")
-                                    .code("MANAGER")
-                                    .description("Manager role")
-                                    .active(true)
-                                    .build());
-                    Set<Permission> managerRolePerms = savedPerms.stream()
-                        .filter(p -> 
-                            (p.getModule().equals("DASHBOARD") && p.getAction().equals("VIEW")) ||
-                            (p.getModule().equals("USER") && p.getAction().equals("VIEW")) ||
-                            (p.getModule().equals("VENDOR") && p.getAction().equals("VIEW")) ||
-                            (p.getModule().equals("REPORT") && p.getAction().equals("VIEW"))
-                        ).collect(Collectors.toSet());
-                    managerRole.setPermissions(managerRolePerms);
-                    roleRepository.save(managerRole);
-
-                    // Create EMPLOYEE
-                    Role employeeRole = roleRepository.findByNameAndTenantId("EMPLOYEE", tenant.getId())
-                            .orElseGet(() -> Role.builder()
-                                    .tenantId(tenant.getId())
-                                    .name("EMPLOYEE")
-                                    .code("EMPLOYEE")
-                                    .description("Employee role")
-                                    .active(true)
-                                    .build());
-                    Set<Permission> employeeRolePerms = savedPerms.stream()
-                        .filter(p -> p.getModule().equals("DASHBOARD") && p.getAction().equals("VIEW"))
-                        .collect(Collectors.toSet());
-                    employeeRole.setPermissions(employeeRolePerms);
-                    roleRepository.save(employeeRole);
 
                     // Initialize Settings and Sequence for Employee IDs
                     int currentYear = java.time.LocalDate.now().getYear();
@@ -306,7 +256,7 @@ public class TenantServiceImpl implements TenantService {
                     settings.setEmployeeSequence(settings.getEmployeeSequence() + 1);
                     tenantSettingsRepository.save(settings);
 
-                    User adminUser = userRepository.findByEmailAndTenantId(request.getAdminEmail(), tenant.getId())
+                    User adminUser = userRepository.findFirstByEmailAndTenantId(request.getAdminEmail(), tenant.getId())
                             .orElseGet(() -> User.builder()
                                     .tenantId(tenant.getId())
                                     .firstName(request.getAdminFirstName())

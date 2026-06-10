@@ -18,5 +18,8 @@ public class SubscriptionRequest {
     private Integer durationDays; // Fallback
     private java.time.LocalDate endDate; // Custom end date
     private String paymentReference;
+    private Double amountPaid;
+    private Double amountPending;
+    private String paymentHistory;
     private java.util.Set<String> customModules; // For overriding or custom plans
 }

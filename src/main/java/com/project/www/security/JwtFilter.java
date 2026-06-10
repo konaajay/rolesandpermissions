@@ -40,6 +40,25 @@ public class JwtFilter extends OncePerRequestFilter {
         // Always clear context at the start of a request to prevent thread contamination
         TenantContext.clear();
 
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String path = request.getServletPath();
+
+        if (path.startsWith("/auth/")
+                || path.startsWith("/api/auth/")
+                || path.startsWith("/public/")
+                || path.startsWith("/uploads/")
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs/")
+                || path.equals("/")
+                || path.equals("/error")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String email;
@@ -47,6 +66,7 @@ public class JwtFilter extends OncePerRequestFilter {
         final String tenantCode;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("No valid Authorization header found. Header: " + authHeader);
             filterChain.doFilter(request, response);
             return;
         }
@@ -70,16 +90,24 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
             tenantCode = code;
+
+            logger.info("JWT email: " + email);
+            logger.info("JWT tenantId: " + tenantId);
+            logger.info("JWT tenantCode: " + tenantCode);
+
         } catch (Exception e) {
+            logger.error("Failed to parse JWT token: " + e.getMessage());
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            if (email != null && tenantId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                if (tenantCode != null && tenantRepository.existsByCode(tenantCode)) {
-                    TenantContext.setCurrentTenant(tenantId);
-                    TenantContext.setCurrentTenantCode(tenantCode);
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                // Case 1: Super Admin / Master user without tenant
+                if (tenantId == null || tenantCode == null) {
+                    TenantContext.setCurrentTenantCode("master");
+
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                     if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
@@ -94,12 +122,51 @@ public class JwtFilter extends OncePerRequestFilter {
                                 new WebAuthenticationDetailsSource().buildDetails(request)
                         );
 
+                        logger.info("Authorities: " + userDetails.getAuthorities());
                         SecurityContextHolder.getContext().setAuthentication(authToken);
+                        logger.info("Authentication set successfully for: " + email);
+                    }
+
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                // Case 2: Tenant user
+                boolean tenantExists;
+                try {
+                    TenantContext.setCurrentTenantCode("master");
+                    tenantExists = tenantRepository.existsByCode(tenantCode);
+                } finally {
+                    TenantContext.clear();
+                }
+
+                if (tenantExists) {
+                    TenantContext.setCurrentTenant(tenantId);
+                    TenantContext.setCurrentTenantCode(tenantCode);
+
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+                    if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request)
+                        );
+
+                        logger.info("Authorities: " + userDetails.getAuthorities());
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        logger.info("Authentication set successfully for: " + email);
                     }
                 } else {
                     logger.warn("Skipping authentication for user " + email + " - tenant " + tenantCode + " is not registered or is inactive.");
                 }
             }
+
             filterChain.doFilter(request, response);
         } finally {
             TenantContext.clear();
