@@ -47,14 +47,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        if (path.startsWith("/auth/")
+        if ((path.startsWith("/auth/")
                 || path.startsWith("/api/auth/")
                 || path.startsWith("/public/")
                 || path.startsWith("/uploads/")
                 || path.startsWith("/swagger-ui/")
                 || path.startsWith("/v3/api-docs/")
                 || path.equals("/")
-                || path.equals("/error")) {
+                || path.equals("/error"))
+                && !path.equals("/api/auth/me")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -97,7 +98,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             logger.error("Failed to parse JWT token: " + e.getMessage());
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Unauthorized: Invalid JWT signature");
             return;
         }
 

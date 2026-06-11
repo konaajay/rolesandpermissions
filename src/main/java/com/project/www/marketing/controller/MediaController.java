@@ -21,7 +21,7 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/marketing/media")
-@CrossOrigin(origins = "*")
+
 @RequiredArgsConstructor
 public class MediaController {
 

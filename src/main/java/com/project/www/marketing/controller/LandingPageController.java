@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/marketing")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class LandingPageController {
 
     private final LandingPageService landingPageService;

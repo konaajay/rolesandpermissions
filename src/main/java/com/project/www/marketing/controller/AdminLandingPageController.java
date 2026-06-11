@@ -31,7 +31,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/marketing/admin/landing")
-@CrossOrigin(origins = "*")
+
 @Transactional
 @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('TENANT_ADMIN') or hasAuthority('MARKETING_VIEW')")
 public class AdminLandingPageController {

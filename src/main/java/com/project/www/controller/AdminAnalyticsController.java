@@ -12,7 +12,7 @@ import com.project.www.marketing.service.MarketingAnalyticsService;
 @RestController
 @RequestMapping("/marketing/admin/analytics")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class AdminAnalyticsController {
 
     private final MarketingAnalyticsService analyticsService;

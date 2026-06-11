@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @RequiredArgsConstructor
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class IntegrationWebConfig implements WebMvcConfigurer {
 
     private final ApiKeyAuthInterceptor apiKeyAuthInterceptor;
@@ -16,9 +16,8 @@ public class IntegrationWebConfig implements WebMvcConfigurer {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
+        registry.addMapping("/**")
                 .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")

@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/marketing/content")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class ContentController {
 
     private final ContentService contentService;

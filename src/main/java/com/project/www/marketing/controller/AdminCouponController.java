@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/marketing/admin/coupons")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('TENANT_ADMIN') or hasAuthority('MARKETING_VIEW')")
 public class AdminCouponController {
 
