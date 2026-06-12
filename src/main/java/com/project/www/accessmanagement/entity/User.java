@@ -77,13 +77,42 @@ public class User extends Auditable {
     @JoinColumn(name = "office_location_id")
     private OfficeLocation assignedOffice;
 
+    @Column(name = "employee_id", length = 100)
+    private String employeeId;
+
+    @Column(name = "date_of_birth")
+    private java.time.LocalDate dateOfBirth;
+
+    @Column(name = "joining_date")
+    private java.time.LocalDate joiningDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_type_id")
+    private com.project.www.tenant.entity.EmployeeType employeeType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "designation_id")
+    private com.project.www.tenant.entity.Designation designation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "work_mode_id")
+    private com.project.www.tenant.entity.WorkMode workMode;
+
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_entities", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "entity_id"))
+    private java.util.Set<com.project.www.tenant.entity.BusinessEntity> entities = new java.util.HashSet<>();
+
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_departments", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "department_id"))
+    private java.util.Set<com.project.www.tenant.entity.Department> departments = new java.util.HashSet<>();
+
     public OfficeLocation getAssignedOffice() {
         return this.assignedOffice;
     }
 
-    public java.time.LocalDate getJoiningDate() {
-        return getCreatedAt().toLocalDate();
-    }
+
 
     public String getName() {
         return getFirstName() + " " + getLastName();

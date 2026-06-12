@@ -40,4 +40,22 @@ public class UserResponse {
     private java.util.List<String> modules;
     private java.util.List<String> permissions;
     private java.util.List<Long> permissionIds;
+
+    private String employeeId;
+    private java.time.LocalDate dateOfBirth;
+    private java.time.LocalDate joiningDate;
+
+    private Long employeeTypeId;
+    private String employeeTypeName;
+
+    private Long designationId;
+    private String designationName;
+
+    private Long workModeId;
+    private String workModeName;
+
+    private java.util.List<Long> entityIds;
+    private java.util.List<String> entityNames;
+    private java.util.List<Long> departmentIds;
+    private java.util.List<String> departmentNames;
 }

@@ -19,7 +19,7 @@ public class ModuleEvaluator {
     public boolean hasModule(String moduleName) {
         Long tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) {
-            return false;
+            return true;
         }
         
         // Save original context just in case we need to read from master DB

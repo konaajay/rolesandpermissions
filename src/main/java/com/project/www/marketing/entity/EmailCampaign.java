@@ -105,4 +105,5 @@ public class EmailCampaign {
     public void setCoreCampaign(Campaign coreCampaign) { this.coreCampaign = coreCampaign; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public List<EmailRecipient> getRecipients() { return recipients; }
+    public void setRecipients(List<EmailRecipient> recipients) { this.recipients = recipients; }
 }

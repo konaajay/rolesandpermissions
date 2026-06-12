@@ -45,4 +45,14 @@ public class CreateUserRequest {
     private java.util.List<String> modules;
 
     private java.util.List<Long> permissionIds;
+
+    private String employeeId;
+    private java.time.LocalDate dateOfBirth;
+    private java.time.LocalDate joiningDate;
+    private Long employeeTypeId;
+    private Long designationId;
+    private Long workModeId;
+
+    private java.util.List<Long> entityIds;
+    private java.util.List<Long> departmentIds;
 }

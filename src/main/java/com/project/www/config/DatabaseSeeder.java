@@ -554,6 +554,35 @@ public class DatabaseSeeder implements CommandLineRunner {
                     });
                 }
 
+                roleRepository.findByNameAndTenantId("EMPLOYEE", t.getId()).ifPresent(role -> {
+                    Set<Permission> updatedPerms = new java.util.HashSet<>(role.getPermissions());
+                    boolean changed = false;
+                    String[] employeeKeys = new String[] {
+                        "USER_VIEW",
+                        "USER_UPDATE",
+                        "USER_CREATE",
+                        "USER_DELETE",
+                        "DASHBOARD_VIEW",
+                        "ATTENDANCE_VIEW_ATTENDANCE",
+                        "LEAVE_VIEW_LEAVE",
+                        "LEAVE_APPLY_LEAVE",
+                        "PAYROLL_VIEW_PAYSLIP",
+                        "TASKS_VIEW_TASKS",
+                        "COMPANY_PROFILE_VIEW"
+                    };
+                    for (String key : employeeKeys) {
+                        Permission p = permMap.get(key);
+                        if (p != null && !updatedPerms.contains(p)) {
+                            updatedPerms.add(p);
+                            changed = true;
+                        }
+                    }
+                    if (changed) {
+                        role.setPermissions(updatedPerms);
+                        roleRepository.save(role);
+                    }
+                });
+
                 java.util.List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()
                         .map(com.project.www.tenant.entity.TemplateDefinition::getTemplateCode)
                         .collect(java.util.stream.Collectors.toList());

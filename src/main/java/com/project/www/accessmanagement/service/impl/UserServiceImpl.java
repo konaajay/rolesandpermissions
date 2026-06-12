@@ -45,6 +45,11 @@ public class UserServiceImpl implements UserService {
     private final RoleHierarchyRepository roleHierarchyRepository;
     private final UserReportingRepository userReportingRepository;
     private final PermissionRepository permissionRepository;
+    private final com.project.www.tenant.repository.EmployeeTypeRepository employeeTypeRepository;
+    private final com.project.www.tenant.repository.DesignationRepository designationRepository;
+    private final com.project.www.tenant.repository.WorkModeRepository workModeRepository;
+    private final com.project.www.tenant.repository.BusinessEntityRepository businessEntityRepository;
+    private final com.project.www.tenant.repository.DepartmentRepository departmentRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -147,6 +152,31 @@ public class UserServiceImpl implements UserService {
             permissions.addAll(permissionRepository.findAllById(request.getPermissionIds()));
         }
 
+        com.project.www.tenant.entity.EmployeeType empType = null;
+        if (request.getEmployeeTypeId() != null) {
+            empType = employeeTypeRepository.findByIdAndTenantId(request.getEmployeeTypeId(), tenantId).orElse(null);
+        }
+
+        com.project.www.tenant.entity.Designation desig = null;
+        if (request.getDesignationId() != null) {
+            desig = designationRepository.findByIdAndTenantId(request.getDesignationId(), tenantId).orElse(null);
+        }
+
+        com.project.www.tenant.entity.WorkMode mode = null;
+        if (request.getWorkModeId() != null) {
+            mode = workModeRepository.findByIdAndTenantId(request.getWorkModeId(), tenantId).orElse(null);
+        }
+
+        java.util.Set<com.project.www.tenant.entity.BusinessEntity> entities = new java.util.HashSet<>();
+        if (request.getEntityIds() != null && !request.getEntityIds().isEmpty()) {
+            entities.addAll(businessEntityRepository.findAllById(request.getEntityIds()));
+        }
+
+        java.util.Set<com.project.www.tenant.entity.Department> departments = new java.util.HashSet<>();
+        if (request.getDepartmentIds() != null && !request.getDepartmentIds().isEmpty()) {
+            departments.addAll(departmentRepository.findAllById(request.getDepartmentIds()));
+        }
+
         User user = User.builder()
                 .tenantId(tenantId)
                 .firstName(request.getFirstName())
@@ -161,6 +191,14 @@ public class UserServiceImpl implements UserService {
                 .permissions(permissions)
                 .modules(modules)
                 .assignedOffice(location)
+                .entities(entities)
+                .departments(departments)
+                .employeeId(request.getEmployeeId())
+                .dateOfBirth(request.getDateOfBirth())
+                .joiningDate(request.getJoiningDate())
+                .employeeType(empType)
+                .designation(desig)
+                .workMode(mode)
                 .build();
 
         user = userRepository.save(user);
@@ -178,30 +216,37 @@ public class UserServiceImpl implements UserService {
             userReportingRepository.save(reporting);
         }
 
-        // Create profile based on role
-        if ("LEAD".equalsIgnoreCase(role.getName())) {
-            IdFormatSetting leadFormat = idFormatSettingRepository.findByTenantIdAndEntityType(tenantId, "LEAD")
+        // Generate ID based on role (LEAD, EMPLOYEE, etc)
+        String entityType = role.getName().toUpperCase();
+        if ("LEAD".equals(entityType) || "EMPLOYEE".equals(entityType)) {
+            String defaultPrefix = "LEAD".equals(entityType) ? "LEA" : "EMP";
+            
+            IdFormatSetting format = idFormatSettingRepository.findByTenantIdAndEntityType(tenantId, entityType)
                     .orElseGet(() -> IdFormatSetting.builder()
                             .tenantId(tenantId)
-                            .entityType("LEAD")
-                            .prefix("LEA")
+                            .entityType(entityType)
+                            .prefix(defaultPrefix)
                             .paddingLength(7)
                             .nextSequence(1L)
                             .includeYear(false)
                             .active(true)
                             .build());
 
-            long nextVal = leadFormat.getNextSequence();
-            String leadId;
-            if (Boolean.TRUE.equals(leadFormat.getIncludeYear())) {
-                leadId = leadFormat.getPrefix() + currentYear
-                        + String.format("%0" + leadFormat.getPaddingLength() + "d", nextVal);
+            long nextVal = format.getNextSequence();
+            String generatedId;
+            if (Boolean.TRUE.equals(format.getIncludeYear())) {
+                generatedId = format.getPrefix() + currentYear
+                        + String.format("%0" + format.getPaddingLength() + "d", nextVal);
             } else {
-                leadId = leadFormat.getPrefix() + String.format("%0" + leadFormat.getPaddingLength() + "d", nextVal);
+                generatedId = format.getPrefix() + String.format("%0" + format.getPaddingLength() + "d", nextVal);
             }
 
-            leadFormat.setNextSequence(nextVal + 1);
-            idFormatSettingRepository.save(leadFormat);
+            format.setNextSequence(nextVal + 1);
+            idFormatSettingRepository.save(format);
+            
+            // Set it on user and save again
+            user.setEmployeeId(generatedId);
+            userRepository.save(user);
         }
 
         // Send email to user
@@ -302,6 +347,30 @@ public class UserServiceImpl implements UserService {
         user.setLastName(request.getLastName());
         user.setPhoneNumber(request.getPhoneNumber());
 
+        if (request.getEmployeeId() != null) {
+            user.setEmployeeId(request.getEmployeeId());
+        }
+        user.setDateOfBirth(request.getDateOfBirth());
+        user.setJoiningDate(request.getJoiningDate());
+
+        if (request.getEmployeeTypeId() != null) {
+            user.setEmployeeType(employeeTypeRepository.findByIdAndTenantId(request.getEmployeeTypeId(), tenantId).orElse(null));
+        } else {
+            user.setEmployeeType(null);
+        }
+
+        if (request.getDesignationId() != null) {
+            user.setDesignation(designationRepository.findByIdAndTenantId(request.getDesignationId(), tenantId).orElse(null));
+        } else {
+            user.setDesignation(null);
+        }
+
+        if (request.getWorkModeId() != null) {
+            user.setWorkMode(workModeRepository.findByIdAndTenantId(request.getWorkModeId(), tenantId).orElse(null));
+        } else {
+            user.setWorkMode(null);
+        }
+
         java.util.Set<Role> roles = new java.util.HashSet<>();
         Role primaryRole = null;
         if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
@@ -334,6 +403,13 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getPermissionIds() != null) {
             user.setPermissions(new java.util.HashSet<>(permissionRepository.findAllById(request.getPermissionIds())));
+        }
+
+        if (request.getEntityIds() != null) {
+            user.setEntities(new java.util.HashSet<>(businessEntityRepository.findAllById(request.getEntityIds())));
+        }
+        if (request.getDepartmentIds() != null) {
+            user.setDepartments(new java.util.HashSet<>(departmentRepository.findAllById(request.getDepartmentIds())));
         }
 
         // --- SUPER ADMIN PROTECTION: PREVENT DEMOTION ---
@@ -515,6 +591,27 @@ public class UserServiceImpl implements UserService {
                         : new java.util.ArrayList<>())
                 .permissionIds(user.getPermissions() != null
                         ? user.getPermissions().stream().map(Permission::getId).collect(Collectors.toList())
+                        : new java.util.ArrayList<>())
+                .employeeId(user.getEmployeeId())
+                .dateOfBirth(user.getDateOfBirth())
+                .joiningDate(user.getJoiningDate())
+                .employeeTypeId(user.getEmployeeType() != null ? user.getEmployeeType().getId() : null)
+                .employeeTypeName(user.getEmployeeType() != null ? user.getEmployeeType().getName() : null)
+                .designationId(user.getDesignation() != null ? user.getDesignation().getId() : null)
+                .designationName(user.getDesignation() != null ? user.getDesignation().getName() : null)
+                .workModeId(user.getWorkMode() != null ? user.getWorkMode().getId() : null)
+                .workModeName(user.getWorkMode() != null ? user.getWorkMode().getName() : null)
+                .entityIds(user.getEntities() != null
+                        ? user.getEntities().stream().map(com.project.www.tenant.entity.BusinessEntity::getId).collect(Collectors.toList())
+                        : new java.util.ArrayList<>())
+                .entityNames(user.getEntities() != null
+                        ? user.getEntities().stream().map(com.project.www.tenant.entity.BusinessEntity::getCompanyName).collect(Collectors.toList())
+                        : new java.util.ArrayList<>())
+                .departmentIds(user.getDepartments() != null
+                        ? user.getDepartments().stream().map(com.project.www.tenant.entity.Department::getId).collect(Collectors.toList())
+                        : new java.util.ArrayList<>())
+                .departmentNames(user.getDepartments() != null
+                        ? user.getDepartments().stream().map(com.project.www.tenant.entity.Department::getDeptName).collect(Collectors.toList())
                         : new java.util.ArrayList<>())
                 .build();
     }
