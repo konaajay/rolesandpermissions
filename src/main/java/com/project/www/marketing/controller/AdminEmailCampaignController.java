@@ -23,6 +23,7 @@ public class AdminEmailCampaignController {
 
     private final EmailCampaignRepository emailCampaignRepository;
     private final EmailService emailService;
+    private final com.project.www.marketing.repository.MarketingLeadRepository marketingLeadRepository;
 
     @GetMapping("/all")
     public ResponseEntity<List<EmailCampaign>> getAllCampaigns() {
@@ -30,8 +31,8 @@ public class AdminEmailCampaignController {
     }
 
     @GetMapping("/leads")
-    public ResponseEntity<List<Object>> getLeads() {
-        return ResponseEntity.ok(java.util.Collections.emptyList());
+    public ResponseEntity<List<com.project.www.marketing.entity.MarketingLead>> getLeads() {
+        return ResponseEntity.ok(marketingLeadRepository.findAll());
     }
 
     public static class CreateCampaignRequest {

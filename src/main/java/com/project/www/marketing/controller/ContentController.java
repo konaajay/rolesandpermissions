@@ -4,9 +4,6 @@ import com.project.www.marketing.controller.ContentController;
 
 import com.project.www.marketing.entity.Content;
 
-import com.project.www.enums.*;
-
-import com.project.www.marketing.entity.Content;
 import com.project.www.marketing.service.ContentService;
 
 import lombok.RequiredArgsConstructor;

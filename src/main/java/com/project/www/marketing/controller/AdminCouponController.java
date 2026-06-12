@@ -4,11 +4,6 @@ import com.project.www.marketing.controller.AdminCouponController;
 
 import com.project.www.marketing.entity.Coupon;
 
-import com.project.www.marketing.dto.CouponRequest;
-
-import com.project.www.enums.*;
-
-import com.project.www.marketing.entity.Coupon;
 import com.project.www.marketing.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +22,7 @@ public class AdminCouponController {
     private final CouponService couponService;
 
     @GetMapping
-    
+
     public ResponseEntity<List<Coupon>> getAllCoupons() {
         return ResponseEntity.ok(couponService.getAllCoupons());
     }
@@ -36,7 +31,8 @@ public class AdminCouponController {
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('TENANT_ADMIN') or hasAuthority('MARKETING_CREATE')")
     public ResponseEntity<Coupon> createCoupon(@RequestBody com.project.www.marketing.dto.CouponRequest request) {
         String creator = "ADMIN_USER";
-        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
         if (auth != null && auth.getName() != null) {
             creator = auth.getName();
         }
