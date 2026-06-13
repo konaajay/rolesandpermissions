@@ -18,21 +18,30 @@ public class EmployeeTypeController {
     private final EmployeeTypeRepository repository;
 
     @GetMapping
-    @PreAuthorize("@moduleEvaluator.hasPermission('TENANT_SETTINGS_VIEW')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
     public ResponseEntity<List<EmployeeType>> getAll() {
         Long tenantId = TenantContext.getCurrentTenant();
         return ResponseEntity.ok(repository.findByTenantId(tenantId));
     }
 
     @GetMapping("/active")
-    @PreAuthorize("@moduleEvaluator.hasPermission('USER_VIEW')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('USER_VIEW')")
     public ResponseEntity<List<EmployeeType>> getActive() {
         Long tenantId = TenantContext.getCurrentTenant();
         return ResponseEntity.ok(repository.findByTenantIdAndActiveTrue(tenantId));
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    public ResponseEntity<EmployeeType> getById(@PathVariable Long id) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        EmployeeType existing = repository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Not found"));
+        return ResponseEntity.ok(existing);
+    }
+
     @PostMapping
-    @PreAuthorize("@moduleEvaluator.hasPermission('TENANT_SETTINGS_UPDATE')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
     public ResponseEntity<EmployeeType> create(@RequestBody EmployeeType entity) {
         entity.setTenantId(TenantContext.getCurrentTenant());
         if (entity.getActive() == null) entity.setActive(true);
@@ -41,7 +50,7 @@ public class EmployeeTypeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@moduleEvaluator.hasPermission('TENANT_SETTINGS_UPDATE')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
     public ResponseEntity<EmployeeType> update(@PathVariable Long id, @RequestBody EmployeeType req) {
         Long tenantId = TenantContext.getCurrentTenant();
         EmployeeType existing = repository.findByIdAndTenantId(id, tenantId)

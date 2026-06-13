@@ -19,5 +19,7 @@ public class CreateRoleRequest {
 
     private String description;
 
+    private Boolean showInUserForm;
+
     private Set<Long> permissionIds;
 }

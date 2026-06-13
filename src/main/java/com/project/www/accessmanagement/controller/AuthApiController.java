@@ -97,13 +97,14 @@ public class AuthApiController {
         response.put("name", user.getFirstName() + " " + user.getLastName());
         response.put("role", user.getRole() != null ? user.getRole().getName() : null);
         
-        if (user.getRole() != null) {
-            response.put("permissions", user.getRole().getPermissions().stream()
-                .map(p -> p.getPermissionKey())
-                .collect(Collectors.toList()));
-        } else {
-            response.put("permissions", java.util.Collections.emptyList());
+        java.util.Set<String> allPermissions = new java.util.HashSet<>();
+        if (user.getRole() != null && user.getRole().getPermissions() != null) {
+            user.getRole().getPermissions().forEach(p -> allPermissions.add(p.getPermissionKey()));
         }
+        if (user.getPermissions() != null) {
+            user.getPermissions().forEach(p -> allPermissions.add(p.getPermissionKey()));
+        }
+        response.put("permissions", new java.util.ArrayList<>(allPermissions));
 
         return ResponseEntity.ok(response);
     }

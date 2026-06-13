@@ -69,6 +69,7 @@ public class RoleServiceImpl implements RoleService {
                 .name(request.getName())
                 .code(code)
                 .description(request.getDescription())
+                .showInUserForm(request.getShowInUserForm() != null ? request.getShowInUserForm() : true)
                 .permissions(permissions)
                 .active(true)
                 .build();
@@ -111,6 +112,9 @@ public class RoleServiceImpl implements RoleService {
         }
 
         role.setDescription(request.getDescription());
+        if (request.getShowInUserForm() != null) {
+            role.setShowInUserForm(request.getShowInUserForm());
+        }
 
         Set<Permission> permissions = new HashSet<>();
         if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {
@@ -175,6 +179,7 @@ public class RoleServiceImpl implements RoleService {
                         .code(role.getCode())
                         .description(role.getDescription())
                         .active(role.getActive())
+                        .showInUserForm(role.getShowInUserForm())
                         .permissions(role.getPermissions().stream()
                                 .map(Permission::getPermissionKey)
                                 .collect(Collectors.toSet()))

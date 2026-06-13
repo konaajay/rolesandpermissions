@@ -42,6 +42,10 @@ public class Role extends Auditable {
     private Boolean active = true;
 
     @Builder.Default
+    @Column(name = "show_in_user_form", nullable = false)
+    private Boolean showInUserForm = true;
+
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "role_permissions",

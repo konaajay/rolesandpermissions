@@ -207,6 +207,16 @@ public class DatabaseSeeder implements CommandLineRunner {
                     stmt.executeUpdate("ALTER TABLE employee_certificates ADD COLUMN custom_html TEXT");
                 } catch (Exception ex) {
                 }
+                
+                // Patch roles
+                try {
+                    stmt.executeUpdate("ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
+                } catch (Exception ex) {
+                }
+                try {
+                    stmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
+                } catch (Exception ex) {
+                }
             } catch (Exception e) {
                 log.warn("Failed to patch tables: " + e.getMessage());
             }
@@ -336,6 +346,16 @@ public class DatabaseSeeder implements CommandLineRunner {
                         try {
                             tStmt.executeUpdate(
                                     "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        } catch (Exception ex) {
+                        }
+
+                        // Patch roles
+                        try {
+                            tStmt.executeUpdate("ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
+                        } catch (Exception ex) {
+                        }
+                        try {
+                            tStmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
                         } catch (Exception ex) {
                         }
 

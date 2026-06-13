@@ -13,5 +13,6 @@ public class RoleResponse {
     private String code;
     private String description;
     private Boolean active;
+    private Boolean showInUserForm;
     private Set<String> permissions;
 }

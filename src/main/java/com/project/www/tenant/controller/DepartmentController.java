@@ -31,6 +31,16 @@ public class DepartmentController {
         return repository.findByTenantIdAndActiveTrue(tenantId);
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).COMPANY_PROFILE_VIEW)")
+    public Department getById(@PathVariable Long id) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        if (tenantId == null) throw new RuntimeException("No tenant context");
+        Department existing = repository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        if (!existing.getTenantId().equals(tenantId)) throw new RuntimeException("Unauthorized");
+        return existing;
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).COMPANY_PROFILE_UPDATE)")
     public Department create(@RequestBody Department dept) {

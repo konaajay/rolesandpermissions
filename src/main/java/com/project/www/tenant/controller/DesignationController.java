@@ -18,21 +18,30 @@ public class DesignationController {
     private final DesignationRepository repository;
 
     @GetMapping
-    @PreAuthorize("@moduleEvaluator.hasPermission('TENANT_SETTINGS_VIEW')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
     public ResponseEntity<List<Designation>> getAll() {
         Long tenantId = TenantContext.getCurrentTenant();
         return ResponseEntity.ok(repository.findByTenantId(tenantId));
     }
 
     @GetMapping("/active")
-    @PreAuthorize("@moduleEvaluator.hasPermission('USER_VIEW')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('USER_VIEW')")
     public ResponseEntity<List<Designation>> getActive() {
         Long tenantId = TenantContext.getCurrentTenant();
         return ResponseEntity.ok(repository.findByTenantIdAndActiveTrue(tenantId));
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    public ResponseEntity<Designation> getById(@PathVariable Long id) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        Designation existing = repository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new RuntimeException("Not found"));
+        return ResponseEntity.ok(existing);
+    }
+
     @PostMapping
-    @PreAuthorize("@moduleEvaluator.hasPermission('TENANT_SETTINGS_UPDATE')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
     public ResponseEntity<Designation> create(@RequestBody Designation entity) {
         entity.setTenantId(TenantContext.getCurrentTenant());
         if (entity.getActive() == null) entity.setActive(true);
@@ -41,7 +50,7 @@ public class DesignationController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@moduleEvaluator.hasPermission('TENANT_SETTINGS_UPDATE')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
     public ResponseEntity<Designation> update(@PathVariable Long id, @RequestBody Designation req) {
         Long tenantId = TenantContext.getCurrentTenant();
         Designation existing = repository.findByIdAndTenantId(id, tenantId)
