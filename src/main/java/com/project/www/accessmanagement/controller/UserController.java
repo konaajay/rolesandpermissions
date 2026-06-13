@@ -46,7 +46,7 @@ public class UserController {
         return userService.getSupervisorsForRole(roleId, roleCode);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_VIEW)")
     public UserResponse getUserById(@PathVariable Long id) {
         return userService.getUserById(id);

@@ -97,8 +97,10 @@ public class PermissionServiceImpl implements PermissionService {
             TenantContext.setCurrentTenantCode(tenantCode);
         }
 
-        List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION");
-
+        List<String> coreModules = java.util.Arrays.asList(
+                "USER", "ROLE", "TENANT", "PERMISSION", "COMPANY_PROFILE", 
+                "SETTINGS_MANAGE", "SUBSCRIPTION", "SETTINGS", "DASHBOARD"
+        );
         return permissionRepository.findAllByTenantId(tenantId).stream()
                 .filter(p -> coreModules.contains(p.getModule()) || activeModules.contains(p.getModule()))
                 .map(p -> PermissionResponse.builder()

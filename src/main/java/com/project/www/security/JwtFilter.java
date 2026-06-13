@@ -146,9 +146,14 @@ public class JwtFilter extends OncePerRequestFilter {
                     TenantContext.setCurrentTenant(tenantId);
                     TenantContext.setCurrentTenantCode(tenantCode);
 
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                    UserDetails userDetails = null;
+                    try {
+                        userDetails = userDetailsService.loadUserByUsername(email);
+                    } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+                        logger.warn("JWT references non-existent user: " + email);
+                    }
 
-                    if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
+                    if (userDetails != null && jwtService.isTokenValid(jwt, userDetails.getUsername())) {
                         UsernamePasswordAuthenticationToken authToken =
                                 new UsernamePasswordAuthenticationToken(
                                         userDetails,

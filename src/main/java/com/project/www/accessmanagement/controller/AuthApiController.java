@@ -105,6 +105,15 @@ public class AuthApiController {
             user.getPermissions().forEach(p -> allPermissions.add(p.getPermissionKey()));
         }
         response.put("permissions", new java.util.ArrayList<>(allPermissions));
+        java.util.Set<String> allModules = new java.util.HashSet<>();
+        if (user.getModules() != null) {
+            allModules.addAll(user.getModules());
+        }
+        if (allModules.isEmpty()) {
+            // Fallback to extracting modules from permissions
+            allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
+        }
+        response.put("modules", new java.util.ArrayList<>(allModules));
 
         return ResponseEntity.ok(response);
     }

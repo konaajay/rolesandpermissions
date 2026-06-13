@@ -389,36 +389,8 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
 
         // --- SUBSCRIPTION PLANS SEEDING ---
-        if (subscriptionPlanRepository.count() == 0) {
-            log.info("Seeding default Subscription Plans...");
-            subscriptionPlanRepository.save(SubscriptionPlan.builder()
-                    .name("Starter")
-                    .description("Basic plan for small teams")
-                    .monthlyPrice(29.0)
-                    .yearlyPrice(290.0)
-                    .maxUsers(10)
-                    .modules(Set.of("CRM", "EMPLOYEE"))
-                    .active(true)
-                    .build());
-            subscriptionPlanRepository.save(SubscriptionPlan.builder()
-                    .name("Professional")
-                    .description("Advanced features for growing businesses")
-                    .monthlyPrice(99.0)
-                    .yearlyPrice(990.0)
-                    .maxUsers(50)
-                    .modules(Set.of("CRM", "HRMS", "VENDOR", "EMPLOYEE"))
-                    .active(true)
-                    .build());
-            subscriptionPlanRepository.save(SubscriptionPlan.builder()
-                    .name("Enterprise")
-                    .description("All-inclusive plan for large organizations")
-                    .monthlyPrice(299.0)
-                    .yearlyPrice(2990.0)
-                    .maxUsers(null) // Unlimited
-                    .modules(Set.of("CRM", "HRMS", "VENDOR", "EMPLOYEE", "ADMIN", "MARKETING"))
-                    .active(true)
-                    .build());
-        }
+        // Removed fake subscription plans seeding as per request.
+
 
         // Apply schema to ALL existing tenants to ensure missing tables are created
         log.info("Checking permissions and system templates for existing tenants...");
@@ -428,20 +400,31 @@ public class DatabaseSeeder implements CommandLineRunner {
                 TenantContext.setCurrentTenant(t.getId());
                 TenantContext.setCurrentTenantCode(t.getCode());
 
-                java.util.List<String[]> newSettingsPerms = java.util.Arrays.asList(
-                        new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
-                        new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
-                        new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
-                        new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
-                        new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
-                        new String[] { "ROLE", "VIEW", "Ability to view roles" },
-                        new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
-                        new String[] { "TENANT", "CREATE", "Create Tenants" },
-                        new String[] { "TENANT", "VIEW", "View Tenants" },
-                        new String[] { "TENANT", "UPDATE", "Update Tenants" },
-                        new String[] { "TENANT", "ENABLE", "Enable Tenants" },
-                        new String[] { "TENANT", "DISABLE", "Disable Tenants" },
-                        new String[] { "DASHBOARD", "VIEW", "View Dashboard" },
+        java.util.List<String[]> newSettingsPerms = java.util.Arrays.asList(
+                new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
+                new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
+                new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
+                new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
+                new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
+                new String[] { "USER", "VIEW", "Ability to view users" },
+                new String[] { "USER", "CREATE", "Ability to create new users" },
+                new String[] { "USER", "UPDATE", "Ability to update users" },
+                new String[] { "USER", "DELETE", "Ability to delete users" },
+                new String[] { "ROLE", "VIEW", "Ability to view roles" },
+                new String[] { "ROLE", "CREATE", "Ability to create new roles" },
+                new String[] { "ROLE", "UPDATE", "Ability to update roles" },
+                new String[] { "ROLE", "ENABLE", "Ability to enable roles" },
+                new String[] { "ROLE", "DISABLE", "Ability to disable roles" },
+                new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
+                new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
+                new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
+                new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
+                new String[] { "TENANT", "CREATE", "Create Tenants" },
+                new String[] { "TENANT", "VIEW", "View Tenants" },
+                new String[] { "TENANT", "UPDATE", "Update Tenants" },
+                new String[] { "TENANT", "ENABLE", "Enable Tenants" },
+                new String[] { "TENANT", "DISABLE", "Disable Tenants" },
+                new String[] { "DASHBOARD", "VIEW", "View Dashboard" },
                         new String[] { "VENDOR", "CREATE", "Create Vendors" },
                         new String[] { "VENDOR", "VIEW", "View Vendors" },
                         new String[] { "VENDOR", "UPDATE", "Update Vendors" },
@@ -474,6 +457,15 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "MARKETING", "ANALYTICS_VIEW", "View Marketing Analytics" },
                         new String[] { "MARKETING", "CAMPAIGN_VIEW", "View Marketing Campaign Analytics" },
                         new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" },
+                        new String[] { "MARKETING", "CONTENT_VIEW", "View Marketing Content" },
+                        new String[] { "MARKETING", "CONTENT_CREATE", "Create Marketing Content" },
+                        new String[] { "MARKETING", "CONTENT_UPDATE", "Update Marketing Content" },
+                        new String[] { "MARKETING", "CONTENT_DELETE", "Delete Marketing Content" },
+                        new String[] { "MARKETING", "MEDIA_VIEW", "View Marketing Media" },
+                        new String[] { "MARKETING", "MEDIA_UPLOAD", "Upload Marketing Media" },
+                        new String[] { "MARKETING", "INTERACTION_VIEW", "View Marketing Interactions" },
+                        new String[] { "MARKETING", "NOTIFICATION_VIEW", "View Marketing Notifications" },
+                        new String[] { "MARKETING", "NOTIFICATION_SEND", "Send Marketing Notifications" },
                         new String[] { "ATTENDANCE", "VIEW_ATTENDANCE", "View Own Attendance" },
                         new String[] { "ATTENDANCE", "VIEW_TEAM_ATTENDANCE", "View Team Attendance" },
                         new String[] { "ATTENDANCE", "APPROVE_REGULARIZE", "Approve Regularization" },
@@ -556,7 +548,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .map(info -> (info[0] + "_" + info[1]).toUpperCase())
                         .collect(java.util.stream.Collectors.toSet());
 
-                for (String roleName : new String[] { "SUPER_ADMIN", "TENANT_ADMIN" }) {
+                for (String roleName : new String[] { "SUPER_ADMIN", "TENANT_ADMIN", "TEST" }) {
                     roleRepository.findByNameAndTenantId(roleName, t.getId()).ifPresent(role -> {
                         Set<Permission> updatedPerms = new java.util.HashSet<>(role.getPermissions());
                         boolean changed = false;
@@ -575,30 +567,19 @@ public class DatabaseSeeder implements CommandLineRunner {
                 }
 
                 roleRepository.findByNameAndTenantId("EMPLOYEE", t.getId()).ifPresent(role -> {
-                    Set<Permission> updatedPerms = new java.util.HashSet<>(role.getPermissions());
-                    boolean changed = false;
+                    Set<Permission> expectedPerms = new java.util.HashSet<>();
                     String[] employeeKeys = new String[] {
-                        "USER_VIEW",
-                        "USER_UPDATE",
-                        "USER_CREATE",
-                        "USER_DELETE",
                         "DASHBOARD_VIEW",
-                        "ATTENDANCE_VIEW_ATTENDANCE",
-                        "LEAVE_VIEW_LEAVE",
-                        "LEAVE_APPLY_LEAVE",
-                        "PAYROLL_VIEW_PAYSLIP",
-                        "TASKS_VIEW_TASKS",
                         "COMPANY_PROFILE_VIEW"
                     };
                     for (String key : employeeKeys) {
                         Permission p = permMap.get(key);
-                        if (p != null && !updatedPerms.contains(p)) {
-                            updatedPerms.add(p);
-                            changed = true;
+                        if (p != null) {
+                            expectedPerms.add(p);
                         }
                     }
-                    if (changed) {
-                        role.setPermissions(updatedPerms);
+                    if (!role.getPermissions().equals(expectedPerms)) {
+                        role.setPermissions(expectedPerms);
                         roleRepository.save(role);
                     }
                 });
@@ -680,6 +661,15 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "MARKETING", "CAMPAIGN_VIEW", "View Marketing Campaign Analytics" },
                     new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" },
                     new String[] { "MARKETING", "Ajay_SUMMARY", "View ajay Summary" },
+                    new String[] { "MARKETING", "CONTENT_VIEW", "View Marketing Content" },
+                    new String[] { "MARKETING", "CONTENT_CREATE", "Create Marketing Content" },
+                    new String[] { "MARKETING", "CONTENT_UPDATE", "Update Marketing Content" },
+                    new String[] { "MARKETING", "CONTENT_DELETE", "Delete Marketing Content" },
+                    new String[] { "MARKETING", "MEDIA_VIEW", "View Marketing Media" },
+                    new String[] { "MARKETING", "MEDIA_UPLOAD", "Upload Marketing Media" },
+                    new String[] { "MARKETING", "INTERACTION_VIEW", "View Marketing Interactions" },
+                    new String[] { "MARKETING", "NOTIFICATION_VIEW", "View Marketing Notifications" },
+                    new String[] { "MARKETING", "NOTIFICATION_SEND", "Send Marketing Notifications" },
                     new String[] { "ATTENDANCE", "VIEW_ATTENDANCE", "View Own Attendance" },
                     new String[] { "ATTENDANCE", "VIEW_TEAM_ATTENDANCE", "View Team Attendance" },
                     new String[] { "ATTENDANCE", "APPROVE_REGULARIZE", "Approve Regularization" },
@@ -765,6 +755,11 @@ public class DatabaseSeeder implements CommandLineRunner {
                             .build());
             superAdminRole.setPermissions(superAdminPermissions);
             superAdminRole = roleRepository.save(superAdminRole);
+
+            roleRepository.findByNameAndTenantId("TEST", systemTenantId).ifPresent(testRole -> {
+                testRole.setPermissions(new java.util.HashSet<>(superAdminPermissions));
+                roleRepository.save(testRole);
+            });
 
             int currentYear = java.time.LocalDate.now().getYear();
             if (!tenantSequenceRepository.findByTenantIdAndYear(systemTenantId, currentYear).isPresent()) {

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS roles (
   code VARCHAR(255) NOT NULL,
   description VARCHAR(255),
   active BOOLEAN NOT NULL DEFAULT TRUE,
+  show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
   created_by VARCHAR(255),
@@ -102,6 +103,56 @@ CREATE TABLE IF NOT EXISTS role_extra_fields (
   CONSTRAINT UNIQUE_role_field UNIQUE (role_id, field_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS employee_types (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description VARCHAR(1000),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS designations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description VARCHAR(1000),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS work_modes (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description VARCHAR(1000),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS departments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description VARCHAR(1000),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS business_entities (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  description VARCHAR(1000),
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT NOT NULL,
@@ -114,12 +165,21 @@ CREATE TABLE IF NOT EXISTS users (
   role_id BIGINT,
   phone_number VARCHAR(255),
   office_location_id BIGINT,
+  employee_id VARCHAR(100),
+  date_of_birth DATE,
+  joining_date DATE,
+  employee_type_id BIGINT,
+  designation_id BIGINT,
+  work_mode_id BIGINT,
   created_at DATETIME NOT NULL,
   updated_at DATETIME,
   created_by VARCHAR(255),
   updated_by VARCHAR(255),
   FOREIGN KEY (role_id) REFERENCES roles(id),
   FOREIGN KEY (office_location_id) REFERENCES office_locations(id) ON DELETE SET NULL,
+  FOREIGN KEY (employee_type_id) REFERENCES employee_types(id) ON DELETE SET NULL,
+  FOREIGN KEY (designation_id) REFERENCES designations(id) ON DELETE SET NULL,
+  FOREIGN KEY (work_mode_id) REFERENCES work_modes(id) ON DELETE SET NULL,
   CONSTRAINT UNIQUE_tenant_email UNIQUE (tenant_id, email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -519,3 +579,19 @@ CREATE TABLE IF NOT EXISTS tracked_links (id BIGINT AUTO_INCREMENT PRIMARY KEY, 
 CREATE TABLE IF NOT EXISTS email_campaigns (id BIGINT AUTO_INCREMENT PRIMARY KEY, subject VARCHAR(200), body TEXT, status VARCHAR(50), sent_at DATETIME, total_sent INT DEFAULT 0, opened INT DEFAULT 0, clicked INT DEFAULT 0, bounced INT DEFAULT 0, core_campaign_id BIGINT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS coupons (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) NOT NULL, discount_value DOUBLE NOT NULL, discount_cap DOUBLE, expiry_date DATETIME, max_usage INT, used_count INT DEFAULT 0, min_purchase_amount DOUBLE DEFAULT 0.0, per_user_limit INT DEFAULT 1, is_first_order_only BOOLEAN DEFAULT FALSE, auto_apply BOOLEAN DEFAULT FALSE, affiliate_id BIGINT, learner_id BIGINT, status VARCHAR(20), deleted BOOLEAN DEFAULT FALSE, campaign_id BIGINT, created_by VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_departments (
+  user_id BIGINT NOT NULL,
+  department_id BIGINT NOT NULL,
+  PRIMARY KEY (user_id, department_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_entities (
+  user_id BIGINT NOT NULL,
+  entity_id BIGINT NOT NULL,
+  PRIMARY KEY (user_id, entity_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (entity_id) REFERENCES business_entities(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
