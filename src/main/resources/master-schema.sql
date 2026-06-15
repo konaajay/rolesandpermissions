@@ -210,8 +210,10 @@ CREATE TABLE IF NOT EXISTS work_modes (
 CREATE TABLE IF NOT EXISTS departments (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT NOT NULL,
-  name VARCHAR(255) NOT NULL,
+  dept_code VARCHAR(100) NOT NULL,
+  dept_name VARCHAR(255) NOT NULL,
   description VARCHAR(1000),
+  entity_id BIGINT,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL
@@ -220,7 +222,8 @@ CREATE TABLE IF NOT EXISTS departments (
 CREATE TABLE IF NOT EXISTS business_entities (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT NOT NULL,
-  name VARCHAR(255) NOT NULL,
+  entity_code VARCHAR(100) NOT NULL,
+  company_name VARCHAR(255) NOT NULL,
   description VARCHAR(1000),
   active BOOLEAN NOT NULL DEFAULT TRUE,
   show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE,
@@ -641,4 +644,20 @@ CREATE TABLE IF NOT EXISTS requirement_items (
     quantity INT NOT NULL,
     unit VARCHAR(50),
     FOREIGN KEY (requirement_id) REFERENCES vendor_requirements(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_departments (
+  user_id BIGINT NOT NULL,
+  department_id BIGINT NOT NULL,
+  PRIMARY KEY (user_id, department_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_entities (
+  user_id BIGINT NOT NULL,
+  entity_id BIGINT NOT NULL,
+  PRIMARY KEY (user_id, entity_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (entity_id) REFERENCES business_entities(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

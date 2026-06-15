@@ -20,7 +20,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "tenantId", "email" })
+        @UniqueConstraint(columnNames = { "tenantId", "email" }),
+        @UniqueConstraint(columnNames = { "tenantId", "employee_id" })
 })
 public class User extends Auditable {
 

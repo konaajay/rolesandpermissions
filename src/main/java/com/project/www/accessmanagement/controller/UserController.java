@@ -15,12 +15,20 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.ResponseEntity;
+import java.util.Map;
+import java.util.HashMap;
+import com.project.www.accessmanagement.repository.UserRepository;
+
 @RestController
 @RequestMapping({"/users", "/employees"})
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_CREATE)")
@@ -44,6 +52,41 @@ public class UserController {
             @RequestParam(required = false) String roleCode
     ) {
         return userService.getSupervisorsForRole(roleId, roleCode);
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getMe() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User user = userRepository.findFirstByEmailAndTenantId(email, com.project.www.util.TenantContext.getCurrentTenant())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", user.getId());
+        response.put("name", user.getFirstName() + " " + user.getLastName());
+        response.put("role", user.getRole() != null ? user.getRole().getName() : null);
+        response.put("email", user.getEmail());
+        
+        java.util.Set<String> allPermissions = new java.util.HashSet<>();
+        if (user.getRole() != null && user.getRole().getPermissions() != null) {
+            user.getRole().getPermissions().forEach(p -> allPermissions.add(p.getPermissionKey()));
+        }
+        if (user.getPermissions() != null) {
+            user.getPermissions().forEach(p -> allPermissions.add(p.getPermissionKey()));
+        }
+        response.put("permissions", new java.util.ArrayList<>(allPermissions));
+        java.util.Set<String> allModules = new java.util.HashSet<>();
+        if (user.getModules() != null) {
+            allModules.addAll(user.getModules());
+        }
+        if (allModules.isEmpty()) {
+            allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
+        }
+        response.put("modules", new java.util.ArrayList<>(allModules));
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id:\\d+}")

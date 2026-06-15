@@ -37,6 +37,7 @@ public class AdminEmailCampaignController {
 
     public static class CreateCampaignRequest {
         public String title;
+        public String campaignName;
         public String subject;
         public String content;
         public EmailCampaignStatus status;
@@ -48,7 +49,7 @@ public class AdminEmailCampaignController {
     public ResponseEntity<EmailCampaign> createCampaign(@RequestBody CreateCampaignRequest request) {
         EmailCampaign campaign = new EmailCampaign();
         campaign.setChannel("EMAIL");
-        campaign.setTitle(request.title);
+        campaign.setTitle(request.title != null ? request.title : request.campaignName);
         campaign.setSubject(request.subject);
         campaign.setContent(request.content);
         campaign.setStatus(request.status);
