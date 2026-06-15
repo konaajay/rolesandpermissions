@@ -436,13 +436,27 @@ public class UserServiceImpl implements UserService {
         if (request.getSupervisorUserId() != null) {
             User supervisor = userRepository.findByIdAndTenantId(request.getSupervisorUserId(), tenantId)
                     .orElseThrow(() -> new RuntimeException("Supervisor user not found"));
-            userReportingRepository.deleteAllByUserIdAndTenantId(updated.getId(), tenantId);
-            UserReporting reporting = UserReporting.builder()
-                    .tenantId(tenantId)
-                    .user(updated)
-                    .supervisorUser(supervisor)
-                    .build();
-            userReportingRepository.save(reporting);
+                    
+            java.util.List<UserReporting> existingList = userReportingRepository.findAllByUserIdAndTenantId(updated.getId(), tenantId);
+            if (existingList.isEmpty()) {
+                UserReporting reporting = UserReporting.builder()
+                        .tenantId(tenantId)
+                        .user(updated)
+                        .supervisorUser(supervisor)
+                        .build();
+                userReportingRepository.save(reporting);
+            } else {
+                UserReporting reporting = existingList.get(0);
+                reporting.setSupervisorUser(supervisor);
+                userReportingRepository.save(reporting);
+                
+                // Clean up any extra records if they exist
+                if (existingList.size() > 1) {
+                    for (int i = 1; i < existingList.size(); i++) {
+                        userReportingRepository.delete(existingList.get(i));
+                    }
+                }
+            }
         } else {
             userReportingRepository.deleteAllByUserIdAndTenantId(updated.getId(), tenantId);
         }
