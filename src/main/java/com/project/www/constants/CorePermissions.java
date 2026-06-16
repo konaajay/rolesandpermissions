@@ -59,4 +59,7 @@ public final class CorePermissions {
     public static final String COMPANY_PROFILE_UPDATE = "COMPANY_PROFILE_UPDATE";
     public static final String SETTINGS_MANAGE_TEMPLATES = "SETTINGS_MANAGE_TEMPLATES";
     public static final String SETTINGS_MANAGE_ONBOARDING = "SETTINGS_MANAGE_ONBOARDING";
+
+    // ── Marketing management ──────────────────────────────────────────────────
+    public static final String MARKETING_AJAY_SUMMARY = "MARKETING_AJAY_SUMMARY";
 }

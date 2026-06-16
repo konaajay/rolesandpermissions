@@ -1,10 +1,6 @@
 package com.project.www.accessmanagement.entity;
 
-import com.project.www.accessmanagement.entity.User;
-
 import com.project.www.entity.Auditable;
-
-import com.project.www.marketing.entity.*;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,12 +11,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(
-    name = "user_extra_field_values",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "field_id"})
-    }
-)
+@Table(name = "user_extra_field_values", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "user_id", "field_id" })
+})
 public class UserExtraFieldValue extends Auditable {
 
     @Id

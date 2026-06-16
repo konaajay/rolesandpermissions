@@ -4,10 +4,6 @@ import com.project.www.entity.Gender;
 
 import com.project.www.entity.Auditable;
 
-import com.project.www.accessmanagement.entity.Role;
-
-import com.project.www.accessmanagement.entity.Permission;
-
 import com.project.www.tenant.entity.OfficeLocation;
 
 import jakarta.persistence.*;
@@ -112,8 +108,6 @@ public class User extends Auditable {
     public OfficeLocation getAssignedOffice() {
         return this.assignedOffice;
     }
-
-
 
     public String getName() {
         return getFirstName() + " " + getLastName();

@@ -28,7 +28,6 @@ import com.project.www.accessmanagement.repository.UserReportingRepository;
 import com.project.www.accessmanagement.repository.UserRepository;
 import com.project.www.util.TenantContext;
 
-import com.project.www.tenant.entity.SubscriptionPlan;
 import com.project.www.tenant.repository.SubscriptionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,154 +68,55 @@ public class DatabaseSeeder implements CommandLineRunner {
             // Patch existing tables in master database to add missing columns
             try (java.sql.Statement stmt = conn.createStatement()) {
                 // Patch tenants table
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN super_admin_name VARCHAR(255)");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN phone VARCHAR(255)");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE'");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_type VARCHAR(50)");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_start_date DATE");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_end_date DATE");
-                } catch (Exception e) {
-                }
+                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN super_admin_name VARCHAR(255)");
+                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN phone VARCHAR(255)");
+                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE'");
+                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_type VARCHAR(50)");
+                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_start_date DATE");
+                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_end_date DATE");
 
                 // Patch subscriptions table
-                try {
-                    stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_paid DOUBLE DEFAULT 0.0");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_pending DOUBLE DEFAULT 0.0");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN payment_history TEXT");
-                } catch (Exception e) {
-                }
+                stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_paid DOUBLE DEFAULT 0.0");
+                stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_pending DOUBLE DEFAULT 0.0");
+                stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN payment_history TEXT");
 
                 // Patch vendor_invoices
-                try {
-                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
-                } catch (Exception e) {
-                }
+                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT");
+                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
+                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
+                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
 
                 // Patch vendor_contracts
-                try {
-                    stmt.executeUpdate("ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
-                } catch (Exception e) {
-                }
+                stmt.executeUpdate("ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
 
                 // Patch tenant_modules
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN amount DOUBLE");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN payment_method VARCHAR(255)");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN special_requirements TEXT");
-                } catch (Exception e) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN extra_charges DOUBLE");
-                } catch (Exception e) {
-                }
+                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN amount DOUBLE");
+                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN payment_method VARCHAR(255)");
+                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN special_requirements TEXT");
+                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN extra_charges DOUBLE");
 
-                try {
-                    stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate(
-                            "ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate(
-                            "ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate(
-                            "ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE id_format_settings DROP COLUMN format_string");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate(
-                            "ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate(
-                            "ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN stamp_url VARCHAR(500)");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN signature_url VARCHAR(500)");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN header_image_url VARCHAR(500)");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN footer_image_url VARCHAR(500)");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("ALTER TABLE employee_certificates ADD COLUMN custom_html TEXT");
-                } catch (Exception ex) {
-                }
-                
+                stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
+                stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
+                stmt.executeUpdate(
+                        "ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE");
+                stmt.executeUpdate(
+                        "ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'");
+                stmt.executeUpdate(
+                        "ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7");
+                stmt.executeUpdate("ALTER TABLE id_format_settings DROP COLUMN format_string");
+                stmt.executeUpdate(
+                        "ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE");
+                stmt.executeUpdate(
+                        "ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE");
+                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN stamp_url VARCHAR(500)");
+                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN signature_url VARCHAR(500)");
+                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN header_image_url VARCHAR(500)");
+                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN footer_image_url VARCHAR(500)");
+                stmt.executeUpdate("ALTER TABLE employee_certificates ADD COLUMN custom_html TEXT");
+
                 // Patch roles
-                try {
-                    stmt.executeUpdate("ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
-                } catch (Exception ex) {
-                }
-                try {
-                    stmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
-                } catch (Exception ex) {
-                }
+                stmt.executeUpdate("ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
+                stmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
             } catch (Exception e) {
                 log.warn("Failed to patch tables: " + e.getMessage());
             }
@@ -250,118 +150,71 @@ public class DatabaseSeeder implements CommandLineRunner {
                     tenantDatabaseService.registerExistingTenantDatabase(t.getCode(), t.getDbName());
 
                     // PATCH TENANT DATABASE
-                    try (java.sql.Connection tConn = java.sql.DriverManager.getConnection(
-                            "jdbc:mysql://localhost:3306/" + t.getDbName() + "?createDatabaseIfNotExist=true", "root",
-                            "root");
-                            java.sql.Statement tStmt = tConn.createStatement()) {
-                        try {
+                    try {
+                        TenantContext.setCurrentTenantCode(t.getCode());
+                        try (java.sql.Connection tConn = dataSource.getConnection();
+                                java.sql.Statement tStmt = tConn.createStatement()) {
                             tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "ALTER TABLE vendor_requirements ADD COLUMN requirement_type VARCHAR(255)");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN return_date DATE");
-                        } catch (Exception ex) {
-                        }
+                        tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
+                        tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
+                        tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
+                        tStmt.executeUpdate(
+                                "ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
+                        tStmt.executeUpdate(
+                                "ALTER TABLE vendor_requirements ADD COLUMN requirement_type VARCHAR(255)");
+                        tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN return_date DATE");
+
+                        // Users missing columns patch
+                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN designation_id BIGINT");
+                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN employee_type_id BIGINT");
+                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN office_location_id BIGINT");
+                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN work_mode_id BIGINT");
+                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN joining_date DATE");
+                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN employee_id VARCHAR(255)");
+
+                        // Permissions table patch
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS permissions (id BIGINT AUTO_INCREMENT PRIMARY KEY, tenant_id BIGINT NOT NULL, permission_key VARCHAR(255), module VARCHAR(255), action VARCHAR(255), description VARCHAR(1000), active BOOLEAN DEFAULT TRUE, created_at DATETIME, updated_at DATETIME, created_by VARCHAR(255), updated_by VARCHAR(255))");
 
                         // User set-based relationship tables patch
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS user_permissions (user_id BIGINT NOT NULL, permission_id BIGINT NOT NULL, PRIMARY KEY (user_id, permission_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS user_modules (user_id BIGINT NOT NULL, module_name VARCHAR(255) NOT NULL, PRIMARY KEY (user_id, module_name), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS user_permissions (user_id BIGINT NOT NULL, permission_id BIGINT NOT NULL, PRIMARY KEY (user_id, permission_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS user_modules (user_id BIGINT NOT NULL, module_name VARCHAR(255) NOT NULL, PRIMARY KEY (user_id, module_name), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
                         // Marketing Tables
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS campaigns (campaign_id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_name VARCHAR(150) NOT NULL, subject VARCHAR(200), campaign_type VARCHAR(50), start_date DATE, end_date DATE, budget DECIMAL(19,2) NOT NULL, status VARCHAR(20), description VARCHAR(500), channel VARCHAR(255) NOT NULL, target_audience VARCHAR(255) NOT NULL, audience_filters TEXT, module_type VARCHAR(50), audience_source VARCHAR(50), content TEXT, scheduled_at DATETIME, sent_count INT DEFAULT 0, failed_count INT DEFAULT 0, open_count INT DEFAULT 0, click_count INT DEFAULT 0, archived_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS campaign_recipients (campaign_id BIGINT NOT NULL, email VARCHAR(255), FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS landing_pages (id BIGINT AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE, title VARCHAR(255) NOT NULL, headline VARCHAR(255), subtitle VARCHAR(255), description TEXT, module_type VARCHAR(255), landing_page_type VARCHAR(255), price DECIMAL(19,2), ad_budget DECIMAL(19,2), video_url VARCHAR(255), cta_text VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS landing_page_features (landing_page_id BIGINT NOT NULL, feature VARCHAR(255), FOREIGN KEY (landing_page_id) REFERENCES landing_pages(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS campaign_performance (id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_id BIGINT NOT NULL, impressions INT DEFAULT 0, clicks INT DEFAULT 0, conversions INT DEFAULT 0, spend DECIMAL(19,2), recorded_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS traffic_events (id BIGINT AUTO_INCREMENT PRIMARY KEY, event_type VARCHAR(255) NOT NULL, source VARCHAR(255), medium VARCHAR(255), campaign_name VARCHAR(255), url VARCHAR(255), ip_address VARCHAR(255), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS tracked_links (id BIGINT AUTO_INCREMENT PRIMARY KEY, tracked_link_id VARCHAR(255), landing_slug VARCHAR(255), source VARCHAR(255), medium VARCHAR(255), campaign VARCHAR(255), generated_link VARCHAR(255), ad_budget DECIMAL(19,2), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS email_campaigns (id BIGINT AUTO_INCREMENT PRIMARY KEY, subject VARCHAR(200), body TEXT, status VARCHAR(50), sent_at DATETIME, total_sent INT DEFAULT 0, opened INT DEFAULT 0, clicked INT DEFAULT 0, bounced INT DEFAULT 0, core_campaign_id BIGINT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS coupons (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) NOT NULL, discount_value DOUBLE NOT NULL, discount_cap DOUBLE, expiry_date DATETIME, max_usage INT, used_count INT DEFAULT 0, min_purchase_amount DOUBLE DEFAULT 0.0, per_user_limit INT DEFAULT 1, is_first_order_only BOOLEAN DEFAULT FALSE, auto_apply BOOLEAN DEFAULT FALSE, affiliate_id BIGINT, learner_id BIGINT, status VARCHAR(20), deleted BOOLEAN DEFAULT FALSE, campaign_id BIGINT, created_by VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate(
-                                    "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        } catch (Exception ex) {
-                        }
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS campaigns (campaign_id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_name VARCHAR(150) NOT NULL, subject VARCHAR(200), campaign_type VARCHAR(50), start_date DATE, end_date DATE, budget DECIMAL(19,2) NOT NULL, status VARCHAR(20), description VARCHAR(500), channel VARCHAR(255) NOT NULL, target_audience VARCHAR(255) NOT NULL, audience_filters TEXT, module_type VARCHAR(50), audience_source VARCHAR(50), content TEXT, scheduled_at DATETIME, sent_count INT DEFAULT 0, failed_count INT DEFAULT 0, open_count INT DEFAULT 0, click_count INT DEFAULT 0, archived_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS campaign_recipients (campaign_id BIGINT NOT NULL, email VARCHAR(255), FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS landing_pages (id BIGINT AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE, title VARCHAR(255) NOT NULL, headline VARCHAR(255), subtitle VARCHAR(255), description TEXT, module_type VARCHAR(255), landing_page_type VARCHAR(255), price DECIMAL(19,2), ad_budget DECIMAL(19,2), video_url VARCHAR(255), cta_text VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS landing_page_features (landing_page_id BIGINT NOT NULL, feature VARCHAR(255), FOREIGN KEY (landing_page_id) REFERENCES landing_pages(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS campaign_performance (id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_id BIGINT NOT NULL, impressions INT DEFAULT 0, clicks INT DEFAULT 0, conversions INT DEFAULT 0, spend DECIMAL(19,2), recorded_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS traffic_events (id BIGINT AUTO_INCREMENT PRIMARY KEY, event_type VARCHAR(255) NOT NULL, source VARCHAR(255), medium VARCHAR(255), campaign_name VARCHAR(255), url VARCHAR(255), ip_address VARCHAR(255), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS tracked_links (id BIGINT AUTO_INCREMENT PRIMARY KEY, tracked_link_id VARCHAR(255), landing_slug VARCHAR(255), source VARCHAR(255), medium VARCHAR(255), campaign VARCHAR(255), generated_link VARCHAR(255), ad_budget DECIMAL(19,2), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS email_campaigns (id BIGINT AUTO_INCREMENT PRIMARY KEY, subject VARCHAR(200), body TEXT, status VARCHAR(50), sent_at DATETIME, total_sent INT DEFAULT 0, opened INT DEFAULT 0, clicked INT DEFAULT 0, bounced INT DEFAULT 0, core_campaign_id BIGINT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS coupons (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) NOT NULL, discount_value DOUBLE NOT NULL, discount_cap DOUBLE, expiry_date DATETIME, max_usage INT, used_count INT DEFAULT 0, min_purchase_amount DOUBLE DEFAULT 0.0, per_user_limit INT DEFAULT 1, is_first_order_only BOOLEAN DEFAULT FALSE, auto_apply BOOLEAN DEFAULT FALSE, affiliate_id BIGINT, learner_id BIGINT, status VARCHAR(20), deleted BOOLEAN DEFAULT FALSE, campaign_id BIGINT, created_by VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                        tStmt.executeUpdate(
+                                "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
                         // Patch roles
-                        try {
-                            tStmt.executeUpdate("ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
-                        } catch (Exception ex) {
-                        }
-                        try {
-                            tStmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
-                        } catch (Exception ex) {
-                        }
+                        tStmt.executeUpdate(
+                                "ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
+                        tStmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
 
                         log.info("Patched tenant database: " + t.getDbName());
+                        }
                     } catch (Exception e) {
                         log.warn("Failed to patch tenant database: " + t.getDbName() + ", error: " + e.getMessage());
+                    } finally {
+                        TenantContext.clear();
                     }
                 }
             }
@@ -391,7 +244,6 @@ public class DatabaseSeeder implements CommandLineRunner {
         // --- SUBSCRIPTION PLANS SEEDING ---
         // Removed fake subscription plans seeding as per request.
 
-
         // Apply schema to ALL existing tenants to ensure missing tables are created
         log.info("Checking permissions and system templates for existing tenants...");
         java.util.List<Tenant> allTenants = tenantRepository.findAll();
@@ -400,31 +252,31 @@ public class DatabaseSeeder implements CommandLineRunner {
                 TenantContext.setCurrentTenant(t.getId());
                 TenantContext.setCurrentTenantCode(t.getCode());
 
-        java.util.List<String[]> newSettingsPerms = java.util.Arrays.asList(
-                new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
-                new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
-                new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
-                new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
-                new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
-                new String[] { "USER", "VIEW", "Ability to view users" },
-                new String[] { "USER", "CREATE", "Ability to create new users" },
-                new String[] { "USER", "UPDATE", "Ability to update users" },
-                new String[] { "USER", "DELETE", "Ability to delete users" },
-                new String[] { "ROLE", "VIEW", "Ability to view roles" },
-                new String[] { "ROLE", "CREATE", "Ability to create new roles" },
-                new String[] { "ROLE", "UPDATE", "Ability to update roles" },
-                new String[] { "ROLE", "ENABLE", "Ability to enable roles" },
-                new String[] { "ROLE", "DISABLE", "Ability to disable roles" },
-                new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
-                new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
-                new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
-                new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
-                new String[] { "TENANT", "CREATE", "Create Tenants" },
-                new String[] { "TENANT", "VIEW", "View Tenants" },
-                new String[] { "TENANT", "UPDATE", "Update Tenants" },
-                new String[] { "TENANT", "ENABLE", "Enable Tenants" },
-                new String[] { "TENANT", "DISABLE", "Disable Tenants" },
-                new String[] { "DASHBOARD", "VIEW", "View Dashboard" },
+                java.util.List<String[]> newSettingsPerms = java.util.Arrays.asList(
+                        new String[] { "COMPANY_PROFILE", "VIEW", "View Company Profile" },
+                        new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
+                        new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
+                        new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
+                        new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
+                        new String[] { "USER", "VIEW", "Ability to view users" },
+                        new String[] { "USER", "CREATE", "Ability to create new users" },
+                        new String[] { "USER", "UPDATE", "Ability to update users" },
+                        new String[] { "USER", "DELETE", "Ability to delete users" },
+                        new String[] { "ROLE", "VIEW", "Ability to view roles" },
+                        new String[] { "ROLE", "CREATE", "Ability to create new roles" },
+                        new String[] { "ROLE", "UPDATE", "Ability to update roles" },
+                        new String[] { "ROLE", "ENABLE", "Ability to enable roles" },
+                        new String[] { "ROLE", "DISABLE", "Ability to disable roles" },
+                        new String[] { "PERMISSION", "VIEW", "Ability to view permissions" },
+                        new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
+                        new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
+                        new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
+                        new String[] { "TENANT", "CREATE", "Create Tenants" },
+                        new String[] { "TENANT", "VIEW", "View Tenants" },
+                        new String[] { "TENANT", "UPDATE", "Update Tenants" },
+                        new String[] { "TENANT", "ENABLE", "Enable Tenants" },
+                        new String[] { "TENANT", "DISABLE", "Disable Tenants" },
+                        new String[] { "DASHBOARD", "VIEW", "View Dashboard" },
                         new String[] { "VENDOR", "CREATE", "Create Vendors" },
                         new String[] { "VENDOR", "VIEW", "View Vendors" },
                         new String[] { "VENDOR", "UPDATE", "Update Vendors" },
@@ -445,10 +297,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "VENDOR", "AUDIT_VIEW", "View Vendor Audits" },
                         new String[] { "VENDOR", "AUDIT_UPDATE", "Update Vendor Audits" },
                         new String[] { "VENDOR", "AUDIT_DELETE", "Delete Vendor Audits" },
-                        new String[] { "PO", "CREATE", "Create Purchase Orders" },
-                        new String[] { "PO", "VIEW", "View Purchase Orders" },
-                        new String[] { "PO", "UPDATE", "Update Purchase Orders" },
-                        new String[] { "PO", "DELETE", "Delete Purchase Orders" },
+
                         new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" },
                         new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
                         new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
@@ -466,6 +315,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "MARKETING", "INTERACTION_VIEW", "View Marketing Interactions" },
                         new String[] { "MARKETING", "NOTIFICATION_VIEW", "View Marketing Notifications" },
                         new String[] { "MARKETING", "NOTIFICATION_SEND", "Send Marketing Notifications" },
+
                         new String[] { "ATTENDANCE", "VIEW_ATTENDANCE", "View Own Attendance" },
                         new String[] { "ATTENDANCE", "VIEW_TEAM_ATTENDANCE", "View Team Attendance" },
                         new String[] { "ATTENDANCE", "APPROVE_REGULARIZE", "Approve Regularization" },
@@ -569,8 +419,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                 roleRepository.findByNameAndTenantId("EMPLOYEE", t.getId()).ifPresent(role -> {
                     Set<Permission> expectedPerms = new java.util.HashSet<>();
                     String[] employeeKeys = new String[] {
-                        "DASHBOARD_VIEW",
-                        "COMPANY_PROFILE_VIEW"
+                            "DASHBOARD_VIEW",
+                            "COMPANY_PROFILE_VIEW"
                     };
                     for (String key : employeeKeys) {
                         Permission p = permMap.get(key);
@@ -660,7 +510,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "MARKETING", "ANALYTICS_VIEW", "View Marketing Analytics" },
                     new String[] { "MARKETING", "CAMPAIGN_VIEW", "View Marketing Campaign Analytics" },
                     new String[] { "MARKETING", "ANALYTICS_SUMMARY", "View Marketing Summary" },
-                    new String[] { "MARKETING", "Ajay_SUMMARY", "View ajay Summary" },
                     new String[] { "MARKETING", "CONTENT_VIEW", "View Marketing Content" },
                     new String[] { "MARKETING", "CONTENT_CREATE", "Create Marketing Content" },
                     new String[] { "MARKETING", "CONTENT_UPDATE", "Update Marketing Content" },
