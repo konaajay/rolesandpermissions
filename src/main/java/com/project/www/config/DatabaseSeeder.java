@@ -68,55 +68,53 @@ public class DatabaseSeeder implements CommandLineRunner {
             // Patch existing tables in master database to add missing columns
             try (java.sql.Statement stmt = conn.createStatement()) {
                 // Patch tenants table
-                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN super_admin_name VARCHAR(255)");
-                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN phone VARCHAR(255)");
-                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN status VARCHAR(50) DEFAULT 'ACTIVE'");
-                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_type VARCHAR(50)");
-                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_start_date DATE");
-                stmt.executeUpdate("ALTER TABLE tenants ADD COLUMN subscription_end_date DATE");
+                addColumnIfNotExists(conn, "rbac_db", "tenants", "super_admin_name", "VARCHAR(255)");
+                addColumnIfNotExists(conn, "rbac_db", "tenants", "phone", "VARCHAR(255)");
+                addColumnIfNotExists(conn, "rbac_db", "tenants", "status", "VARCHAR(50) DEFAULT 'ACTIVE'");
+                addColumnIfNotExists(conn, "rbac_db", "tenants", "subscription_type", "VARCHAR(50)");
+                addColumnIfNotExists(conn, "rbac_db", "tenants", "subscription_start_date", "DATE");
+                addColumnIfNotExists(conn, "rbac_db", "tenants", "subscription_end_date", "DATE");
 
                 // Patch subscriptions table
-                stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_paid DOUBLE DEFAULT 0.0");
-                stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN amount_pending DOUBLE DEFAULT 0.0");
-                stmt.executeUpdate("ALTER TABLE subscriptions ADD COLUMN payment_history TEXT");
+                addColumnIfNotExists(conn, "rbac_db", "subscriptions", "amount_paid", "DOUBLE DEFAULT 0.0");
+                addColumnIfNotExists(conn, "rbac_db", "subscriptions", "amount_pending", "DOUBLE DEFAULT 0.0");
+                addColumnIfNotExists(conn, "rbac_db", "subscriptions", "payment_history", "TEXT");
 
                 // Patch vendor_invoices
-                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT");
-                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
-                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
-                stmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
+                addColumnIfNotExists(conn, "rbac_db", "vendor_invoices", "requirement_id", "BIGINT");
+                addColumnIfNotExists(conn, "rbac_db", "vendor_invoices", "amount_paid", "DECIMAL(15,2)");
+                addColumnIfNotExists(conn, "rbac_db", "vendor_invoices", "amount_pending", "DECIMAL(15,2)");
+                addColumnIfNotExists(conn, "rbac_db", "vendor_invoices", "payment_history", "TEXT");
 
                 // Patch vendor_contracts
-                stmt.executeUpdate("ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
+                addColumnIfNotExists(conn, "rbac_db", "vendor_contracts", "document_url", "TEXT");
 
                 // Patch tenant_modules
-                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN amount DOUBLE");
-                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN payment_method VARCHAR(255)");
-                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN special_requirements TEXT");
-                stmt.executeUpdate("ALTER TABLE tenant_modules ADD COLUMN extra_charges DOUBLE");
+                addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "amount", "DOUBLE");
+                addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "payment_method", "VARCHAR(255)");
+                addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "special_requirements", "TEXT");
+                addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "extra_charges", "DOUBLE");
 
-                stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
-                stmt.executeUpdate("ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
-                stmt.executeUpdate(
-                        "ALTER TABLE id_format_settings ADD COLUMN include_year BOOLEAN NOT NULL DEFAULT FALSE");
-                stmt.executeUpdate(
-                        "ALTER TABLE id_format_settings ADD COLUMN prefix VARCHAR(50) NOT NULL DEFAULT 'EMP'");
-                stmt.executeUpdate(
-                        "ALTER TABLE id_format_settings ADD COLUMN padding_length INT NOT NULL DEFAULT 7");
-                stmt.executeUpdate("ALTER TABLE id_format_settings DROP COLUMN format_string");
-                stmt.executeUpdate(
-                        "ALTER TABLE template_definitions ADD COLUMN is_system_template BOOLEAN NOT NULL DEFAULT FALSE");
-                stmt.executeUpdate(
-                        "ALTER TABLE template_definitions ADD COLUMN is_editable BOOLEAN NOT NULL DEFAULT TRUE");
-                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN stamp_url VARCHAR(500)");
-                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN signature_url VARCHAR(500)");
-                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN header_image_url VARCHAR(500)");
-                stmt.executeUpdate("ALTER TABLE company_profiles ADD COLUMN footer_image_url VARCHAR(500)");
-                stmt.executeUpdate("ALTER TABLE employee_certificates ADD COLUMN custom_html TEXT");
+                executeQuietly(conn, "ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
+                executeQuietly(conn, "ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
+                
+                addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "include_year", "BOOLEAN NOT NULL DEFAULT FALSE");
+                addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "prefix", "VARCHAR(50) NOT NULL DEFAULT 'EMP'");
+                addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "padding_length", "INT NOT NULL DEFAULT 7");
+                
+                executeQuietly(conn, "ALTER TABLE id_format_settings DROP COLUMN format_string");
+                
+                addColumnIfNotExists(conn, "rbac_db", "template_definitions", "is_system_template", "BOOLEAN NOT NULL DEFAULT FALSE");
+                addColumnIfNotExists(conn, "rbac_db", "template_definitions", "is_editable", "BOOLEAN NOT NULL DEFAULT TRUE");
+                addColumnIfNotExists(conn, "rbac_db", "company_profiles", "stamp_url", "VARCHAR(500)");
+                addColumnIfNotExists(conn, "rbac_db", "company_profiles", "signature_url", "VARCHAR(500)");
+                addColumnIfNotExists(conn, "rbac_db", "company_profiles", "header_image_url", "VARCHAR(500)");
+                addColumnIfNotExists(conn, "rbac_db", "company_profiles", "footer_image_url", "VARCHAR(500)");
+                addColumnIfNotExists(conn, "rbac_db", "employee_certificates", "custom_html", "TEXT");
 
                 // Patch roles
-                stmt.executeUpdate("ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
-                stmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
+                addColumnIfNotExists(conn, "rbac_db", "roles", "show_in_user_form", "BOOLEAN NOT NULL DEFAULT TRUE");
+                executeQuietly(conn, "UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
             } catch (Exception e) {
                 log.warn("Failed to patch tables: " + e.getMessage());
             }
@@ -154,23 +152,21 @@ public class DatabaseSeeder implements CommandLineRunner {
                         TenantContext.setCurrentTenantCode(t.getCode());
                         try (java.sql.Connection tConn = dataSource.getConnection();
                                 java.sql.Statement tStmt = tConn.createStatement()) {
-                            tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN requirement_id BIGINT");
-                        tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_paid DECIMAL(15,2)");
-                        tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN amount_pending DECIMAL(15,2)");
-                        tStmt.executeUpdate("ALTER TABLE vendor_invoices ADD COLUMN payment_history TEXT");
-                        tStmt.executeUpdate(
-                                "ALTER TABLE vendor_contracts ADD COLUMN document_url TEXT");
-                        tStmt.executeUpdate(
-                                "ALTER TABLE vendor_requirements ADD COLUMN requirement_type VARCHAR(255)");
-                        tStmt.executeUpdate("ALTER TABLE vendor_requirements ADD COLUMN return_date DATE");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "requirement_id", "BIGINT");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "amount_paid", "DECIMAL(15,2)");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "amount_pending", "DECIMAL(15,2)");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "payment_history", "TEXT");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_contracts", "document_url", "TEXT");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_requirements", "requirement_type", "VARCHAR(255)");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_requirements", "return_date", "DATE");
 
                         // Users missing columns patch
-                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN designation_id BIGINT");
-                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN employee_type_id BIGINT");
-                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN office_location_id BIGINT");
-                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN work_mode_id BIGINT");
-                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN joining_date DATE");
-                        tStmt.executeUpdate("ALTER TABLE users ADD COLUMN employee_id VARCHAR(255)");
+                        addColumnIfNotExists(tConn, t.getDbName(), "users", "designation_id", "BIGINT");
+                        addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_type_id", "BIGINT");
+                        addColumnIfNotExists(tConn, t.getDbName(), "users", "office_location_id", "BIGINT");
+                        addColumnIfNotExists(tConn, t.getDbName(), "users", "work_mode_id", "BIGINT");
+                        addColumnIfNotExists(tConn, t.getDbName(), "users", "joining_date", "DATE");
+                        addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_id", "VARCHAR(255)");
 
                         // Permissions table patch
                         tStmt.executeUpdate(
@@ -205,9 +201,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                                 "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
                         // Patch roles
-                        tStmt.executeUpdate(
-                                "ALTER TABLE roles ADD COLUMN show_in_user_form BOOLEAN NOT NULL DEFAULT TRUE");
-                        tStmt.executeUpdate("UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
+                        addColumnIfNotExists(tConn, t.getDbName(), "roles", "show_in_user_form", "BOOLEAN NOT NULL DEFAULT TRUE");
+                        executeQuietly(tConn, "UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
 
                         log.info("Patched tenant database: " + t.getDbName());
                         }
@@ -646,5 +641,44 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         java.util.List<Tenant> everyTenant = tenantRepository.findAll();
         globalUserRegistrySyncService.syncAllTenants(everyTenant, userRepository);
+    }
+
+    private boolean columnExists(java.sql.Connection conn, String dbName, String tableName, String columnName) {
+        try (java.sql.PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?")) {
+            pstmt.setString(1, dbName);
+            pstmt.setString(2, tableName);
+            pstmt.setString(3, columnName);
+            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error checking column existence for {}.{}: {}", tableName, columnName, e.getMessage());
+        }
+        return false;
+    }
+
+    private void addColumnIfNotExists(java.sql.Connection conn, String dbName, String tableName, String columnName, String columnDefinition) {
+        if (!columnExists(conn, dbName, tableName, columnName)) {
+            String sql = "ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + columnDefinition;
+            try (java.sql.Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate(sql);
+                log.info("Column added: {}.{}", tableName, columnName);
+            } catch (Exception e) {
+                log.warn("Failed to add column {}.{}: {}", tableName, columnName, e.getMessage());
+            }
+        } else {
+            log.info("Column already exists: {}.{}", tableName, columnName);
+        }
+    }
+
+    private void executeQuietly(java.sql.Connection conn, String sql) {
+        try (java.sql.Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate(sql);
+        } catch (Exception e) {
+            // Ignore silently
+        }
     }
 }
