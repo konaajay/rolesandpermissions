@@ -19,6 +19,7 @@ public class AuthApiController {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final com.project.www.tenant.repository.TenantModuleRepository tenantModuleRepository;
 
     @PostMapping("/validate-token")
     public ResponseEntity<Map<String, Object>> validateToken(@RequestBody Map<String, String> request) {
@@ -106,13 +107,25 @@ public class AuthApiController {
         }
         response.put("permissions", new java.util.ArrayList<>(allPermissions));
         java.util.Set<String> allModules = new java.util.HashSet<>();
-        if (user.getModules() != null) {
-            allModules.addAll(user.getModules());
+        java.util.List<com.project.www.tenant.entity.TenantModule> activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        java.util.Set<String> activeTenantModuleNames = activeTenantModules.stream()
+                .map(com.project.www.tenant.entity.TenantModule::getModuleName)
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
+            allModules.addAll(activeTenantModuleNames);
+        } else {
+            if (user.getModules() != null) {
+                allModules.addAll(user.getModules());
+            }
+            if (allModules.isEmpty()) {
+                // Fallback to extracting modules from permissions
+                allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
+            }
+            // Retain only modules the tenant is actively subscribed to
+            allModules.retainAll(activeTenantModuleNames);
         }
-        if (allModules.isEmpty()) {
-            // Fallback to extracting modules from permissions
-            allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
-        }
+        
         response.put("modules", new java.util.ArrayList<>(allModules));
 
         return ResponseEntity.ok(response);

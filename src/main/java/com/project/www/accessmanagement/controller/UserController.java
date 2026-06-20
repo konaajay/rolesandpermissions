@@ -29,6 +29,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
+    private final com.project.www.tenant.repository.TenantModuleRepository tenantModuleRepository;
 
     @PostMapping
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_CREATE)")
@@ -78,12 +79,25 @@ public class UserController {
         }
         response.put("permissions", new java.util.ArrayList<>(allPermissions));
         java.util.Set<String> allModules = new java.util.HashSet<>();
-        if (user.getModules() != null) {
-            allModules.addAll(user.getModules());
+        
+        List<com.project.www.tenant.entity.TenantModule> activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        java.util.Set<String> activeTenantModuleNames = activeTenantModules.stream()
+                .map(com.project.www.tenant.entity.TenantModule::getModuleName)
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
+            allModules.addAll(activeTenantModuleNames);
+        } else {
+            if (user.getModules() != null) {
+                allModules.addAll(user.getModules());
+            }
+            if (allModules.isEmpty()) {
+                allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
+            }
+            // Ensure regular users cannot see modules the tenant has lost access to
+            allModules.retainAll(activeTenantModuleNames);
         }
-        if (allModules.isEmpty()) {
-            allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
-        }
+        
         response.put("modules", new java.util.ArrayList<>(allModules));
 
         return ResponseEntity.ok(response);
@@ -148,5 +162,17 @@ public class UserController {
     public String resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest request) {
         userService.resetPassword(id, request);
         return "Password Reset Successfully";
+    }
+
+    @GetMapping("/access-scope")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<com.project.www.accessmanagement.dto.AccessScopeResponse> getAccessScope() {
+        return ResponseEntity.ok(userService.getAccessScope());
+    }
+
+    @GetMapping("/{id}/direct-reports")
+    @PreAuthorize("isAuthenticated()")
+    public List<UserResponse> getDirectReports(@PathVariable Long id) {
+        return userService.getDirectReports(id);
     }
 }

@@ -9,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.List;
+import com.project.www.constants.ModulePricing;
 
 @RestController
 @RequestMapping("/api/subscriptions")
@@ -50,5 +52,10 @@ public class SubscriptionController {
         return ResponseEntity.ok(ApiResponse.success(
             subscriptionService.getAllSubscriptions()
         ));
+    }
+
+    @GetMapping("/modules/pricing")
+    public ResponseEntity<ApiResponse<Map<String, Double>>> getModulePricing() {
+        return ResponseEntity.ok(ApiResponse.success(ModulePricing.getAllPricing()));
     }
 }

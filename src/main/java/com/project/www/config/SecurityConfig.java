@@ -58,6 +58,7 @@ public class SecurityConfig {
                                                                 "/swagger-ui.html",
                                                                 "/api/auth/validate-token",
                                                                 "/api/auth/check-permission",
+                                                                "/api/leads/**",
                                                                 "/error")
                                                 .permitAll()
                                                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")

@@ -56,7 +56,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 ).getBean(com.project.www.tenant.repository.SubscriptionPlanRepository.class)).findById(request.getPlanId()).orElse(null);
             }
                 
-            LocalDate startDate = LocalDate.now();
+            LocalDate startDate = request.getStartDate() != null ? request.getStartDate() : LocalDate.now();
             LocalDate endDate = request.getEndDate();
             if (endDate == null) {
                 int days = request.getDurationDays() != null ? request.getDurationDays() : 30;
@@ -95,23 +95,45 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             
             // 3. Update Tenant Modules
             java.util.Set<String> modulesToAssign = new java.util.HashSet<>();
-            if (request.getCustomModules() != null && !request.getCustomModules().isEmpty()) {
+            if (request.getCustomModules() != null) {
                 modulesToAssign.addAll(request.getCustomModules());
             } else if (plan != null && plan.getModules() != null) {
                 modulesToAssign.addAll(plan.getModules());
             }
 
-            if (!modulesToAssign.isEmpty()) {
-                com.project.www.tenant.repository.TenantModuleRepository tmRepo = org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext(
-                        ((org.springframework.web.context.request.ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()).getRequest().getServletContext()
-                ).getBean(com.project.www.tenant.repository.TenantModuleRepository.class);
-                
-                List<com.project.www.tenant.entity.TenantModule> existing = tmRepo.findByTenantId(tenant.getId());
-                for (com.project.www.tenant.entity.TenantModule tm : existing) {
-                    tm.setActive(false);
-                    tmRepo.save(tm);
+            com.project.www.tenant.repository.TenantModuleRepository tmRepo = org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext(
+                    ((org.springframework.web.context.request.ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()).getRequest().getServletContext()
+            ).getBean(com.project.www.tenant.repository.TenantModuleRepository.class);
+            
+            List<com.project.www.tenant.entity.TenantModule> existing = tmRepo.findByTenantId(tenant.getId());
+            for (com.project.www.tenant.entity.TenantModule tm : existing) {
+                tm.setActive(false);
+                tmRepo.save(tm);
+            }
+            
+            if (request.getModuleAssignments() != null && !request.getModuleAssignments().isEmpty()) {
+                for (SubscriptionRequest.ModuleAssignment ma : request.getModuleAssignments()) {
+                    com.project.www.tenant.entity.TenantModule tm = tmRepo.findByTenantIdAndModuleName(tenant.getId(), ma.getModuleName()).orElse(null);
+                    if (tm == null) {
+                        tmRepo.save(com.project.www.tenant.entity.TenantModule.builder()
+                                .tenantId(tenant.getId())
+                                .moduleName(ma.getModuleName())
+                                .active(true)
+                                .amount(ma.getAmount())
+                                .paymentMethod(ma.getPaymentMethod())
+                                .specialRequirements(ma.getSpecialRequirements())
+                                .extraCharges(ma.getExtraCharges())
+                                .build());
+                    } else {
+                        tm.setActive(true);
+                        tm.setAmount(ma.getAmount());
+                        tm.setPaymentMethod(ma.getPaymentMethod());
+                        tm.setSpecialRequirements(ma.getSpecialRequirements());
+                        tm.setExtraCharges(ma.getExtraCharges());
+                        tmRepo.save(tm);
+                    }
                 }
-                
+            } else {
                 for (String mod : modulesToAssign) {
                     com.project.www.tenant.entity.TenantModule tm = tmRepo.findByTenantIdAndModuleName(tenant.getId(), mod).orElse(null);
                     if (tm == null) {

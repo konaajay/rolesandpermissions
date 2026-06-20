@@ -1,10 +1,6 @@
 package com.project.www.accessmanagement.controller;
 
-import com.project.www.tenant.repository.TenantRepository;
-
 import com.project.www.accessmanagement.controller.PublicVerificationController;
-
-import com.project.www.tenant.entity.Tenant;
 
 import com.project.www.service.CertificateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +22,10 @@ public class PublicVerificationController {
 
     @GetMapping("/{identifier}")
     public ResponseEntity<?> verifyCertificate(@PathVariable String identifier) {
-        // Since verification tokens do not encode the tenant ID and public endpoints 
+        // Since verification tokens do not encode the tenant ID and public endpoints
         // lack a JWT, we must search across all active tenant databases.
-        // Clear any potentially lingering thread-local context before accessing master DB
+        // Clear any potentially lingering thread-local context before accessing master
+        // DB
         com.project.www.util.TenantContext.clear();
         java.util.List<com.project.www.tenant.entity.Tenant> tenants = tenantRepository.findAll();
         for (com.project.www.tenant.entity.Tenant tenant : tenants) {
@@ -36,7 +33,7 @@ public class PublicVerificationController {
                 try {
                     com.project.www.util.TenantContext.setCurrentTenant(tenant.getId());
                     com.project.www.util.TenantContext.setCurrentTenantCode(tenant.getCode());
-                    
+
                     Object dto = certificateService.verifyCertificate(identifier);
                     return ResponseEntity.ok(dto);
                 } catch (Exception e) {
@@ -46,7 +43,7 @@ public class PublicVerificationController {
                 }
             }
         }
-        
+
         return ResponseEntity.badRequest().body("Certificate Not Found or Invalid");
     }
 }

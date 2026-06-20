@@ -1,17 +1,5 @@
 package com.project.www.accessmanagement.service.impl;
 
-import com.project.www.accessmanagement.entity.Permission;
-
-import com.project.www.accessmanagement.repository.PermissionRepository;
-
-import com.project.www.accessmanagement.entity.GlobalUserRegistry;
-
-import com.project.www.accessmanagement.repository.GlobalUserRegistryRepository;
-
-import com.project.www.accessmanagement.service.GlobalUserRegistrySyncService;
-
-import com.project.www.vendor.entity.Vendor;
-
 import com.project.www.accessmanagement.dto.AuthResponse;
 import com.project.www.tenant.dto.CreateTenantRequest;
 import com.project.www.accessmanagement.dto.LoginRequest;
@@ -56,11 +44,11 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final com.project.www.util.TenantResolver tenantResolver;
     private final jakarta.servlet.http.HttpServletRequest servletRequest;
-    
+
     @org.springframework.beans.factory.annotation.Autowired
     @Lazy
     private TenantService tenantService;
-    
+
     private final TenantModuleRepository tenantModuleRepository;
     private final com.project.www.accessmanagement.repository.PermissionRepository permissionRepository;
     private final com.project.www.accessmanagement.repository.GlobalUserRegistryRepository globalUserRegistryRepository;
@@ -71,21 +59,22 @@ public class AuthServiceImpl implements AuthService {
         String originalTenantCode = TenantContext.getCurrentTenantCode();
         Long originalTenantId = TenantContext.getCurrentTenant();
         Tenant tenant = null;
-        
+
         try {
             TenantContext.clear(); // Ensure we query the master database
-            
+
             // 1. Locate user in global registry by email
-            com.project.www.accessmanagement.entity.GlobalUserRegistry registryEntry = globalUserRegistryRepository.findFirstByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("No account found with this email address."));
-                
+            com.project.www.accessmanagement.entity.GlobalUserRegistry registryEntry = globalUserRegistryRepository
+                    .findFirstByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+
             if (!registryEntry.getActive()) {
                 throw new RuntimeException("User account is inactive.");
             }
 
             // 2. Fetch the tenant from the master database
             tenant = tenantRepository.findById(registryEntry.getTenantId())
-                .orElseThrow(() -> new RuntimeException("Associated workspace not found."));
+                    .orElseThrow(() -> new RuntimeException("Associated workspace not found."));
 
             if (tenant != null) {
                 Set<String> activeModules = tenantModuleRepository.findByTenantIdAndActiveTrue(tenant.getId())
@@ -114,7 +103,8 @@ public class AuthServiceImpl implements AuthService {
                 } finally {
                     TenantContext.setCurrentTenantCode(ogCode);
                 }
-                throw new RuntimeException("PAYMENT_REQUIRED: Your 15-day free trial has expired. Please upgrade your subscription to continue.");
+                throw new RuntimeException(
+                        "PAYMENT_REQUIRED: Your 15-day free trial has expired. Please upgrade your subscription to continue.");
             }
         } else if ("ACTIVE".equalsIgnoreCase(tenant.getStatus()) && tenant.getSubscriptionEndDate() != null) {
             if (java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
@@ -127,10 +117,12 @@ public class AuthServiceImpl implements AuthService {
                 } finally {
                     TenantContext.setCurrentTenantCode(ogCode);
                 }
-                throw new RuntimeException("PAYMENT_REQUIRED: Your subscription has expired. Please renew your plan to continue.");
+                throw new RuntimeException(
+                        "PAYMENT_REQUIRED: Your subscription has expired. Please renew your plan to continue.");
             }
         } else if ("EXPIRED".equalsIgnoreCase(tenant.getStatus())) {
-            throw new RuntimeException("PAYMENT_REQUIRED: Your subscription has expired. Please renew your plan to continue.");
+            throw new RuntimeException(
+                    "PAYMENT_REQUIRED: Your subscription has expired. Please renew your plan to continue.");
         }
 
         if (!tenant.getActive()) {
@@ -142,7 +134,8 @@ public class AuthServiceImpl implements AuthService {
         TenantContext.setCurrentTenantCode(tenant.getCode());
         try {
             User user = userRepository.findFirstByEmailAndTenantId(request.getEmail(), tenant.getId())
-                    .orElseThrow(() -> new RuntimeException("No account found with this email address in the tenant workspace."));
+                    .orElseThrow(() -> new RuntimeException(
+                            "No account found with this email address in the tenant workspace."));
 
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 throw new RuntimeException("Incorrect password.");
@@ -151,9 +144,7 @@ public class AuthServiceImpl implements AuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
-                            request.getPassword()
-                    )
-            );
+                            request.getPassword()));
 
             if (!user.getActive()) {
                 throw new RuntimeException("User account is inactive");
@@ -169,7 +160,8 @@ public class AuthServiceImpl implements AuthService {
                 modules = new HashSet<>();
             }
 
-            java.util.List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION", "COMPANY_PROFILE", "SETTINGS", "SETTINGS_MANAGE", "SUBSCRIPTION");
+            java.util.List<String> coreModules = java.util.Arrays.asList("USER", "ROLE", "TENANT", "PERMISSION",
+                    "COMPANY_PROFILE", "SETTINGS", "SETTINGS_MANAGE", "SUBSCRIPTION");
             final Set<String> activeModules = modules; // for lambda
 
             Set<String> permissions = new java.util.HashSet<>();
@@ -196,7 +188,8 @@ public class AuthServiceImpl implements AuthService {
                         .filter(m -> user.getModules().contains(m))
                         .collect(Collectors.toSet());
             } else {
-                // If they have no user-level modules, they get no non-core modules unless they have permissions for them
+                // If they have no user-level modules, they get no non-core modules unless they
+                // have permissions for them
                 // But let's just extract modules from their active permissions
                 finalModules = permissions.stream()
                         .map(p -> p.split("_")[0]) // roughly getting module from permission key
@@ -206,7 +199,8 @@ public class AuthServiceImpl implements AuthService {
 
             String token = jwtService.generateToken(user.getEmail(), user.getTenantId(), tenant.getCode());
             System.out.println("DEBUG - Tenant ID: " + tenant.getId() + " - Modules fetched: " + finalModules);
-            return new AuthResponse(token, permissions, finalModules, user.getRole() != null ? user.getRole().getName() : null);
+            return new AuthResponse(token, permissions, finalModules,
+                    user.getRole() != null ? user.getRole().getName() : null);
         } finally {
             TenantContext.clear();
         }
@@ -219,7 +213,7 @@ public class AuthServiceImpl implements AuthService {
             // Register under existing tenant
             // ==========================================
             Tenant tenant;
-            
+
             // 1. Query master DB to validate tenant
             String originalTenantCode = TenantContext.getCurrentTenantCode();
             Long originalTenantId = TenantContext.getCurrentTenant();
@@ -249,10 +243,12 @@ public class AuthServiceImpl implements AuthService {
 
                 if (request.getRoleId() != null) {
                     role = roleRepository.findByIdAndTenantId(request.getRoleId(), tenant.getId())
-                            .orElseThrow(() -> new RuntimeException("Role not found or does not belong to this tenant"));
+                            .orElseThrow(
+                                    () -> new RuntimeException("Role not found or does not belong to this tenant"));
                 } else {
                     role = roleRepository.findByNameAndTenantId("SUPER_ADMIN", tenant.getId())
-                            .orElseThrow(() -> new RuntimeException("Default SUPER_ADMIN role not found for this tenant"));
+                            .orElseThrow(
+                                    () -> new RuntimeException("Default SUPER_ADMIN role not found for this tenant"));
                 }
 
                 int currentYear = java.time.LocalDate.now().getYear();
@@ -264,14 +260,15 @@ public class AuthServiceImpl implements AuthService {
                                 .build());
                 settings.setEmployeeSequence(settings.getEmployeeSequence() + 1);
                 tenantSettingsRepository.save(settings);
-                
+
                 long nextVal = settings.getEmployeeSequence();
-                String employeeId = settings.getEmployeeIdFormat() != null && !settings.getEmployeeIdFormat().trim().isEmpty()
-                        ? settings.getEmployeeIdFormat()
-                                .replace("{TENANT}", tenant.getCode())
-                                .replace("{YYYY}", String.valueOf(currentYear))
-                                .replace("{SEQ}", String.format("%03d", nextVal))
-                        : String.format("EMP-%s-%d-%03d", tenant.getCode(), currentYear, nextVal);
+                String employeeId = settings.getEmployeeIdFormat() != null
+                        && !settings.getEmployeeIdFormat().trim().isEmpty()
+                                ? settings.getEmployeeIdFormat()
+                                        .replace("{TENANT}", tenant.getCode())
+                                        .replace("{YYYY}", String.valueOf(currentYear))
+                                        .replace("{SEQ}", String.format("%03d", nextVal))
+                                : String.format("EMP-%s-%d-%03d", tenant.getCode(), currentYear, nextVal);
 
                 java.util.List<String[]> defaultPermsInfo = java.util.Arrays.asList(
                         new String[] { "USER", "CREATE", "Ability to create new users" },
@@ -320,12 +317,15 @@ public class AuthServiceImpl implements AuthService {
                         new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
                         new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
                         new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
-                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" }
-                );
+                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
 
-                java.util.List<com.project.www.accessmanagement.entity.Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());
-                java.util.Map<String, com.project.www.accessmanagement.entity.Permission> permMap = existingPerms.stream()
-                        .collect(java.util.stream.Collectors.toMap(com.project.www.accessmanagement.entity.Permission::getPermissionKey, java.util.function.Function.identity()));
+                java.util.List<com.project.www.accessmanagement.entity.Permission> existingPerms = permissionRepository
+                        .findAllByTenantId(tenant.getId());
+                java.util.Map<String, com.project.www.accessmanagement.entity.Permission> permMap = existingPerms
+                        .stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                com.project.www.accessmanagement.entity.Permission::getPermissionKey,
+                                java.util.function.Function.identity()));
 
                 java.util.List<com.project.www.accessmanagement.entity.Permission> permsToSave = new java.util.ArrayList<>();
                 for (String[] permInfo : defaultPermsInfo) {
@@ -399,9 +399,10 @@ public class AuthServiceImpl implements AuthService {
             TenantResponse tenantResponse;
             String originalTenantCode = TenantContext.getCurrentTenantCode();
             Long originalTenantId = TenantContext.getCurrentTenant();
-            
+
             try {
-                // Clear context to ensure TenantService runs entirely on the Master DB where necessary
+                // Clear context to ensure TenantService runs entirely on the Master DB where
+                // necessary
                 TenantContext.clear();
                 tenantResponse = tenantService.createTenant(tenantReq);
             } finally {
@@ -409,12 +410,14 @@ public class AuthServiceImpl implements AuthService {
                 TenantContext.setCurrentTenantCode(originalTenantCode);
             }
 
-            // Retrieve permissions for newly created admin (they get all initial permissions configured for the tenant)
+            // Retrieve permissions for newly created admin (they get all initial
+            // permissions configured for the tenant)
             Set<String> permissions = new HashSet<>();
             try {
                 TenantContext.setCurrentTenant(tenantResponse.getId());
                 TenantContext.setCurrentTenantCode(tenantResponse.getCode());
-                User adminUser = userRepository.findFirstByEmailAndTenantId(tenantResponse.getAdminEmail(), tenantResponse.getId())
+                User adminUser = userRepository
+                        .findFirstByEmailAndTenantId(tenantResponse.getAdminEmail(), tenantResponse.getId())
                         .orElse(null);
                 if (adminUser != null && adminUser.getRole() != null) {
                     permissions = adminUser.getRole().getPermissions().stream()
@@ -427,8 +430,9 @@ public class AuthServiceImpl implements AuthService {
             }
 
             // Generate token immediately for the newly registered admin user
-            String token = jwtService.generateToken(tenantResponse.getAdminEmail(), tenantResponse.getId(), tenantResponse.getCode());
-            
+            String token = jwtService.generateToken(tenantResponse.getAdminEmail(), tenantResponse.getId(),
+                    tenantResponse.getCode());
+
             Set<String> modules = new HashSet<>();
             String originalContextCode = TenantContext.getCurrentTenantCode();
             try {
@@ -439,7 +443,7 @@ public class AuthServiceImpl implements AuthService {
             } finally {
                 TenantContext.setCurrentTenantCode(originalContextCode);
             }
-            
+
             return new AuthResponse(token, permissions, modules, "SUPER_ADMIN");
         }
     }

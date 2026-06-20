@@ -1,9 +1,5 @@
 package com.project.www.accessmanagement.controller;
 
-import com.project.www.accessmanagement.entity.Role;
-
-import com.project.www.accessmanagement.dto.MapPermissionsRequest;
-
 import com.project.www.accessmanagement.dto.CreateRoleRequest;
 import com.project.www.accessmanagement.dto.RoleResponse;
 import com.project.www.accessmanagement.dto.RoleHierarchyResponse;
@@ -24,8 +20,7 @@ public class RoleController {
     @PostMapping
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_CREATE)")
     public String createRole(
-            @RequestBody CreateRoleRequest request
-    ) {
+            @RequestBody CreateRoleRequest request) {
         roleService.createRole(request);
         return "Role Created Successfully";
     }
@@ -34,8 +29,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_UPDATE)")
     public String updateRole(
             @PathVariable Long id,
-            @RequestBody CreateRoleRequest request
-    ) {
+            @RequestBody CreateRoleRequest request) {
         roleService.updateRole(id, request);
         return "Role Updated Successfully";
     }
@@ -43,8 +37,7 @@ public class RoleController {
     @PutMapping("/{id}/enable")
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_ENABLE)")
     public String enableRole(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         roleService.enableRole(id);
         return "Role Enabled Successfully";
     }
@@ -52,8 +45,7 @@ public class RoleController {
     @PutMapping("/{id}/disable")
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_DISABLE)")
     public String disableRole(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         roleService.disableRole(id);
         return "Role Disabled Successfully";
     }
@@ -68,8 +60,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_CREATE)")
     public String mapPermissions(
             @PathVariable Long roleId,
-            @RequestBody com.project.www.accessmanagement.dto.MapPermissionsRequest request
-    ) {
+            @RequestBody com.project.www.accessmanagement.dto.MapPermissionsRequest request) {
         roleService.mapPermissions(roleId, request);
         return "Permissions mapped successfully";
     }
@@ -86,8 +77,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_UPDATE)")
     public String setHierarchy(
             @RequestParam Long roleId,
-            @RequestParam Long reportsToRoleId
-    ) {
+            @RequestParam Long reportsToRoleId) {
         roleService.setHierarchy(roleId, reportsToRoleId);
         return "Hierarchy link created";
     }
@@ -96,8 +86,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_UPDATE)")
     public String deleteHierarchy(
             @RequestParam Long roleId,
-            @RequestParam Long reportsToRoleId
-    ) {
+            @RequestParam Long reportsToRoleId) {
         roleService.deleteHierarchy(roleId, reportsToRoleId);
         return "Hierarchy link removed";
     }

@@ -13,33 +13,51 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
-@AllArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
+    private final java.util.List<Permission> superAdminPermissions;
+
+    public CustomUserDetails(User user) {
+        this.user = user;
+        this.superAdminPermissions = null;
+    }
+
+    public CustomUserDetails(User user, java.util.List<Permission> superAdminPermissions) {
+        this.user = user;
+        this.superAdminPermissions = superAdminPermissions;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         java.util.Set<GrantedAuthority> authorities = new java.util.HashSet<>();
 
-        if (user.getRole() != null && user.getRole().getActive()) {
-            user.getRole().getPermissions().stream()
-                    .filter(p -> p != null && p.getActive() && p.getPermissionKey() != null)
+        if (superAdminPermissions != null) {
+            superAdminPermissions.stream()
+                    .filter(p -> p != null && p.getPermissionKey() != null)
                     .map(p -> p.getPermissionKey().toUpperCase())
                     .map(SimpleGrantedAuthority::new)
                     .forEach(authorities::add);
+        } else {
+            if (user.getRole() != null && user.getRole().getActive()) {
+                user.getRole().getPermissions().stream()
+                        .filter(p -> p != null && p.getActive() && p.getPermissionKey() != null)
+                        .map(p -> p.getPermissionKey().toUpperCase())
+                        .map(SimpleGrantedAuthority::new)
+                        .forEach(authorities::add);
+            }
 
-            if (user.getRole().getName() != null) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()));
+            if (user.getPermissions() != null) {
+                user.getPermissions().stream()
+                        .filter(p -> p != null && p.getActive() && p.getPermissionKey() != null)
+                        .map(p -> p.getPermissionKey().toUpperCase())
+                        .map(SimpleGrantedAuthority::new)
+                        .forEach(authorities::add);
             }
         }
-
-        if (user.getPermissions() != null) {
-            user.getPermissions().stream()
-                    .filter(p -> p != null && p.getActive() && p.getPermissionKey() != null)
-                    .map(p -> p.getPermissionKey().toUpperCase())
-                    .map(SimpleGrantedAuthority::new)
-                    .forEach(authorities::add);
+        
+        if (user.getRole() != null && user.getRole().getActive() && user.getRole().getName() != null) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName()));
         }
 
         return authorities;

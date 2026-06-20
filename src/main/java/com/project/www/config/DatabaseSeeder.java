@@ -97,15 +97,19 @@ public class DatabaseSeeder implements CommandLineRunner {
 
                 executeQuietly(conn, "ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
                 executeQuietly(conn, "ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
-                
-                addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "include_year", "BOOLEAN NOT NULL DEFAULT FALSE");
-                addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "prefix", "VARCHAR(50) NOT NULL DEFAULT 'EMP'");
+
+                addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "include_year",
+                        "BOOLEAN NOT NULL DEFAULT FALSE");
+                addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "prefix",
+                        "VARCHAR(50) NOT NULL DEFAULT 'EMP'");
                 addColumnIfNotExists(conn, "rbac_db", "id_format_settings", "padding_length", "INT NOT NULL DEFAULT 7");
-                
+
                 executeQuietly(conn, "ALTER TABLE id_format_settings DROP COLUMN format_string");
-                
-                addColumnIfNotExists(conn, "rbac_db", "template_definitions", "is_system_template", "BOOLEAN NOT NULL DEFAULT FALSE");
-                addColumnIfNotExists(conn, "rbac_db", "template_definitions", "is_editable", "BOOLEAN NOT NULL DEFAULT TRUE");
+
+                addColumnIfNotExists(conn, "rbac_db", "template_definitions", "is_system_template",
+                        "BOOLEAN NOT NULL DEFAULT FALSE");
+                addColumnIfNotExists(conn, "rbac_db", "template_definitions", "is_editable",
+                        "BOOLEAN NOT NULL DEFAULT TRUE");
                 addColumnIfNotExists(conn, "rbac_db", "company_profiles", "stamp_url", "VARCHAR(500)");
                 addColumnIfNotExists(conn, "rbac_db", "company_profiles", "signature_url", "VARCHAR(500)");
                 addColumnIfNotExists(conn, "rbac_db", "company_profiles", "header_image_url", "VARCHAR(500)");
@@ -153,58 +157,62 @@ public class DatabaseSeeder implements CommandLineRunner {
                         try (java.sql.Connection tConn = dataSource.getConnection();
                                 java.sql.Statement tStmt = tConn.createStatement()) {
                             addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "requirement_id", "BIGINT");
-                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "amount_paid", "DECIMAL(15,2)");
-                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "amount_pending", "DECIMAL(15,2)");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "amount_paid",
+                                    "DECIMAL(15,2)");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "amount_pending",
+                                    "DECIMAL(15,2)");
                             addColumnIfNotExists(tConn, t.getDbName(), "vendor_invoices", "payment_history", "TEXT");
                             addColumnIfNotExists(tConn, t.getDbName(), "vendor_contracts", "document_url", "TEXT");
-                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_requirements", "requirement_type", "VARCHAR(255)");
+                            addColumnIfNotExists(tConn, t.getDbName(), "vendor_requirements", "requirement_type",
+                                    "VARCHAR(255)");
                             addColumnIfNotExists(tConn, t.getDbName(), "vendor_requirements", "return_date", "DATE");
 
-                        // Users missing columns patch
-                        addColumnIfNotExists(tConn, t.getDbName(), "users", "designation_id", "BIGINT");
-                        addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_type_id", "BIGINT");
-                        addColumnIfNotExists(tConn, t.getDbName(), "users", "office_location_id", "BIGINT");
-                        addColumnIfNotExists(tConn, t.getDbName(), "users", "work_mode_id", "BIGINT");
-                        addColumnIfNotExists(tConn, t.getDbName(), "users", "joining_date", "DATE");
-                        addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_id", "VARCHAR(255)");
+                            // Users missing columns patch
+                            addColumnIfNotExists(tConn, t.getDbName(), "users", "designation_id", "BIGINT");
+                            addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_type_id", "BIGINT");
+                            addColumnIfNotExists(tConn, t.getDbName(), "users", "office_location_id", "BIGINT");
+                            addColumnIfNotExists(tConn, t.getDbName(), "users", "work_mode_id", "BIGINT");
+                            addColumnIfNotExists(tConn, t.getDbName(), "users", "joining_date", "DATE");
+                            addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_id", "VARCHAR(255)");
 
-                        // Permissions table patch
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS permissions (id BIGINT AUTO_INCREMENT PRIMARY KEY, tenant_id BIGINT NOT NULL, permission_key VARCHAR(255), module VARCHAR(255), action VARCHAR(255), description VARCHAR(1000), active BOOLEAN DEFAULT TRUE, created_at DATETIME, updated_at DATETIME, created_by VARCHAR(255), updated_by VARCHAR(255))");
+                            // Permissions table patch
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS permissions (id BIGINT AUTO_INCREMENT PRIMARY KEY, tenant_id BIGINT NOT NULL, permission_key VARCHAR(255), module VARCHAR(255), action VARCHAR(255), description VARCHAR(1000), active BOOLEAN DEFAULT TRUE, created_at DATETIME, updated_at DATETIME, created_by VARCHAR(255), updated_by VARCHAR(255))");
 
-                        // User set-based relationship tables patch
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS user_permissions (user_id BIGINT NOT NULL, permission_id BIGINT NOT NULL, PRIMARY KEY (user_id, permission_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS user_modules (user_id BIGINT NOT NULL, module_name VARCHAR(255) NOT NULL, PRIMARY KEY (user_id, module_name), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            // User set-based relationship tables patch
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS user_permissions (user_id BIGINT NOT NULL, permission_id BIGINT NOT NULL, PRIMARY KEY (user_id, permission_id), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS user_modules (user_id BIGINT NOT NULL, module_name VARCHAR(255) NOT NULL, PRIMARY KEY (user_id, module_name), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-                        // Marketing Tables
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS campaigns (campaign_id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_name VARCHAR(150) NOT NULL, subject VARCHAR(200), campaign_type VARCHAR(50), start_date DATE, end_date DATE, budget DECIMAL(19,2) NOT NULL, status VARCHAR(20), description VARCHAR(500), channel VARCHAR(255) NOT NULL, target_audience VARCHAR(255) NOT NULL, audience_filters TEXT, module_type VARCHAR(50), audience_source VARCHAR(50), content TEXT, scheduled_at DATETIME, sent_count INT DEFAULT 0, failed_count INT DEFAULT 0, open_count INT DEFAULT 0, click_count INT DEFAULT 0, archived_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS campaign_recipients (campaign_id BIGINT NOT NULL, email VARCHAR(255), FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS landing_pages (id BIGINT AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE, title VARCHAR(255) NOT NULL, headline VARCHAR(255), subtitle VARCHAR(255), description TEXT, module_type VARCHAR(255), landing_page_type VARCHAR(255), price DECIMAL(19,2), ad_budget DECIMAL(19,2), video_url VARCHAR(255), cta_text VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS landing_page_features (landing_page_id BIGINT NOT NULL, feature VARCHAR(255), FOREIGN KEY (landing_page_id) REFERENCES landing_pages(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS campaign_performance (id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_id BIGINT NOT NULL, impressions INT DEFAULT 0, clicks INT DEFAULT 0, conversions INT DEFAULT 0, spend DECIMAL(19,2), recorded_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS traffic_events (id BIGINT AUTO_INCREMENT PRIMARY KEY, event_type VARCHAR(255) NOT NULL, source VARCHAR(255), medium VARCHAR(255), campaign_name VARCHAR(255), url VARCHAR(255), ip_address VARCHAR(255), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS tracked_links (id BIGINT AUTO_INCREMENT PRIMARY KEY, tracked_link_id VARCHAR(255), landing_slug VARCHAR(255), source VARCHAR(255), medium VARCHAR(255), campaign VARCHAR(255), generated_link VARCHAR(255), ad_budget DECIMAL(19,2), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS email_campaigns (id BIGINT AUTO_INCREMENT PRIMARY KEY, subject VARCHAR(200), body TEXT, status VARCHAR(50), sent_at DATETIME, total_sent INT DEFAULT 0, opened INT DEFAULT 0, clicked INT DEFAULT 0, bounced INT DEFAULT 0, core_campaign_id BIGINT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS coupons (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) NOT NULL, discount_value DOUBLE NOT NULL, discount_cap DOUBLE, expiry_date DATETIME, max_usage INT, used_count INT DEFAULT 0, min_purchase_amount DOUBLE DEFAULT 0.0, per_user_limit INT DEFAULT 1, is_first_order_only BOOLEAN DEFAULT FALSE, auto_apply BOOLEAN DEFAULT FALSE, affiliate_id BIGINT, learner_id BIGINT, status VARCHAR(20), deleted BOOLEAN DEFAULT FALSE, campaign_id BIGINT, created_by VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-                        tStmt.executeUpdate(
-                                "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            // Marketing Tables
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS campaigns (campaign_id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_name VARCHAR(150) NOT NULL, subject VARCHAR(200), campaign_type VARCHAR(50), start_date DATE, end_date DATE, budget DECIMAL(19,2) NOT NULL, status VARCHAR(20), description VARCHAR(500), channel VARCHAR(255) NOT NULL, target_audience VARCHAR(255) NOT NULL, audience_filters TEXT, module_type VARCHAR(50), audience_source VARCHAR(50), content TEXT, scheduled_at DATETIME, sent_count INT DEFAULT 0, failed_count INT DEFAULT 0, open_count INT DEFAULT 0, click_count INT DEFAULT 0, archived_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS campaign_recipients (campaign_id BIGINT NOT NULL, email VARCHAR(255), FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS landing_pages (id BIGINT AUTO_INCREMENT PRIMARY KEY, slug VARCHAR(255) NOT NULL UNIQUE, title VARCHAR(255) NOT NULL, headline VARCHAR(255), subtitle VARCHAR(255), description TEXT, module_type VARCHAR(255), landing_page_type VARCHAR(255), price DECIMAL(19,2), ad_budget DECIMAL(19,2), video_url VARCHAR(255), cta_text VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS landing_page_features (landing_page_id BIGINT NOT NULL, feature VARCHAR(255), FOREIGN KEY (landing_page_id) REFERENCES landing_pages(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS campaign_performance (id BIGINT AUTO_INCREMENT PRIMARY KEY, campaign_id BIGINT NOT NULL, impressions INT DEFAULT 0, clicks INT DEFAULT 0, conversions INT DEFAULT 0, spend DECIMAL(19,2), recorded_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS traffic_events (id BIGINT AUTO_INCREMENT PRIMARY KEY, event_type VARCHAR(255) NOT NULL, source VARCHAR(255), medium VARCHAR(255), campaign_name VARCHAR(255), url VARCHAR(255), ip_address VARCHAR(255), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS tracked_links (id BIGINT AUTO_INCREMENT PRIMARY KEY, tracked_link_id VARCHAR(255), landing_slug VARCHAR(255), source VARCHAR(255), medium VARCHAR(255), campaign VARCHAR(255), generated_link VARCHAR(255), ad_budget DECIMAL(19,2), timestamp DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS email_campaigns (id BIGINT AUTO_INCREMENT PRIMARY KEY, subject VARCHAR(200), body TEXT, status VARCHAR(50), sent_at DATETIME, total_sent INT DEFAULT 0, opened INT DEFAULT 0, clicked INT DEFAULT 0, bounced INT DEFAULT 0, core_campaign_id BIGINT) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS coupons (id BIGINT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) NOT NULL, discount_value DOUBLE NOT NULL, discount_cap DOUBLE, expiry_date DATETIME, max_usage INT, used_count INT DEFAULT 0, min_purchase_amount DOUBLE DEFAULT 0.0, per_user_limit INT DEFAULT 1, is_first_order_only BOOLEAN DEFAULT FALSE, auto_apply BOOLEAN DEFAULT FALSE, affiliate_id BIGINT, learner_id BIGINT, status VARCHAR(20), deleted BOOLEAN DEFAULT FALSE, campaign_id BIGINT, created_by VARCHAR(255), created_at DATETIME) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-                        // Patch roles
-                        addColumnIfNotExists(tConn, t.getDbName(), "roles", "show_in_user_form", "BOOLEAN NOT NULL DEFAULT TRUE");
-                        executeQuietly(tConn, "UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
+                            // Patch roles
+                            addColumnIfNotExists(tConn, t.getDbName(), "roles", "show_in_user_form",
+                                    "BOOLEAN NOT NULL DEFAULT TRUE");
+                            executeQuietly(tConn, "UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
 
-                        log.info("Patched tenant database: " + t.getDbName());
+                            log.info("Patched tenant database: " + t.getDbName());
                         }
                     } catch (Exception e) {
                         log.warn("Failed to patch tenant database: " + t.getDbName() + ", error: " + e.getMessage());
@@ -220,10 +228,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         // --- SYSTEM PERMISSIONS SEEDING ---
         final String systemTenantCode = systemTenant.getCode();
 
-        // Seed System Modules
+        // Seed System Modules "po"
         String[] allModules = {
                 "ADMIN", "AFFILIATE", "ATTENDANCE", "COURSE", "CRM", "EMPLOYEE",
-                "HRMS", "LEADS", "LMS", "MARKETING", "PAYROLL", "VENDOR", "PO", "PERFORMANCE",
+                "HRMS", "LEADS", "LMS", "MARKETING", "PAYROLL", "VENDOR", "PERFORMANCE",
                 "SETTINGS", "LEAVE", "REPORTS", "SUPPORT_TICKETS", "TASKS", "REVENUE"
         };
         for (String mod : allModules) {
@@ -429,6 +437,16 @@ public class DatabaseSeeder implements CommandLineRunner {
                     }
                 });
 
+                roleRepository.findByNameAndTenantId("HR", t.getId()).ifPresent(role -> {
+                    Set<Permission> expectedPerms = new java.util.HashSet<>(role.getPermissions());
+                    Permission p = permMap.get("USER_VIEW");
+                    if (p != null && !expectedPerms.contains(p)) {
+                        expectedPerms.add(p);
+                        role.setPermissions(expectedPerms);
+                        roleRepository.save(role);
+                    }
+                });
+
                 java.util.List<String> sysCodes = templateDefinitionService.getAvailableSystemTemplates().stream()
                         .map(com.project.www.tenant.entity.TemplateDefinition::getTemplateCode)
                         .collect(java.util.stream.Collectors.toList());
@@ -493,10 +511,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "VENDOR", "AUDIT_VIEW", "View Vendor Audits" },
                     new String[] { "VENDOR", "AUDIT_UPDATE", "Update Vendor Audits" },
                     new String[] { "VENDOR", "AUDIT_DELETE", "Delete Vendor Audits" },
-                    new String[] { "PO", "CREATE", "Create Purchase Orders" },
-                    new String[] { "PO", "VIEW", "View Purchase Orders" },
-                    new String[] { "PO", "UPDATE", "Update Purchase Orders" },
-                    new String[] { "PO", "DELETE", "Delete Purchase Orders" },
+
                     new String[] { "PERFORMANCE", "VIEW", "View Vendor Performance" },
                     new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
                     new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
@@ -660,7 +675,8 @@ public class DatabaseSeeder implements CommandLineRunner {
         return false;
     }
 
-    private void addColumnIfNotExists(java.sql.Connection conn, String dbName, String tableName, String columnName, String columnDefinition) {
+    private void addColumnIfNotExists(java.sql.Connection conn, String dbName, String tableName, String columnName,
+            String columnDefinition) {
         if (!columnExists(conn, dbName, tableName, columnName)) {
             String sql = "ALTER TABLE " + tableName + " ADD COLUMN " + columnName + " " + columnDefinition;
             try (java.sql.Statement stmt = conn.createStatement()) {

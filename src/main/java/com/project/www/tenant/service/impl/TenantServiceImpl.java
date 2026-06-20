@@ -142,7 +142,7 @@ public class TenantServiceImpl implements TenantService {
                         .status("TRIAL")
                         .subscriptionType("TRIAL")
                         .subscriptionStartDate(java.time.LocalDate.now())
-                        .subscriptionEndDate(java.time.LocalDate.now().plusDays(15))
+                        .subscriptionEndDate(java.time.LocalDate.now().plusDays(30))
                         .active(true)
                         .build();
                 return tenantRepository.save(t);

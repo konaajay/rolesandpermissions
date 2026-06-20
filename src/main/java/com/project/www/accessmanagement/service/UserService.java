@@ -19,4 +19,6 @@ public interface UserService {
     void toggleUserActiveStatus(Long id);
     void resetPassword(Long id, ResetPasswordRequest request);
     List<com.project.www.dto.SupervisorResponse> getSupervisorsForRole(Long roleId, String roleCode);
+    com.project.www.accessmanagement.dto.AccessScopeResponse getAccessScope();
+    List<UserResponse> getDirectReports(Long supervisorId);
 }

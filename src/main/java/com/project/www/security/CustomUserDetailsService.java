@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final com.project.www.accessmanagement.repository.PermissionRepository permissionRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email)
@@ -27,6 +28,13 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with email: " + email + " under tenant: " + tenantId));
 
-        return new CustomUserDetails(user);
+        java.util.List<com.project.www.accessmanagement.entity.Permission> allPermissions = null;
+        if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
+            allPermissions = permissionRepository.findAllByTenantId(tenantId).stream()
+                .filter(com.project.www.accessmanagement.entity.Permission::getActive)
+                .collect(java.util.stream.Collectors.toList());
+        }
+
+        return new CustomUserDetails(user, allPermissions);
     }
 }

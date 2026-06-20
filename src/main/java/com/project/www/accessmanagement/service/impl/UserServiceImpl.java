@@ -56,6 +56,7 @@ public class UserServiceImpl implements UserService {
     private final com.project.www.accessmanagement.service.GlobalUserRegistrySyncService globalUserRegistrySyncService;
     private final com.project.www.accessmanagement.repository.GlobalUserRegistryRepository globalUserRegistryRepository;
     private final com.project.www.tenant.repository.TenantRepository tenantRepository;
+    private final com.project.www.tenant.repository.TenantModuleRepository tenantModuleRepository;
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;
 
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
@@ -205,9 +206,9 @@ public class UserServiceImpl implements UserService {
         globalUserRegistrySyncService.syncUser(user, tenantId);
         roleExtraFieldService.saveUserExtraFieldValues(user, request.getProfileData());
 
-        if (request.getSupervisorUserId() != null) {
+        if (request.getSupervisorUserId() != null && request.getSupervisorUserId() > 0) {
             User supervisor = userRepository.findByIdAndTenantId(request.getSupervisorUserId(), tenantId)
-                    .orElseThrow(() -> new RuntimeException("Supervisor user not found"));
+                    .orElseThrow(() -> new RuntimeException("Supervisor user not found with ID: " + request.getSupervisorUserId()));
             UserReporting reporting = UserReporting.builder()
                     .tenantId(tenantId)
                     .user(user)
@@ -314,7 +315,40 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("No active tenant context found");
         }
 
-        List<User> users = userRepository.findAllByTenantId(tenantId);
+        Long currentUserId = com.project.www.security.UserContext.getCurrentUserId();
+        User currentUser = userRepository.findByIdAndTenantId(currentUserId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
+
+        List<User> users;
+
+        // If Super Admin, return all users
+        if (currentUser.getRole() != null && ("SUPER_ADMIN".equals(currentUser.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equals(currentUser.getRole().getName()))) {
+            users = userRepository.findAllByTenantId(tenantId);
+        } else {
+            // Otherwise, recursively fetch all downstream reports
+            users = new java.util.ArrayList<>();
+            users.add(currentUser);
+            
+            java.util.Set<Long> seenIds = new java.util.HashSet<>();
+            seenIds.add(currentUser.getId());
+            
+            java.util.Queue<Long> supervisorIds = new java.util.LinkedList<>();
+            supervisorIds.add(currentUser.getId());
+            
+            while (!supervisorIds.isEmpty()) {
+                Long currentSupId = supervisorIds.poll();
+                List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(currentSupId, tenantId);
+                for (UserReporting report : reports) {
+                    User subUser = report.getUser();
+                    if (subUser != null && !seenIds.contains(subUser.getId())) {
+                        seenIds.add(subUser.getId());
+                        users.add(subUser);
+                        supervisorIds.add(subUser.getId());
+                    }
+                }
+            }
+        }
+
         return users.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -433,9 +467,9 @@ public class UserServiceImpl implements UserService {
         globalUserRegistrySyncService.syncUser(updated, tenantId);
         roleExtraFieldService.saveUserExtraFieldValues(updated, request.getProfileData());
 
-        if (request.getSupervisorUserId() != null) {
+        if (request.getSupervisorUserId() != null && request.getSupervisorUserId() > 0) {
             User supervisor = userRepository.findByIdAndTenantId(request.getSupervisorUserId(), tenantId)
-                    .orElseThrow(() -> new RuntimeException("Supervisor user not found"));
+                    .orElseThrow(() -> new RuntimeException("Supervisor user not found with ID: " + request.getSupervisorUserId()));
                     
             java.util.List<UserReporting> existingList = userReportingRepository.findAllByUserIdAndTenantId(updated.getId(), tenantId);
             if (existingList.isEmpty()) {
@@ -572,6 +606,31 @@ public class UserServiceImpl implements UserService {
             }
         }
 
+        java.util.List<String> userModules = new java.util.ArrayList<>();
+        java.util.List<String> userPermissions = new java.util.ArrayList<>();
+        java.util.List<Long> userPermissionIds = new java.util.ArrayList<>();
+
+        if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
+            if (tenantId != null) {
+                userModules = tenantModuleRepository.findByTenantIdAndActiveTrue(tenantId).stream()
+                        .map(com.project.www.tenant.entity.TenantModule::getModuleName)
+                        .collect(Collectors.toList());
+                java.util.List<Permission> allPerms = permissionRepository.findAllByTenantId(tenantId).stream()
+                        .filter(Permission::getActive)
+                        .collect(Collectors.toList());
+                userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
+            }
+        } else {
+            if (user.getModules() != null) {
+                userModules.addAll(user.getModules());
+            }
+            if (user.getPermissions() != null) {
+                userPermissions = user.getPermissions().stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                userPermissionIds = user.getPermissions().stream().map(Permission::getId).collect(Collectors.toList());
+            }
+        }
+
         return UserResponse.builder()
                 .id(user.getId())
                 .tenantId(user.getTenantId())
@@ -598,14 +657,9 @@ public class UserServiceImpl implements UserService {
                 .updatedAt(user.getUpdatedAt())
                 .createdBy(user.getCreatedBy())
                 .updatedBy(user.getUpdatedBy())
-                .modules(user.getModules() != null ? new java.util.ArrayList<>(user.getModules())
-                        : new java.util.ArrayList<>())
-                .permissions(user.getPermissions() != null
-                        ? user.getPermissions().stream().map(Permission::getPermissionKey).collect(Collectors.toList())
-                        : new java.util.ArrayList<>())
-                .permissionIds(user.getPermissions() != null
-                        ? user.getPermissions().stream().map(Permission::getId).collect(Collectors.toList())
-                        : new java.util.ArrayList<>())
+                .modules(userModules)
+                .permissions(userPermissions)
+                .permissionIds(userPermissionIds)
                 .employeeId(user.getEmployeeId())
                 .dateOfBirth(user.getDateOfBirth())
                 .joiningDate(user.getJoiningDate())
@@ -686,5 +740,79 @@ public class UserServiceImpl implements UserService {
         }
 
         return supervisors;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.project.www.accessmanagement.dto.AccessScopeResponse getAccessScope() {
+        Long currentUserId = com.project.www.security.UserContext.getCurrentUserId();
+        Long tenantId = TenantContext.getCurrentTenant();
+
+        if (currentUserId == null || tenantId == null) {
+            throw new RuntimeException("Unauthorized or no active tenant context found");
+        }
+
+        User user = userRepository.findByIdAndTenantId(currentUserId, tenantId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        com.project.www.accessmanagement.dto.AccessScopeResponse.AccessScopeResponseBuilder builder = 
+                com.project.www.accessmanagement.dto.AccessScopeResponse.builder()
+                .loggedInUserId(user.getId())
+                .role(user.getRole() != null ? user.getRole().getName() : null);
+
+        if (user.getRole() != null && "SUPER_ADMIN".equals(user.getRole().getName())) {
+            builder.canViewAll(true);
+            builder.accessibleEmployeeIds(new java.util.ArrayList<>());
+            return builder.build();
+        }
+
+        builder.canViewAll(false);
+        java.util.Set<String> accessibleEmployeeIds = new java.util.HashSet<>();
+        java.util.Set<Long> visitedUserIds = new java.util.HashSet<>();
+
+        // Add self
+        if (user.getEmployeeId() != null) {
+            accessibleEmployeeIds.add(user.getEmployeeId());
+        }
+
+        // Recursively find all downstream reports
+        collectAccessibleEmployeeIds(user.getId(), tenantId, accessibleEmployeeIds, visitedUserIds);
+
+        builder.accessibleEmployeeIds(new java.util.ArrayList<>(accessibleEmployeeIds));
+        return builder.build();
+    }
+
+    private void collectAccessibleEmployeeIds(Long supervisorId, Long tenantId, java.util.Set<String> employeeIds, java.util.Set<Long> visitedUserIds) {
+        if (visitedUserIds.contains(supervisorId)) return;
+        visitedUserIds.add(supervisorId);
+
+        List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(supervisorId, tenantId);
+        for (UserReporting report : reports) {
+            User subordinate = report.getUser();
+            if (subordinate.getEmployeeId() != null) {
+                employeeIds.add(subordinate.getEmployeeId());
+            }
+            collectAccessibleEmployeeIds(subordinate.getId(), tenantId, employeeIds, visitedUserIds);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> getDirectReports(Long supervisorId) {
+        Long tenantId = TenantContext.getCurrentTenant();
+        if (tenantId == null) {
+            throw new RuntimeException("No active tenant context found");
+        }
+
+        userRepository.findByIdAndTenantId(supervisorId, tenantId)
+                .orElseThrow(() -> new RuntimeException("Supervisor not found"));
+
+        List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(supervisorId, tenantId);
+
+        return reports.stream()
+                .map(UserReporting::getUser)
+                .filter(User::getActive)
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 }

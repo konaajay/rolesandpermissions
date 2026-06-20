@@ -41,4 +41,5 @@ public class VendorInvoiceDto {
 
     private String notes;
     private String receiptUrl;
+    private String paymentHistory;
 }
