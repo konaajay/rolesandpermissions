@@ -44,6 +44,9 @@ public class TenantModule {
     @Column(name = "extra_charges")
     private Double extraCharges;
 
+    @Column(name = "expiry_date")
+    private java.time.LocalDate expiryDate;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

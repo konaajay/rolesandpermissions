@@ -105,12 +105,18 @@ public class AuthApiController {
         if (user.getPermissions() != null) {
             user.getPermissions().forEach(p -> allPermissions.add(p.getPermissionKey()));
         }
-        response.put("permissions", new java.util.ArrayList<>(allPermissions));
         java.util.Set<String> allModules = new java.util.HashSet<>();
         java.util.List<com.project.www.tenant.entity.TenantModule> activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
         java.util.Set<String> activeTenantModuleNames = activeTenantModules.stream()
+                .filter(m -> m.getExpiryDate() == null || !m.getExpiryDate().isBefore(today))
                 .map(com.project.www.tenant.entity.TenantModule::getModuleName)
                 .collect(java.util.stream.Collectors.toSet());
+
+        // Core modules never expire and are not billed
+        activeTenantModuleNames.add("SYSTEM_ADMIN");
+        activeTenantModuleNames.add("EMPLOYEE");
 
         if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
             allModules.addAll(activeTenantModuleNames);
@@ -122,10 +128,19 @@ public class AuthApiController {
                 // Fallback to extracting modules from permissions
                 allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
             }
-            // Retain only modules the tenant is actively subscribed to
+            // Retain only modules the tenant is actively subscribed to and not expired
             allModules.retainAll(activeTenantModuleNames);
         }
         
+        // Filter out permissions for modules that are not active or have expired
+        java.util.Set<String> validPermissions = allPermissions.stream()
+                .filter(p -> {
+                    String modulePrefix = p.split("_")[0];
+                    return activeTenantModuleNames.contains(modulePrefix) || "SYSTEM".equals(modulePrefix) || "TENANT".equals(modulePrefix);
+                })
+                .collect(java.util.stream.Collectors.toSet());
+        
+        response.put("permissions", new java.util.ArrayList<>(validPermissions));
         response.put("modules", new java.util.ArrayList<>(allModules));
 
         return ResponseEntity.ok(response);

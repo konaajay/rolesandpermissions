@@ -43,6 +43,7 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                 module.setPaymentMethod(request.getPaymentMethod());
                 module.setSpecialRequirements(request.getSpecialRequirements());
                 module.setExtraCharges(request.getExtraCharges());
+                module.setExpiryDate(request.getExpiryDate());
             }
             tenantModuleRepository.save(module);
         } finally {

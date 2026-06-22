@@ -94,6 +94,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "payment_method", "VARCHAR(255)");
                 addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "special_requirements", "TEXT");
                 addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "extra_charges", "DOUBLE");
+                addColumnIfNotExists(conn, "rbac_db", "tenant_modules", "expiry_date", "DATE");
 
                 executeQuietly(conn, "ALTER TABLE id_format_settings MODIFY COLUMN created_by VARCHAR(255)");
                 executeQuietly(conn, "ALTER TABLE id_format_settings MODIFY COLUMN updated_by VARCHAR(255)");
