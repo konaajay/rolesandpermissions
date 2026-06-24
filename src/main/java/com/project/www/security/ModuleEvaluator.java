@@ -30,7 +30,18 @@ public class ModuleEvaluator {
         String originalCode = TenantContext.getCurrentTenantCode();
         try {
             TenantContext.clear();
-            return tenantModuleRepository.existsByTenantIdAndModuleNameAndActiveTrue(tenantId, moduleName);
+            java.util.Optional<TenantModule> opt = tenantModuleRepository.findByTenantIdAndModuleName(tenantId, moduleName);
+            if (opt.isPresent()) {
+                TenantModule m = opt.get();
+                if (m.getActive() == null || !m.getActive()) {
+                    return false;
+                }
+                if (m.getExpiryDate() != null && java.time.LocalDate.now().isAfter(m.getExpiryDate())) {
+                    return false;
+                }
+                return true;
+            }
+            return false;
         } finally {
             TenantContext.setCurrentTenant(tenantId);
             TenantContext.setCurrentTenantCode(originalCode);

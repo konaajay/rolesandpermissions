@@ -116,6 +116,10 @@ public class DatabaseSeeder implements CommandLineRunner {
                 addColumnIfNotExists(conn, "rbac_db", "company_profiles", "header_image_url", "VARCHAR(500)");
                 addColumnIfNotExists(conn, "rbac_db", "company_profiles", "footer_image_url", "VARCHAR(500)");
                 addColumnIfNotExists(conn, "rbac_db", "employee_certificates", "custom_html", "TEXT");
+                
+                executeQuietly(conn, "ALTER TABLE tenant_invoices DROP COLUMN module_name");
+                addColumnIfNotExists(conn, "rbac_db", "tenant_invoices", "subtotal", "DOUBLE");
+                addColumnIfNotExists(conn, "rbac_db", "tenant_invoices", "gst_amount", "DOUBLE");
 
                 // Patch roles
                 addColumnIfNotExists(conn, "rbac_db", "roles", "show_in_user_form", "BOOLEAN NOT NULL DEFAULT TRUE");
@@ -175,6 +179,10 @@ public class DatabaseSeeder implements CommandLineRunner {
                             addColumnIfNotExists(tConn, t.getDbName(), "users", "work_mode_id", "BIGINT");
                             addColumnIfNotExists(tConn, t.getDbName(), "users", "joining_date", "DATE");
                             addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_id", "VARCHAR(255)");
+                            
+                            executeQuietly(tConn, "ALTER TABLE tenant_invoices DROP COLUMN module_name");
+                            addColumnIfNotExists(tConn, t.getDbName(), "tenant_invoices", "subtotal", "DOUBLE");
+                            addColumnIfNotExists(tConn, t.getDbName(), "tenant_invoices", "gst_amount", "DOUBLE");
 
                             // Permissions table patch
                             tStmt.executeUpdate(

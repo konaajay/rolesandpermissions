@@ -112,13 +112,19 @@ public class TenantModuleServiceImpl implements TenantModuleService {
             }
 
             // 2. Generate a single invoice
+            double subtotal = totalInvoiceAmount;
+            double gstAmount = subtotal * 0.18; // 18% GST
+            double grandTotal = subtotal + gstAmount;
+
             TenantInvoice invoice = TenantInvoice.builder()
                     .invoiceNumber("INV-" + tenantId + "-" + System.currentTimeMillis())
                     .tenantId(tenantId)
                     .invoiceType(request.getInvoiceType() != null ? request.getInvoiceType() : "NEW_SUBSCRIPTION")
-                    .totalAmount(totalInvoiceAmount)
+                    .subtotal(subtotal)
+                    .gstAmount(gstAmount)
+                    .totalAmount(grandTotal)
                     .paidAmount(0.0)
-                    .pendingAmount(totalInvoiceAmount)
+                    .pendingAmount(grandTotal)
                     .paymentType(request.getPaymentType())
                     .invoiceDate(LocalDate.now())
                     .dueDate(LocalDate.now().plusDays(7)) // default 7 days due
@@ -142,7 +148,7 @@ public class TenantModuleServiceImpl implements TenantModuleService {
 
             // 4. Handle Installments
             if ("INSTALLMENT".equalsIgnoreCase(request.getPaymentType()) && request.getNoOfInstallments() != null && request.getNoOfInstallments() > 0) {
-                double installmentAmt = request.getInstallmentAmount() != null ? request.getInstallmentAmount() : (totalInvoiceAmount / request.getNoOfInstallments());
+                double installmentAmt = request.getInstallmentAmount() != null ? request.getInstallmentAmount() : (grandTotal / request.getNoOfInstallments());
                 for (int i = 1; i <= request.getNoOfInstallments(); i++) {
                     TenantInvoiceInstallment installment = TenantInvoiceInstallment.builder()
                             .invoiceId(invoice.getId())
@@ -187,6 +193,17 @@ public class TenantModuleServiceImpl implements TenantModuleService {
         try {
             TenantContext.clear();
             return tenantInvoiceInstallmentRepository.findByInvoiceId(invoiceId);
+        } finally {
+            TenantContext.setCurrentTenantCode(originalCode);
+        }
+    }
+
+    @Override
+    public List<TenantInvoiceItem> getItemsForInvoice(Long invoiceId) {
+        String originalCode = TenantContext.getCurrentTenantCode();
+        try {
+            TenantContext.clear();
+            return tenantInvoiceItemRepository.findByInvoiceId(invoiceId);
         } finally {
             TenantContext.setCurrentTenantCode(originalCode);
         }

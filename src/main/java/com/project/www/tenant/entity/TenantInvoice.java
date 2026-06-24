@@ -33,6 +33,12 @@ public class TenantInvoice {
     @Column(name = "total_amount")
     private Double totalAmount;
 
+    @Column(name = "subtotal")
+    private Double subtotal;
+
+    @Column(name = "gst_amount")
+    private Double gstAmount;
+
     @Column(name = "paid_amount")
     private Double paidAmount;
 

@@ -107,8 +107,14 @@ public class JwtFilter extends OncePerRequestFilter {
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 // Case 1: Super Admin / Master user without tenant
-                if (tenantId == null || tenantCode == null) {
-                    TenantContext.setCurrentTenantCode("master");
+                if (tenantId == null || tenantCode == null || "master".equals(tenantCode) || "SYS".equals(tenantCode)) {
+                    TenantContext.setCurrentTenantCode(tenantCode != null ? tenantCode : "master");
+                    if (tenantId != null) {
+                        TenantContext.setCurrentTenant(tenantId);
+                    } else {
+                        // Fallback to 1 for legacy master tokens
+                        TenantContext.setCurrentTenant(1L);
+                    }
 
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
@@ -134,15 +140,34 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
 
                 // Case 2: Tenant user
-                boolean tenantExists;
+                Tenant tenant = null;
                 try {
                     TenantContext.setCurrentTenantCode("master");
-                    tenantExists = tenantRepository.existsByCode(tenantCode);
+                    Optional<Tenant> tOpt = tenantRepository.findByCode(tenantCode);
+                    if (tOpt.isPresent()) {
+                        tenant = tOpt.get();
+                    }
                 } finally {
                     TenantContext.clear();
                 }
 
-                if (tenantExists) {
+                if (tenant != null) {
+                    if (tenant.getActive() == null || !tenant.getActive()) {
+                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Tenant inactive");
+                        return;
+                    }
+                    if (!"ACTIVE".equalsIgnoreCase(tenant.getStatus())) {
+                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
+                        return;
+                    }
+                    if (tenant.getSubscriptionEndDate() != null && java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
+                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription expired");
+                        return;
+                    }
+                    if (tenant.getSubscriptionStartDate() != null && java.time.LocalDate.now().isBefore(tenant.getSubscriptionStartDate())) {
+                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
+                        return;
+                    }
                     TenantContext.setCurrentTenant(tenantId);
                     TenantContext.setCurrentTenantCode(tenantCode);
 
@@ -178,5 +203,11 @@ public class JwtFilter extends OncePerRequestFilter {
         } finally {
             TenantContext.clear();
         }
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"" + message + "\"}");
     }
 }

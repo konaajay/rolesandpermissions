@@ -11,5 +11,6 @@ public interface TenantModuleService {
     void saveBulkModules(Long tenantId, com.project.www.tenant.dto.BulkModuleSaveRequest request);
     List<com.project.www.tenant.entity.TenantInvoice> getInvoicesForTenant(Long tenantId);
     List<com.project.www.tenant.entity.TenantInvoiceInstallment> getInstallmentsForInvoice(Long invoiceId);
+    List<com.project.www.tenant.entity.TenantInvoiceItem> getItemsForInvoice(Long invoiceId);
     void payInstallment(Long invoiceId, Long installmentId);
 }
