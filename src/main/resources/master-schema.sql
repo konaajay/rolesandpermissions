@@ -675,34 +675,41 @@ CREATE TABLE IF NOT EXISTS tenant_invoice_installments (
   FOREIGN KEY (invoice_id) REFERENCES tenant_invoices(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+
 CREATE TABLE IF NOT EXISTS modules (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL UNIQUE,
-  description VARCHAR(255) NOT NULL,
-  price DOUBLE NOT NULL,
-  status VARCHAR(255) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    module_code VARCHAR(100) NOT NULL UNIQUE,
+    module_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS plans (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL UNIQUE,
-  description VARCHAR(255) NOT NULL,
-  base_price DOUBLE NOT NULL,
-  billing_cycle VARCHAR(255) NOT NULL,
-  status VARCHAR(255) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plan_code VARCHAR(100) NOT NULL UNIQUE,
+    plan_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DOUBLE NOT NULL DEFAULT 0,
+    currency VARCHAR(10) NOT NULL DEFAULT 'INR',
+    billing_cycle VARCHAR(50) NOT NULL,
+    trial_days INT NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS plan_modules (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  plan_id BIGINT NOT NULL,
-  module_id BIGINT NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE,
-  FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plan_id BIGINT NOT NULL,
+    module_id BIGINT NOT NULL,
+    is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_plan_modules_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON DELETE CASCADE,
+    CONSTRAINT fk_plan_modules_module FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS tenant_invoices (
@@ -714,6 +721,7 @@ CREATE TABLE IF NOT EXISTS tenant_invoices (
   tax_amount DOUBLE,
   status VARCHAR(255) NOT NULL,
   due_date DATE,
+  invoice_date DATE,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -722,11 +730,127 @@ CREATE TABLE IF NOT EXISTS tenant_invoice_items (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   invoice_id BIGINT NOT NULL,
   module_name VARCHAR(255) NOT NULL,
-  amount DOUBLE NOT NULL,
+  amount DOUBLE,
   extra_charges DOUBLE,
   start_date DATE,
   expiry_date DATE,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (invoice_id) REFERENCES tenant_invoices(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS tenant_invoice_installments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  invoice_id BIGINT NOT NULL,
+  installment_no INT NOT NULL,
+  amount DOUBLE NOT NULL,
+  due_date DATE NOT NULL,
+  paid BOOLEAN NOT NULL DEFAULT FALSE,
+  paid_date DATE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (invoice_id) REFERENCES tenant_invoices(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS assets (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    type VARCHAR(255),
+    value VARCHAR(255),
+    status VARCHAR(255),
+    assigned_to VARCHAR(255),
+    notes TEXT,
+    created_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS content (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255),
+    body TEXT,
+    author VARCHAR(255),
+    status VARCHAR(255),
+    published_date DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS integration_credentials (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    integration_name VARCHAR(255),
+    client_id VARCHAR(255),
+    client_secret VARCHAR(255),
+    access_token VARCHAR(255),
+    refresh_token VARCHAR(255),
+    expires_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS integration_definitions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    description TEXT,
+    api_endpoint VARCHAR(255),
+    auth_type VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS marketing_leads (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(255),
+    source VARCHAR(255),
+    status VARCHAR(255),
+    created_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS platform_users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255),
+    email VARCHAR(255),
+    password_hash VARCHAR(255),
+    role VARCHAR(255),
+    status VARCHAR(255),
+    created_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS push_notifications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255),
+    message TEXT,
+    recipient VARCHAR(255),
+    status VARCHAR(255),
+    sent_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS subscription_plans (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    price DOUBLE,
+    billing_cycle VARCHAR(255),
+    features TEXT,
+    created_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS vendor_complaints (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT,
+    vendor_id BIGINT,
+    subject VARCHAR(255),
+    description TEXT,
+    status VARCHAR(255),
+    date_reported VARCHAR(255),
+    resolved_date VARCHAR(255),
+    resolution TEXT,
+    deleted BOOLEAN DEFAULT FALSE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS wfh_requests (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
+    start_date DATE,
+    end_date DATE,
+    reason TEXT,
+    status VARCHAR(255),
+    admin_notes TEXT,
+    requested_days INT DEFAULT 0,
+    created_at DATETIME,
+    responded_at DATETIME,
+    responded_by_id BIGINT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
