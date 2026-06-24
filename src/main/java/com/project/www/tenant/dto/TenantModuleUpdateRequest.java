@@ -10,5 +10,6 @@ public class TenantModuleUpdateRequest {
     private String paymentMethod;
     private String specialRequirements;
     private Double extraCharges;
+    private java.time.LocalDate startDate;
     private java.time.LocalDate expiryDate;
 }

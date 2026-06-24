@@ -65,6 +65,25 @@ public class SubscriptionScheduler {
                 }
             }
         }
-        log.info("Finished daily subscription expiry check.");
+        log.info("Finished daily tenant subscription expiry check.");
+
+        log.info("Starting per-module expiry check...");
+        String ogCode = TenantContext.getCurrentTenantCode();
+        Long ogId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            List<TenantModule> expiredModules = tenantModuleRepository.findByActiveTrueAndExpiryDateBefore(today);
+            for (TenantModule module : expiredModules) {
+                log.info("Module {} for Tenant ID {} has expired. Disabling module.", module.getModuleName(), module.getTenantId());
+                module.setActive(false);
+            }
+            if (!expiredModules.isEmpty()) {
+                tenantModuleRepository.saveAll(expiredModules);
+            }
+        } finally {
+            TenantContext.setCurrentTenant(ogId);
+            TenantContext.setCurrentTenantCode(ogCode);
+        }
+        log.info("Finished per-module expiry check.");
     }
 }

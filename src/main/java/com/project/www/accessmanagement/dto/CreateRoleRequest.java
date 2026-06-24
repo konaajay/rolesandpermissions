@@ -3,6 +3,7 @@ package com.project.www.accessmanagement.dto;
 import com.project.www.accessmanagement.entity.Role;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.util.Set;

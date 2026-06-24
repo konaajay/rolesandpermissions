@@ -91,4 +91,32 @@ public class TenantController {
         tenantModuleService.disableModule(id, moduleName);
         return ResponseEntity.ok("Module Disabled Successfully");
     }
+    @PutMapping("/{id}/modules/bulk")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_UPDATE) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE)")
+    public ResponseEntity<String> saveBulkModules(
+            @PathVariable Long id,
+            @RequestBody com.project.www.tenant.dto.BulkModuleSaveRequest request) {
+        tenantModuleService.saveBulkModules(id, request);
+        return ResponseEntity.ok("Bulk modules saved successfully");
+    }
+
+    @GetMapping("/{id}/invoices")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE)")
+    public ResponseEntity<List<com.project.www.tenant.entity.TenantInvoice>> getTenantInvoices(@PathVariable Long id) {
+        return ResponseEntity.ok(tenantModuleService.getInvoicesForTenant(id));
+    }
+    @GetMapping("/{id}/invoices/{invoiceId}/installments")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE)")
+    public ResponseEntity<List<com.project.www.tenant.entity.TenantInvoiceInstallment>> getInvoiceInstallments(
+            @PathVariable Long id, @PathVariable Long invoiceId) {
+        return ResponseEntity.ok(tenantModuleService.getInstallmentsForInvoice(invoiceId));
+    }
+
+    @PutMapping("/{id}/invoices/{invoiceId}/installments/{installmentId}/pay")
+    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_UPDATE) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE)")
+    public ResponseEntity<String> payInstallment(
+            @PathVariable Long id, @PathVariable Long invoiceId, @PathVariable Long installmentId) {
+        tenantModuleService.payInstallment(invoiceId, installmentId);
+        return ResponseEntity.ok("Installment paid successfully");
+    }
 }

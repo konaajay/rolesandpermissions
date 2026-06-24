@@ -5,50 +5,38 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tenant_modules", uniqueConstraints = {
-        @UniqueConstraint(name = "UNIQUE_tenant_module", columnNames = {"tenant_id", "module_name"})
-})
+@Table(name = "tenant_invoice_items")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TenantModule {
-
+public class TenantInvoiceItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "tenant_id", nullable = false)
-    private Long tenantId;
+    @Column(name = "invoice_id", nullable = false)
+    private Long invoiceId;
 
     @Column(name = "module_name", nullable = false)
     private String moduleName;
 
-    @Builder.Default
-    @Column(nullable = false)
-    private Boolean active = true;
-
     @Column(name = "amount")
     private Double amount;
-
-    @Column(name = "payment_method")
-    private String paymentMethod;
-
-    @Column(name = "special_requirements", columnDefinition = "TEXT")
-    private String specialRequirements;
 
     @Column(name = "extra_charges")
     private Double extraCharges;
 
     @Column(name = "start_date")
-    private java.time.LocalDate startDate;
+    private LocalDate startDate;
 
     @Column(name = "expiry_date")
-    private java.time.LocalDate expiryDate;
+    private LocalDate expiryDate;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

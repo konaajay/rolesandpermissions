@@ -34,7 +34,7 @@ public class UserController {
     @PostMapping
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_CREATE)")
     public String createUser(
-            @RequestBody CreateUserRequest request
+            @Valid @RequestBody CreateUserRequest request
     ) {
         userService.createUser(request);
         return "User Created Successfully";
@@ -130,7 +130,7 @@ public class UserController {
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_UPDATE)")
     public UserResponse updateUser(
             @PathVariable Long id,
-            @RequestBody CreateUserRequest request
+            @Valid @RequestBody CreateUserRequest request
     ) {
         return userService.updateUser(id, request);
     }

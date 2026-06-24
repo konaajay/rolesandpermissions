@@ -7,6 +7,7 @@ import com.project.www.accessmanagement.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class RoleController {
     @PostMapping
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_CREATE)")
     public String createRole(
-            @RequestBody CreateRoleRequest request) {
+            @Valid @RequestBody CreateRoleRequest request) {
         roleService.createRole(request);
         return "Role Created Successfully";
     }
@@ -29,7 +30,7 @@ public class RoleController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).ROLE_UPDATE)")
     public String updateRole(
             @PathVariable Long id,
-            @RequestBody CreateRoleRequest request) {
+            @Valid @RequestBody CreateRoleRequest request) {
         roleService.updateRole(id, request);
         return "Role Updated Successfully";
     }
