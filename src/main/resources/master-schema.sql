@@ -677,6 +677,8 @@ CREATE TABLE IF NOT EXISTS tenant_invoice_installments (
 
 
 
+
+
 CREATE TABLE IF NOT EXISTS modules (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     module_code VARCHAR(100) NOT NULL UNIQUE,
