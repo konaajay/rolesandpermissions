@@ -30,9 +30,17 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         java.util.List<com.project.www.accessmanagement.entity.Permission> allPermissions = null;
         if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
-            allPermissions = permissionRepository.findAllByTenantId(tenantId).stream()
-                .filter(com.project.www.accessmanagement.entity.Permission::getActive)
-                .collect(java.util.stream.Collectors.toList());
+            String originalCode = com.project.www.util.TenantContext.getCurrentTenantCode();
+            Long originalTenant = com.project.www.util.TenantContext.getCurrentTenant();
+            try {
+                com.project.www.util.TenantContext.clear();
+                allPermissions = permissionRepository.findAllByTenantId(tenantId).stream()
+                    .filter(com.project.www.accessmanagement.entity.Permission::getActive)
+                    .collect(java.util.stream.Collectors.toList());
+            } finally {
+                com.project.www.util.TenantContext.setCurrentTenantCode(originalCode);
+                com.project.www.util.TenantContext.setCurrentTenant(originalTenant);
+            }
         }
 
         return new CustomUserDetails(user, allPermissions);

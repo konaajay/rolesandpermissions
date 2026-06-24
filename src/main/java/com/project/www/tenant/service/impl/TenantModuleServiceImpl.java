@@ -89,6 +89,10 @@ public class TenantModuleServiceImpl implements TenantModuleService {
 
             double totalInvoiceAmount = 0.0;
 
+            java.util.Set<String> requestedModules = request.getModules().stream()
+                    .map(BulkModuleItemRequest::getModuleName)
+                    .collect(java.util.stream.Collectors.toSet());
+
             // 1. Process and save all modules
             for (BulkModuleItemRequest item : request.getModules()) {
                 TenantModule module = tenantModuleRepository.findByTenantIdAndModuleName(tenantId, item.getModuleName())
@@ -109,6 +113,17 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                 double amount = item.getAmount() != null ? item.getAmount() : 0.0;
                 double extra = item.getExtraCharges() != null ? item.getExtraCharges() : 0.0;
                 totalInvoiceAmount += (amount + extra);
+            }
+
+            // Deactivate other non-core modules that are NOT part of this new subscription
+            java.util.List<TenantModule> existingModules = tenantModuleRepository.findByTenantId(tenantId);
+            for (TenantModule existing : existingModules) {
+                if (!requestedModules.contains(existing.getModuleName()) 
+                        && !"ADMIN".equals(existing.getModuleName()) 
+                        && !"SETTINGS".equals(existing.getModuleName())) {
+                    existing.setActive(false);
+                    tenantModuleRepository.save(existing);
+                }
             }
 
             // 2. Generate a single invoice
