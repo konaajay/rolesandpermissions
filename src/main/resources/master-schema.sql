@@ -707,10 +707,14 @@ CREATE TABLE IF NOT EXISTS tenant_invoices (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT NOT NULL,
   invoice_number VARCHAR(255) NOT NULL UNIQUE,
-  amount DOUBLE NOT NULL,
+  invoice_type VARCHAR(50),
+  total_amount DOUBLE,
   subtotal DOUBLE,
-  tax_amount DOUBLE,
-  status VARCHAR(255) NOT NULL,
+  gst_amount DOUBLE,
+  paid_amount DOUBLE,
+  pending_amount DOUBLE,
+  payment_type VARCHAR(50),
+  status VARCHAR(255),
   due_date DATE,
   invoice_date DATE,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -812,11 +816,19 @@ CREATE TABLE IF NOT EXISTS push_notifications (
 
 CREATE TABLE IF NOT EXISTS subscription_plans (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255),
-    price DOUBLE,
-    billing_cycle VARCHAR(255),
-    features TEXT,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    monthly_price DOUBLE NOT NULL,
+    yearly_price DOUBLE NOT NULL,
+    max_users INT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS subscription_plan_modules (
+    plan_id BIGINT NOT NULL,
+    module_name VARCHAR(255),
+    FOREIGN KEY (plan_id) REFERENCES subscription_plans(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS vendor_complaints (

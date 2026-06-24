@@ -283,11 +283,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
                         new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
                         new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
-                        new String[] { "TENANT", "CREATE", "Create Tenants" },
-                        new String[] { "TENANT", "VIEW", "View Tenants" },
-                        new String[] { "TENANT", "UPDATE", "Update Tenants" },
-                        new String[] { "TENANT", "ENABLE", "Enable Tenants" },
-                        new String[] { "TENANT", "DISABLE", "Disable Tenants" },
                         new String[] { "DASHBOARD", "VIEW", "View Dashboard" },
                         new String[] { "VENDOR", "CREATE", "Create Vendors" },
                         new String[] { "VENDOR", "VIEW", "View Vendors" },
@@ -489,11 +484,6 @@ public class DatabaseSeeder implements CommandLineRunner {
                     new String[] { "PERMISSION", "CREATE", "Ability to create permissions" },
                     new String[] { "PERMISSION", "ENABLE", "Ability to enable permissions" },
                     new String[] { "PERMISSION", "DISABLE", "Ability to disable permissions" },
-                    new String[] { "TENANT", "CREATE", "Create Tenants" },
-                    new String[] { "TENANT", "VIEW", "View Tenants" },
-                    new String[] { "TENANT", "UPDATE", "Update Tenants" },
-                    new String[] { "TENANT", "ENABLE", "Enable Tenants" },
-                    new String[] { "TENANT", "DISABLE", "Disable Tenants" },
                     new String[] { "SETTINGS", "MANAGE_TEMPLATES", "Ability to manage document templates" },
                     new String[] { "SETTINGS", "MANAGE_ID_FORMATS", "Ability to manage ID generation formats" },
                     new String[] { "COMPANY_PROFILE", "VIEW", "Ability to view company profile" },
@@ -707,3 +697,4 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
     }
 }
+
