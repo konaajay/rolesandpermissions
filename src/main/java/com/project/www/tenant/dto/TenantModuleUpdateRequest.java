@@ -7,7 +7,6 @@ import lombok.Setter;
 @Setter
 public class TenantModuleUpdateRequest {
     private Double amount;
-    private String paymentMethod;
     private String specialRequirements;
     private Double extraCharges;
     private java.time.LocalDate startDate;

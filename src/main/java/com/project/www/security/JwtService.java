@@ -37,6 +37,7 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tenantId", tenantId);
         claims.put("tenantCode", tenantCode);
+        claims.put("isPlatformAdmin", tenantId != null && tenantId == 1L);
 
         return Jwts.builder()
                 .setClaims(claims)

@@ -17,4 +17,7 @@ public class BulkModuleSaveRequest {
     private String invoiceType; // NEW_SUBSCRIPTION, RENEWAL, ADDON_MODULE
     private Integer noOfInstallments;
     private Double installmentAmount;
+    private Double gstPercentage;
+    private String discountType; // FLAT, PERCENTAGE
+    private Double discountValue;
 }

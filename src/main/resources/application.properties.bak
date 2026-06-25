@@ -1,0 +1,41 @@
+spring.application.name=rbac-project
+spring.config.import=optional:file:.env[.properties]
+# MAIL
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=ourhr.futureinvosolutions@gmail.com
+spring.mail.password=dqkjeldpbvqjtxqt
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+# SERVER
+server.port=8080
+
+# DATABASE
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# JPA
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=false
+spring.jpa.open-in-view=false
+logging.level.org.hibernate.SQL=OFF
+logging.level.org.hibernate.orm.jdbc.bind=OFF
+
+# JWT
+jwt.secret=${JWT_SECRET}
+
+# SECURITY LOGS
+logging.level.org.springframework.security=DEBUG
+
+# FRONTEND
+app.frontend.url=${FRONTEND_URL}
+
+# BACKEND
+app.backend.url=${BACKEND_URL:http://localhost:8080}
+
+# FILE UPLOADS
+app.upload.dir=uploads
+spring.mail.properties.mail.debug=true

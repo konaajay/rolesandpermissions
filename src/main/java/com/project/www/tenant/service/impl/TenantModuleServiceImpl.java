@@ -28,6 +28,8 @@ public class TenantModuleServiceImpl implements TenantModuleService {
     private final TenantInvoiceRepository tenantInvoiceRepository;
     private final TenantInvoiceItemRepository tenantInvoiceItemRepository;
     private final TenantInvoiceInstallmentRepository tenantInvoiceInstallmentRepository;
+    private final com.project.www.tenant.repository.SubscriptionRepository subscriptionRepository;
+    private final com.project.www.tenant.repository.TenantRepository tenantRepository;
 
     @Override
     public List<TenantModule> getModulesForTenant(Long tenantId) {
@@ -40,6 +42,19 @@ public class TenantModuleServiceImpl implements TenantModuleService {
         }
     }
 
+    @Override
+    @org.springframework.transaction.annotation.Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public List<TenantModule> getActiveModulesForTenantRequiresNew(Long tenantId) {
+        String originalCode = TenantContext.getCurrentTenantCode();
+        Long originalId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            return tenantModuleRepository.findByTenantIdAndActiveTrue(tenantId);
+        } finally {
+            TenantContext.setCurrentTenantCode(originalCode);
+            TenantContext.setCurrentTenant(originalId);
+        }
+    }
     @Override
     public void enableModule(Long tenantId, String moduleName, TenantModuleUpdateRequest request) {
         // Kept for backward compatibility but doesn't generate invoice anymore.
@@ -55,7 +70,6 @@ public class TenantModuleServiceImpl implements TenantModuleService {
             module.setActive(true);
             if (request != null) {
                 module.setAmount(request.getAmount());
-                module.setPaymentMethod(request.getPaymentMethod());
                 module.setSpecialRequirements(request.getSpecialRequirements());
                 module.setExtraCharges(request.getExtraCharges());
                 module.setStartDate(request.getStartDate());
@@ -82,12 +96,9 @@ public class TenantModuleServiceImpl implements TenantModuleService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void saveBulkModules(Long tenantId, BulkModuleSaveRequest request) {
-        String originalCode = TenantContext.getCurrentTenantCode();
-        try {
-            TenantContext.clear();
-
-            double totalInvoiceAmount = 0.0;
+        double totalInvoiceAmount = 0.0;
 
             java.util.Set<String> requestedModules = request.getModules().stream()
                     .map(BulkModuleItemRequest::getModuleName)
@@ -102,8 +113,6 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                                 .build());
                 module.setActive(true);
                 module.setAmount(item.getAmount());
-                // In bulk mode, payment method belongs to the invoice, not individual module
-                module.setPaymentMethod(request.getPaymentType());
                 module.setSpecialRequirements(item.getSpecialRequirements());
                 module.setExtraCharges(item.getExtraCharges());
                 module.setStartDate(item.getStartDate());
@@ -118,18 +127,60 @@ public class TenantModuleServiceImpl implements TenantModuleService {
             // Deactivate other non-core modules that are NOT part of this new subscription
             java.util.List<TenantModule> existingModules = tenantModuleRepository.findByTenantId(tenantId);
             for (TenantModule existing : existingModules) {
-                if (!requestedModules.contains(existing.getModuleName()) 
-                        && !"ADMIN".equals(existing.getModuleName()) 
-                        && !"SETTINGS".equals(existing.getModuleName())) {
+                if ("ADMIN".equals(existing.getModuleName()) || "SETTINGS".equals(existing.getModuleName()) || "EMPLOYEE".equals(existing.getModuleName())) {
+                    if (!existing.getActive()) {
+                        existing.setActive(true);
+                        tenantModuleRepository.save(existing);
+                    }
+                } else if (!requestedModules.contains(existing.getModuleName())) {
                     existing.setActive(false);
                     tenantModuleRepository.save(existing);
                 }
             }
 
-            // 2. Generate a single invoice
+            // 3. Save Subscription entity
+            com.project.www.tenant.entity.Tenant tenant = tenantRepository.findById(tenantId)
+                    .orElseThrow(() -> new RuntimeException("Tenant not found"));
+            
+            // Re-calculate grand total for subscription based on logic below
+            double subtotalForSub = totalInvoiceAmount;
+            double gstPercentageForSub = request.getGstPercentage() != null ? request.getGstPercentage() : 18.0;
+            double initialGrandTotal = subtotalForSub + (subtotalForSub * (gstPercentageForSub / 100.0));
+
+            com.project.www.tenant.entity.Subscription subscription = com.project.www.tenant.entity.Subscription.builder()
+                    .tenant(tenant)
+                    .planName("CUSTOM_BULK")
+                    .billingInterval(request.getPaymentType())
+                    .amount(totalInvoiceAmount)
+                    .status("ACTIVE")
+                    .startDate(java.time.LocalDate.now())
+                    .endDate(java.time.LocalDate.now().plusYears(1))
+                    .amountPaid(0.0)
+                    .amountPending(initialGrandTotal)
+                    .build();
+            subscriptionRepository.save(subscription);
+
+            // 4. Generate Invoice (if applicable)
+            if (totalInvoiceAmount > 0) {          
             double subtotal = totalInvoiceAmount;
-            double gstAmount = subtotal * 0.18; // 18% GST
-            double grandTotal = subtotal + gstAmount;
+            
+            double discount = 0.0;
+            if (request.getDiscountValue() != null && request.getDiscountValue() > 0) {
+                if ("PERCENTAGE".equalsIgnoreCase(request.getDiscountType())) {
+                    discount = subtotal * (request.getDiscountValue() / 100.0);
+                } else {
+                    discount = request.getDiscountValue();
+                }
+            }
+            
+            double amountAfterDiscount = subtotal - discount;
+            double gstPercentage = request.getGstPercentage() != null ? request.getGstPercentage() : 18.0;
+            double gstAmount = amountAfterDiscount * (gstPercentage / 100.0); 
+            
+            double cgst = gstAmount / 2.0; 
+            double sgst = gstAmount / 2.0; 
+            double igst = 0.0;
+            double grandTotal = amountAfterDiscount + gstAmount;
 
             TenantInvoice invoice = TenantInvoice.builder()
                     .invoiceNumber("INV-" + tenantId + "-" + System.currentTimeMillis())
@@ -137,6 +188,10 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                     .invoiceType(request.getInvoiceType() != null ? request.getInvoiceType() : "NEW_SUBSCRIPTION")
                     .subtotal(subtotal)
                     .gstAmount(gstAmount)
+                    .cgst(cgst)
+                    .sgst(sgst)
+                    .igst(igst)
+                    .discount(discount)
                     .totalAmount(grandTotal)
                     .paidAmount(0.0)
                     .pendingAmount(grandTotal)
@@ -150,11 +205,17 @@ public class TenantModuleServiceImpl implements TenantModuleService {
 
             // 3. Save invoice items
             for (BulkModuleItemRequest item : request.getModules()) {
+                double itemAmt = item.getAmount() != null ? item.getAmount() : 0.0;
+                double extra = item.getExtraCharges() != null ? item.getExtraCharges() : 0.0;
                 TenantInvoiceItem invoiceItem = TenantInvoiceItem.builder()
                         .invoiceId(invoice.getId())
                         .moduleName(item.getModuleName())
-                        .amount(item.getAmount() != null ? item.getAmount() : 0.0)
-                        .extraCharges(item.getExtraCharges() != null ? item.getExtraCharges() : 0.0)
+                        .amount(itemAmt)
+                        .quantity(1)
+                        .unitPrice(itemAmt)
+                        .taxRate(18.0)
+                        .total(itemAmt + extra)
+                        .extraCharges(extra)
                         .startDate(item.getStartDate())
                         .expiryDate(item.getExpiryDate())
                         .build();
@@ -187,9 +248,8 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                 tenantInvoiceInstallmentRepository.save(installment);
             }
 
-        } finally {
-            TenantContext.setCurrentTenantCode(originalCode);
-        }
+            }
+
     }
 
     @Override

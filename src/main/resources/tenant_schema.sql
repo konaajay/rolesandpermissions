@@ -523,12 +523,37 @@ CREATE TABLE IF NOT EXISTS vendor_invoices (
     notes TEXT,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     receipt_url TEXT,
+    payment_history TEXT,
+    customer_address TEXT,
+    gstin VARCHAR(50),
+    cgst DECIMAL(15,2),
+    sgst DECIMAL(15,2),
+    igst DECIMAL(15,2),
+    discount DECIMAL(15,2),
+    sub_total DECIMAL(15,2),
+    tax_total DECIMAL(15,2),
     created_at DATETIME NOT NULL,
     updated_at DATETIME,
     created_by VARCHAR(255),
     updated_by VARCHAR(255),
     FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
     UNIQUE KEY uk_invoice_number (invoice_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS vendor_invoice_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    vendor_invoice_id BIGINT NOT NULL,
+    item_name VARCHAR(255) NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(15,2) NOT NULL,
+    tax_rate DECIMAL(5,2),
+    total DECIMAL(15,2) NOT NULL,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    FOREIGN KEY (vendor_invoice_id) REFERENCES vendor_invoices(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS vendor_audits (
@@ -597,5 +622,24 @@ CREATE TABLE IF NOT EXISTS user_entities (
   PRIMARY KEY (user_id, entity_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (entity_id) REFERENCES business_entities(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS invoice_configurations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    invoice_name VARCHAR(100) NOT NULL,
+    invoice_prefix VARCHAR(20),
+    invoice_number_format VARCHAR(50),
+    company_logo TEXT,
+    company_details TEXT,
+    gst_tax_details TEXT,
+    terms_conditions TEXT,
+    active BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    CONSTRAINT uk_invoice_name_tenant UNIQUE (tenant_id, invoice_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

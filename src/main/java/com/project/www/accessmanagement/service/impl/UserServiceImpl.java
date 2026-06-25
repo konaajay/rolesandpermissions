@@ -612,14 +612,26 @@ public class UserServiceImpl implements UserService {
 
         if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
             if (tenantId != null) {
-                userModules = tenantModuleRepository.findByTenantIdAndActiveTrue(tenantId).stream()
-                        .map(com.project.www.tenant.entity.TenantModule::getModuleName)
-                        .collect(Collectors.toList());
-                java.util.List<Permission> allPerms = permissionRepository.findAllByTenantId(tenantId).stream()
-                        .filter(Permission::getActive)
-                        .collect(Collectors.toList());
-                userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
-                userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
+                String originalTenantCode = TenantContext.getCurrentTenantCode();
+                Long originalTenantId = TenantContext.getCurrentTenant();
+                try {
+                    TenantContext.clear();
+                    org.springframework.transaction.support.TransactionTemplate tt = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+                    tt.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                    
+                    userModules = tt.execute(status -> tenantModuleRepository.findByTenantIdAndActiveTrue(tenantId).stream()
+                            .map(com.project.www.tenant.entity.TenantModule::getModuleName)
+                            .collect(Collectors.toList()));
+                    
+                    java.util.List<Permission> allPerms = tt.execute(status -> permissionRepository.findAllByTenantId(tenantId).stream()
+                            .filter(Permission::getActive)
+                            .collect(Collectors.toList()));
+                    userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                    userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
+                } finally {
+                    TenantContext.setCurrentTenant(originalTenantId);
+                    TenantContext.setCurrentTenantCode(originalTenantCode);
+                }
             }
         } else {
             if (user.getModules() != null) {
@@ -629,6 +641,17 @@ public class UserServiceImpl implements UserService {
                 userPermissions = user.getPermissions().stream().map(Permission::getPermissionKey).collect(Collectors.toList());
                 userPermissionIds = user.getPermissions().stream().map(Permission::getId).collect(Collectors.toList());
             }
+        }
+        
+        // Ensure core system modules are always enabled so the frontend displays settings/admin sections
+        if (!userModules.contains("ADMIN")) {
+            userModules.add("ADMIN");
+        }
+        if (!userModules.contains("EMPLOYEE")) {
+            userModules.add("EMPLOYEE");
+        }
+        if (!userModules.contains("SETTINGS")) {
+            userModules.add("SETTINGS");
         }
 
         return UserResponse.builder()

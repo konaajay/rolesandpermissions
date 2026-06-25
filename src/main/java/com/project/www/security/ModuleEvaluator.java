@@ -21,7 +21,10 @@ public class ModuleEvaluator {
         if (tenantId == null) {
             return true;
         }
-        
+        if ("ADMIN".equals(moduleName) || "SETTINGS".equals(moduleName) || "EMPLOYEE".equals(moduleName)) {
+            return true;
+        }
+
         // Save original context just in case we need to read from master DB
         // But TenantModule is in master DB and tenantRepository is connected to master DB?
         // Wait, if tenantModule is an Entity in the main package, it connects to the active DataSource!

@@ -317,7 +317,7 @@ public class AuthServiceImpl implements AuthService {
                         new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
                         new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
                         new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
-                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
+                        new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" }, new String[] { "MARKETING", "AJAY_SUMMARY", "Ajay Summary" });
 
                 java.util.List<com.project.www.accessmanagement.entity.Permission> existingPerms = permissionRepository
                         .findAllByTenantId(tenant.getId());

@@ -43,6 +43,9 @@ public class VendorInvoiceServiceImpl implements VendorInvoiceService {
 
         VendorInvoice entity = mapper.toEntity(dto);
         entity.setVendor(vendor);
+        if (entity.getItems() != null) {
+            entity.getItems().forEach(item -> item.setVendorInvoice(entity));
+        }
         
         if (dto.getRequirementId() != null) {
             Requirement req = requirementRepository.findById(dto.getRequirementId()).orElse(null);
@@ -78,6 +81,10 @@ public class VendorInvoiceServiceImpl implements VendorInvoiceService {
         
         mapper.updateEntityFromDto(dto, entity);
         
+        if (entity.getItems() != null) {
+            entity.getItems().forEach(item -> item.setVendorInvoice(entity));
+        }
+
         if (dto.getVendorId() != null && !dto.getVendorId().equals(entity.getVendor().getId())) {
             Vendor vendor = vendorRepository.findByIdAndTenantIdAndDeletedFalse(dto.getVendorId(), tenantId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));

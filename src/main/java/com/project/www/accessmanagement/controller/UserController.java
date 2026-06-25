@@ -80,7 +80,17 @@ public class UserController {
         response.put("permissions", new java.util.ArrayList<>(allPermissions));
         java.util.Set<String> allModules = new java.util.HashSet<>();
         
-        List<com.project.www.tenant.entity.TenantModule> activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        List<com.project.www.tenant.entity.TenantModule> activeTenantModules;
+        String ogCode = com.project.www.util.TenantContext.getCurrentTenantCode();
+        Long ogId = com.project.www.util.TenantContext.getCurrentTenant();
+        try {
+            com.project.www.util.TenantContext.clear();
+            activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        } finally {
+            com.project.www.util.TenantContext.setCurrentTenantCode(ogCode);
+            com.project.www.util.TenantContext.setCurrentTenant(ogId);
+        }
+        
         java.util.Set<String> activeTenantModuleNames = activeTenantModules.stream()
                 .map(com.project.www.tenant.entity.TenantModule::getModuleName)
                 .collect(java.util.stream.Collectors.toSet());
@@ -99,6 +109,9 @@ public class UserController {
         }
         
         response.put("modules", new java.util.ArrayList<>(allModules));
+        response.put("tenantId", user.getTenantId());
+        response.put("tenantCode", com.project.www.util.TenantContext.getCurrentTenantCode());
+        response.put("isPlatformAdmin", user.getTenantId() != null && user.getTenantId() == 1L);
 
         return ResponseEntity.ok(response);
     }

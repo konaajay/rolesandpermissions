@@ -29,7 +29,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                         new UsernameNotFoundException("User not found with email: " + email + " under tenant: " + tenantId));
 
         java.util.List<com.project.www.accessmanagement.entity.Permission> allPermissions = null;
-        if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
+        if (user.getRole() != null && "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName())) {
             String originalCode = com.project.www.util.TenantContext.getCurrentTenantCode();
             Long originalTenant = com.project.www.util.TenantContext.getCurrentTenant();
             try {
@@ -41,6 +41,11 @@ public class CustomUserDetailsService implements UserDetailsService {
                 com.project.www.util.TenantContext.setCurrentTenantCode(originalCode);
                 com.project.www.util.TenantContext.setCurrentTenant(originalTenant);
             }
+        } else if (user.getRole() != null && "SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName())) {
+            // For regular tenant SUPER_ADMIN, fetch permissions from the tenant's own database
+            allPermissions = permissionRepository.findAllByTenantId(tenantId).stream()
+                .filter(com.project.www.accessmanagement.entity.Permission::getActive)
+                .collect(java.util.stream.Collectors.toList());
         }
 
         return new CustomUserDetails(user, allPermissions);

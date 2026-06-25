@@ -156,7 +156,7 @@ public class JwtFilter extends OncePerRequestFilter {
                         sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Tenant inactive");
                         return;
                     }
-                    if (!"ACTIVE".equalsIgnoreCase(tenant.getStatus())) {
+                    if (!"ACTIVE".equalsIgnoreCase(tenant.getStatus()) && !"TRIAL".equalsIgnoreCase(tenant.getStatus())) {
                         sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
                         return;
                     }

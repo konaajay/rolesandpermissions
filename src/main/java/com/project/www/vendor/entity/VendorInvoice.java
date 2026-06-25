@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -64,4 +66,32 @@ public class VendorInvoice extends Auditable {
 
     @Column(columnDefinition = "TEXT")
     private String paymentHistory;
+
+    @Column(columnDefinition = "TEXT")
+    private String customerAddress;
+
+    @Column(length = 50)
+    private String gstin;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal cgst;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal sgst;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal igst;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal discount;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal subTotal;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal taxTotal;
+
+    @OneToMany(mappedBy = "vendorInvoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<VendorInvoiceItem> items = new ArrayList<>();
 }

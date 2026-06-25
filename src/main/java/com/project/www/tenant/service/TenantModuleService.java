@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface TenantModuleService {
     List<TenantModule> getModulesForTenant(Long tenantId);
+    List<TenantModule> getActiveModulesForTenantRequiresNew(Long tenantId);
     void enableModule(Long tenantId, String moduleName, TenantModuleUpdateRequest request);
     void disableModule(Long tenantId, String moduleName);
     void saveBulkModules(Long tenantId, com.project.www.tenant.dto.BulkModuleSaveRequest request);

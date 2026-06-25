@@ -59,11 +59,12 @@ public class DatabaseSeeder implements CommandLineRunner {
         log.info("Starting database seeding check...");
 
         try (java.sql.Connection conn = dataSource.getConnection()) {
-            ResourceDatabasePopulator masterPopulator = new ResourceDatabasePopulator();
-            masterPopulator.setContinueOnError(true);
-            masterPopulator.addScript(new ClassPathResource("master-schema.sql"));
-            masterPopulator.execute(dataSource);
-            log.info("Successfully executed master-schema.sql on database");
+            // WARNING: Executing master-schema.sql drops tables on every restart!
+            // ResourceDatabasePopulator masterPopulator = new ResourceDatabasePopulator();
+            // masterPopulator.setContinueOnError(true);
+            // masterPopulator.addScript(new ClassPathResource("master-schema.sql"));
+            // masterPopulator.execute(dataSource);
+            // log.info("Successfully executed master-schema.sql on database");
 
             // Patch existing tables in master database to add missing columns
             try (java.sql.Statement stmt = conn.createStatement()) {

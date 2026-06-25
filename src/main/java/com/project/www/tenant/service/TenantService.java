@@ -10,4 +10,5 @@ public interface TenantService {
     List<TenantResponse> getAllTenants();
     void enableTenant(Long id);
     void disableTenant(Long id);
+    TenantResponse getTenantById(Long id);
 }

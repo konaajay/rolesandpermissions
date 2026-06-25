@@ -120,14 +120,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                 .moduleName(ma.getModuleName())
                                 .active(true)
                                 .amount(ma.getAmount())
-                                .paymentMethod(ma.getPaymentMethod())
                                 .specialRequirements(ma.getSpecialRequirements())
                                 .extraCharges(ma.getExtraCharges())
                                 .build());
                     } else {
                         tm.setActive(true);
                         tm.setAmount(ma.getAmount());
-                        tm.setPaymentMethod(ma.getPaymentMethod());
                         tm.setSpecialRequirements(ma.getSpecialRequirements());
                         tm.setExtraCharges(ma.getExtraCharges());
                         tmRepo.save(tm);

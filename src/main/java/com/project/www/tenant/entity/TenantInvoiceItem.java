@@ -29,6 +29,18 @@ public class TenantInvoiceItem {
     @Column(name = "amount")
     private Double amount;
 
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @Column(name = "unit_price")
+    private Double unitPrice;
+
+    @Column(name = "tax_rate")
+    private Double taxRate;
+
+    @Column(name = "total")
+    private Double total;
+
     @Column(name = "extra_charges")
     private Double extraCharges;
 

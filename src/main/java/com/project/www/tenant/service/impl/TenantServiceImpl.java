@@ -205,7 +205,7 @@ public class TenantServiceImpl implements TenantService {
                             new String[] { "MARKETING", "VIEW", "View Marketing Campaigns" },
                             new String[] { "MARKETING", "CREATE", "Create Marketing Campaigns" },
                             new String[] { "MARKETING", "UPDATE", "Update Marketing Campaigns" },
-                            new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" });
+                            new String[] { "MARKETING", "DELETE", "Delete Marketing Campaigns" }, new String[] { "MARKETING", "AJAY_SUMMARY", "Ajay Summary" });
 
                     List<Permission> existingPerms = permissionRepository.findAllByTenantId(tenant.getId());
                     java.util.Map<String, Permission> permMap = existingPerms.stream()
@@ -398,6 +398,20 @@ public class TenantServiceImpl implements TenantService {
 
             tenant.setActive(false);
             tenantRepository.save(tenant);
+        } finally {
+            TenantContext.setCurrentTenant(originalTenantId);
+            TenantContext.setCurrentTenantCode(originalTenantCode);
+        }
+    }
+
+    public TenantResponse getTenantById(Long id) {
+        String originalTenantCode = TenantContext.getCurrentTenantCode();
+        Long originalTenantId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            Tenant tenant = tenantRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Tenant not found"));
+            return mapToResponse(tenant);
         } finally {
             TenantContext.setCurrentTenant(originalTenantId);
             TenantContext.setCurrentTenantCode(originalTenantCode);

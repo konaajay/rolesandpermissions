@@ -32,7 +32,6 @@ public class SubscriptionRequest {
     public static class ModuleAssignment {
         private String moduleName;
         private Double amount;
-        private String paymentMethod;
         private String specialRequirements;
         private Double extraCharges;
     }

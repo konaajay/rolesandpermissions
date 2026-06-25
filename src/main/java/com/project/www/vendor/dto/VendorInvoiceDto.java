@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
@@ -42,4 +43,15 @@ public class VendorInvoiceDto {
     private String notes;
     private String receiptUrl;
     private String paymentHistory;
+
+    private String customerAddress;
+    private String gstin;
+    private BigDecimal cgst;
+    private BigDecimal sgst;
+    private BigDecimal igst;
+    private BigDecimal discount;
+    private BigDecimal subTotal;
+    private BigDecimal taxTotal;
+
+    private List<VendorInvoiceItemDto> items;
 }

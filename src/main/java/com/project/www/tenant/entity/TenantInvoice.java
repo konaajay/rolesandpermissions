@@ -57,6 +57,24 @@ public class TenantInvoice {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "customer_address", columnDefinition = "TEXT")
+    private String customerAddress;
+
+    @Column(name = "gstin", length = 50)
+    private String gstin;
+
+    @Column(name = "cgst")
+    private Double cgst;
+
+    @Column(name = "sgst")
+    private Double sgst;
+
+    @Column(name = "igst")
+    private Double igst;
+
+    @Column(name = "discount")
+    private Double discount;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

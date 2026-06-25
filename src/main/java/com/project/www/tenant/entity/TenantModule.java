@@ -35,8 +35,7 @@ public class TenantModule {
     @Column(name = "amount")
     private Double amount;
 
-    @Column(name = "payment_method")
-    private String paymentMethod;
+
 
     @Column(name = "special_requirements", columnDefinition = "TEXT")
     private String specialRequirements;
