@@ -23,7 +23,7 @@ public class SubscriptionRequest {
     private Double amountPending;
     private String paymentHistory;
     private java.util.Set<String> customModules; // For overriding or custom plans
-    
+
     private java.util.List<ModuleAssignment> moduleAssignments;
 
     @Data

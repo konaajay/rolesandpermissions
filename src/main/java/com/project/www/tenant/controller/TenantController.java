@@ -137,7 +137,15 @@ public class TenantController {
     @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_UPDATE) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE) or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
     public ResponseEntity<String> payInstallment(
             @PathVariable Long id, @PathVariable Long invoiceId, @PathVariable Long installmentId) {
-        tenantModuleService.payInstallment(invoiceId, installmentId);
-        return ResponseEntity.ok("Installment paid successfully");
+        String originalCode = com.project.www.util.TenantContext.getCurrentTenantCode();
+        Long originalTenantId = com.project.www.util.TenantContext.getCurrentTenant();
+        try {
+            com.project.www.util.TenantContext.clear();
+            tenantModuleService.payInstallment(invoiceId, installmentId);
+            return ResponseEntity.ok("Installment paid successfully");
+        } finally {
+            com.project.www.util.TenantContext.setCurrentTenant(originalTenantId);
+            com.project.www.util.TenantContext.setCurrentTenantCode(originalCode);
+        }
     }
 }
