@@ -35,18 +35,9 @@ public class TenantDatabaseService {
         jdbcTemplate.execute("CREATE DATABASE IF NOT EXISTS " + dbName);
 
         // 2. Register the new data source into the dynamic routing manager
-        String newDbUrl = masterUrl.substring(0, masterUrl.lastIndexOf("/") + 1) + dbName + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-        
-        HikariDataSource newDataSource = new HikariDataSource();
-        newDataSource.setDriverClassName(driverClassName);
-        newDataSource.setJdbcUrl(newDbUrl);
-        newDataSource.setUsername(dbUsername);
-        newDataSource.setPassword(dbPassword);
-        newDataSource.setMaximumPoolSize(10);
-        newDataSource.setMinimumIdle(2);
-
+        HikariDataSource newDataSource = buildDataSource(dbName);
         dynamicDataSourceManager.addDataSource(tenantCode, newDataSource);
-        
+
         // 3. Execute the schema script
         try {
             org.springframework.core.io.ClassPathResource schemaResource = new org.springframework.core.io.ClassPathResource("tenant_schema.sql");
@@ -63,17 +54,32 @@ public class TenantDatabaseService {
     }
 
     public void registerExistingTenantDatabase(String tenantCode, String dbName) {
-        String dbUrl = masterUrl.substring(0, masterUrl.lastIndexOf("/") + 1) + dbName + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-        
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setDriverClassName(driverClassName);
-        dataSource.setJdbcUrl(dbUrl);
-        dataSource.setUsername(dbUsername);
-        dataSource.setPassword(dbPassword);
-        dataSource.setMaximumPoolSize(10);
-        dataSource.setMinimumIdle(2);
-
+        HikariDataSource dataSource = buildDataSource(dbName);
         dynamicDataSourceManager.addDataSource(tenantCode, dataSource);
         System.out.println("✅ Re-registered existing tenant data source for: " + tenantCode + " -> " + dbName);
     }
+
+    /**
+     * Shared factory for tenant HikariCP pools.
+     * Keep pool sizes small — with many tenants, large pools exhaust MySQL max_connections.
+     * Rule of thumb: maximumPoolSize = 2-3 per tenant for background/API workloads.
+     */
+    private HikariDataSource buildDataSource(String dbName) {
+        String dbUrl = masterUrl.substring(0, masterUrl.lastIndexOf("/") + 1)
+                + dbName + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+
+        HikariDataSource ds = new HikariDataSource();
+        ds.setDriverClassName(driverClassName);
+        ds.setJdbcUrl(dbUrl);
+        ds.setUsername(dbUsername);
+        ds.setPassword(dbPassword);
+        ds.setMaximumPoolSize(2);       // was 10 — too many connections with multiple tenants
+        ds.setMinimumIdle(1);           // was 2
+        ds.setConnectionTimeout(20000); // 20s timeout instead of default 30s
+        ds.setIdleTimeout(300000);      // release idle connections after 5 min
+        ds.setMaxLifetime(600000);      // recycle connections every 10 min
+        ds.setPoolName("HikariPool-" + dbName);
+        return ds;
+    }
 }
+
