@@ -152,6 +152,12 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
 
                 if (tenant != null) {
+                    // Allow billing-related paths regardless of subscription status
+                    // (so tenants can view/pay invoices even if subscription is expired)
+                    boolean isBillingPath = path.startsWith("/tenants/") && (path.contains("/invoices") || path.contains("/installments"))
+                            || path.equals("/users/me") || path.startsWith("/users/me");
+
+                    if (!isBillingPath) {
                     if (tenant.getActive() == null || !tenant.getActive()) {
                         sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Tenant inactive");
                         return;
@@ -167,6 +173,7 @@ public class JwtFilter extends OncePerRequestFilter {
                     if (tenant.getSubscriptionStartDate() != null && java.time.LocalDate.now().isBefore(tenant.getSubscriptionStartDate())) {
                         sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
                         return;
+                    }
                     }
                     TenantContext.setCurrentTenant(tenantId);
                     TenantContext.setCurrentTenantCode(tenantCode);

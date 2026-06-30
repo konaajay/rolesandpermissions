@@ -16,7 +16,7 @@ public class CompanyProfileController {
     private final CompanyProfileService service;
 
     @GetMapping
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).COMPANY_PROFILE_VIEW)")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CompanyProfileDTO> getCompanyProfile() {
         CompanyProfileDTO dto = service.getCompanyProfile();
         if (dto == null) {
