@@ -161,6 +161,13 @@ public class TemplateDefinitionService {
                    .replace("{{ACHIEVEMENT_NAME}}", "Employee of the Year")
                    .replace("{{EVENT_NAME}}", "Annual Tech Fest")
                    .replace("{{EVENT_DATE}}", "2026-05-15")
+                   .replace("{{INVOICE_NUMBER}}", "INV-2026-0001")
+                   .replace("{{CUSTOMER_NAME}}", "Acme Corporation")
+                   .replace("{{CUSTOMER_ADDRESS}}", "456 Client Avenue, Business District")
+                   .replace("{{INVOICE_ITEMS}}", "<tr><td style=\"padding: 10px; border-bottom: 1px solid #eee;\">Consulting Services</td><td style=\"padding: 10px; border-bottom: 1px solid #eee; text-align: right;\">1</td><td style=\"padding: 10px; border-bottom: 1px solid #eee; text-align: right;\">$1000.00</td><td style=\"padding: 10px; border-bottom: 1px solid #eee; text-align: right;\">$1000.00</td></tr>")
+                   .replace("{{SUBTOTAL}}", "$1000.00")
+                   .replace("{{TAX_AMOUNT}}", "$100.00")
+                   .replace("{{TOTAL_AMOUNT}}", "$1100.00")
                    .replace("{{QR_CODE}}", "<div style=\"width:50px; height:50px; background:#ccc; border:1px solid #999;\">QR</div>");
         
         // Remove unreplaced placeholders
@@ -362,6 +369,55 @@ public class TemplateDefinitionService {
                "</div>";
     }
 
+    private static String getInvoiceHtml(String title, String colorCode) {
+        return "<div style=\"font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; font-size: 13px; background-color: #fff;\">" +
+               "<table style=\"width: 100%; border-bottom: 3px solid " + colorCode + "; padding-bottom: 20px; margin-bottom: 30px;\"><tr>" +
+               "<td style=\"width: 50%; vertical-align: top;\">{{COMPANY_LOGO}}</td>" +
+               "<td style=\"width: 50%; text-align: right; vertical-align: top;\">" +
+               "<h1 style=\"color: " + colorCode + "; margin: 0; font-size: 28px; text-transform: uppercase;\">" + title + "</h1>" +
+               "<p style=\"margin: 10px 0 0 0; font-size: 14px;\"><strong>Invoice #:</strong> {{INVOICE_NUMBER}}</p>" +
+               "<p style=\"margin: 5px 0 0 0; font-size: 14px;\"><strong>Date:</strong> {{ISSUE_DATE}}</p>" +
+               "</td></tr></table>" +
+               "<table style=\"width: 100%; margin-bottom: 40px;\"><tr>" +
+               "<td style=\"width: 50%; vertical-align: top;\">" +
+               "<h3 style=\"margin: 0 0 10px 0; color: #666; font-size: 12px; text-transform: uppercase;\">Billed To</h3>" +
+               "<p style=\"margin: 0; font-weight: bold; font-size: 14px;\">{{CUSTOMER_NAME}}</p>" +
+               "<p style=\"margin: 5px 0 0 0; color: #555;\">{{CUSTOMER_ADDRESS}}</p>" +
+               "</td>" +
+               "<td style=\"width: 50%; vertical-align: top; text-align: right;\">" +
+               "<h3 style=\"margin: 0 0 10px 0; color: #666; font-size: 12px; text-transform: uppercase;\">From</h3>" +
+               "<p style=\"margin: 0; font-weight: bold; font-size: 14px;\">{{COMPANY_NAME}}</p>" +
+               "<p style=\"margin: 5px 0 0 0; color: #555;\">{{COMPANY_ADDRESS}}</p>" +
+               "</td></tr></table>" +
+               "<table style=\"width: 100%; border-collapse: collapse; margin-bottom: 30px;\">" +
+               "<thead><tr style=\"background-color: " + colorCode + "; color: #fff;\">" +
+               "<th style=\"padding: 12px; text-align: left; font-weight: bold;\">Description</th>" +
+               "<th style=\"padding: 12px; text-align: right; font-weight: bold;\">Qty</th>" +
+               "<th style=\"padding: 12px; text-align: right; font-weight: bold;\">Price</th>" +
+               "<th style=\"padding: 12px; text-align: right; font-weight: bold;\">Total</th>" +
+               "</tr></thead>" +
+               "<tbody>{{INVOICE_ITEMS}}</tbody>" +
+               "</table>" +
+               "<table style=\"width: 100%;\"><tr>" +
+               "<td style=\"width: 50%; vertical-align: top;\">" +
+               "<div style=\"padding: 15px; background-color: #f8f9fa; border-radius: 4px; margin-right: 20px;\">" +
+               "<p style=\"margin: 0 0 5px 0; font-weight: bold;\">Payment Terms:</p>" +
+               "<p style=\"margin: 0; font-size: 11px; color: #555;\">Please pay within 15 days of receiving this invoice.</p>" +
+               "</div>" +
+               "</td>" +
+               "<td style=\"width: 50%; vertical-align: top;\">" +
+               "<table style=\"width: 100%; border-collapse: collapse;\">" +
+               "<tr><td style=\"padding: 8px; font-weight: bold; color: #555;\">Subtotal:</td><td style=\"padding: 8px; text-align: right;\">{{SUBTOTAL}}</td></tr>" +
+               "<tr><td style=\"padding: 8px; font-weight: bold; color: #555;\">Tax:</td><td style=\"padding: 8px; text-align: right;\">{{TAX_AMOUNT}}</td></tr>" +
+               "<tr><td colspan=\"2\" style=\"border-top: 2px solid #eee; padding-top: 5px;\"></td></tr>" +
+               "<tr><td style=\"padding: 12px; font-weight: bold; font-size: 16px; color: " + colorCode + ";\">Total Amount:</td><td style=\"padding: 12px; text-align: right; font-weight: bold; font-size: 16px;\">{{TOTAL_AMOUNT}}</td></tr>" +
+               "</table>" +
+               "</td></tr></table>" +
+               "<div style=\"margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;\">" +
+               "<p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Thank you for your business!</p>" +
+               "</div></div>";
+    }
+
     private static final List<TemplateDefinition> SYSTEM_TEMPLATES = List.of(
             // Documents
             createSystemTemplate("OFFER_LETTER", "Offer Letter", "DOCUMENT", getDocumentHtml("Offer Letter", 
@@ -468,7 +524,13 @@ public class TemplateDefinitionService {
             )),
             createSystemTemplate("EMPLOYEE_RECOGNITION_CERTIFICATE", "Employee Recognition Certificate", "CERTIFICATE", getCertificateHtml("Employee Recognition", 
                 "is recognized for their dedication, hard work<br/>and valuable contribution to the organization.<br/><br/>Thank you for being an inspiration!", "#eab308" // Gold
-            ))
+            )),
+            
+            // Invoices
+            createSystemTemplate("PROFESSIONAL_INVOICE", "Professional Invoice", "INVOICE", getInvoiceHtml("INVOICE", "#1e3a8a")),
+            createSystemTemplate("MODERN_INVOICE", "Modern Invoice", "INVOICE", getInvoiceHtml("TAX INVOICE", "#0f766e")),
+            createSystemTemplate("CORPORATE_INVOICE", "Corporate Invoice", "INVOICE", getInvoiceHtml("INVOICE", "#374151")),
+            createSystemTemplate("MINIMAL_INVOICE", "Minimal Invoice", "INVOICE", getInvoiceHtml("INVOICE", "#000000"))
     );
 
     public List<TemplateDefinition> getAvailableSystemTemplates() {

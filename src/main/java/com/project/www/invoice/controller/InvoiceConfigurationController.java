@@ -37,8 +37,8 @@ public class InvoiceConfigurationController {
     }
 
     @GetMapping("/active")
-    public ResponseEntity<InvoiceConfigurationDto> getActiveConfiguration() {
-        return ResponseEntity.ok(service.getActiveConfigurationForTenant());
+    public ResponseEntity<InvoiceConfigurationDto> getActiveConfiguration(@RequestParam(required = false, defaultValue = "ALL") String module) {
+        return ResponseEntity.ok(service.getActiveConfigurationForTenantAndModule(module));
     }
 
     @PutMapping("/{id}/activate")

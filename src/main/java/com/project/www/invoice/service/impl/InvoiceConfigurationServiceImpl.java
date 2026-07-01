@@ -28,8 +28,12 @@ public class InvoiceConfigurationServiceImpl implements InvoiceConfigurationServ
         entity.setTenantId(tenantId);
         entity.setDeleted(false);
         
+        if (entity.getTargetModule() == null || entity.getTargetModule().isEmpty()) {
+            entity.setTargetModule("ALL");
+        }
+
         if (Boolean.TRUE.equals(dto.getActive())) {
-            repository.deactivateAllForTenant(tenantId);
+            repository.deactivateAllForTenantAndModule(tenantId, entity.getTargetModule());
         } else {
             entity.setActive(false);
         }
@@ -47,8 +51,12 @@ public class InvoiceConfigurationServiceImpl implements InvoiceConfigurationServ
         
         mapper.updateEntityFromDto(dto, entity);
         
+        if (entity.getTargetModule() == null || entity.getTargetModule().isEmpty()) {
+            entity.setTargetModule("ALL");
+        }
+        
         if (Boolean.TRUE.equals(dto.getActive())) {
-            repository.deactivateAllForTenant(tenantId);
+            repository.deactivateAllForTenantAndModule(tenantId, entity.getTargetModule());
             entity.setActive(true);
         }
         
@@ -87,10 +95,26 @@ public class InvoiceConfigurationServiceImpl implements InvoiceConfigurationServ
     @Override
     @Transactional(readOnly = true)
     public InvoiceConfigurationDto getActiveConfigurationForTenant() {
+        // Fallback for ALL if no module specified
+        return getActiveConfigurationForTenantAndModule("ALL");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceConfigurationDto getActiveConfigurationForTenantAndModule(String targetModule) {
         Long tenantId = TenantContext.getCurrentTenant();
-        return repository.findByTenantIdAndActiveTrueAndDeletedFalse(tenantId)
+        // First try to find the specific module
+        return repository.findByTenantIdAndTargetModuleAndActiveTrueAndDeletedFalse(tenantId, targetModule)
                 .map(mapper::toDto)
-                .orElse(null);
+                .orElseGet(() -> {
+                    // Fallback to "ALL" if the specific module doesn't have an active template
+                    if (!"ALL".equals(targetModule)) {
+                        return repository.findByTenantIdAndTargetModuleAndActiveTrueAndDeletedFalse(tenantId, "ALL")
+                                .map(mapper::toDto)
+                                .orElse(null);
+                    }
+                    return null;
+                });
     }
 
     @Override
@@ -100,7 +124,7 @@ public class InvoiceConfigurationServiceImpl implements InvoiceConfigurationServ
         InvoiceConfiguration entity = repository.findByIdAndTenantIdAndDeletedFalse(id, tenantId)
                 .orElseThrow(() -> new RuntimeException("Invoice Configuration not found"));
         
-        repository.deactivateAllForTenant(tenantId);
+        repository.deactivateAllForTenantAndModule(tenantId, entity.getTargetModule() != null ? entity.getTargetModule() : "ALL");
         entity.setActive(true);
         repository.save(entity);
     }

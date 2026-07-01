@@ -15,9 +15,11 @@ public interface InvoiceConfigurationRepository extends JpaRepository<InvoiceCon
 
     Optional<InvoiceConfiguration> findByIdAndTenantIdAndDeletedFalse(Long id, Long tenantId);
 
+    Optional<InvoiceConfiguration> findByTenantIdAndTargetModuleAndActiveTrueAndDeletedFalse(Long tenantId, String targetModule);
+
     Optional<InvoiceConfiguration> findByTenantIdAndActiveTrueAndDeletedFalse(Long tenantId);
 
     @Modifying
-    @Query("UPDATE InvoiceConfiguration i SET i.active = false WHERE i.tenantId = :tenantId AND i.active = true")
-    void deactivateAllForTenant(@Param("tenantId") Long tenantId);
+    @Query("UPDATE InvoiceConfiguration i SET i.active = false WHERE i.tenantId = :tenantId AND i.targetModule = :targetModule AND i.active = true")
+    void deactivateAllForTenantAndModule(@Param("tenantId") Long tenantId, @Param("targetModule") String targetModule);
 }

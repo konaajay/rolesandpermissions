@@ -47,6 +47,10 @@ public class InvoiceConfiguration extends Auditable {
     @Builder.Default
     private Boolean active = false;
 
+    @Column(name = "target_module", length = 255)
+    @Builder.Default
+    private String targetModule = "ALL";
+
     @Column(name = "deleted", nullable = false)
     @Builder.Default
     private Boolean deleted = false;

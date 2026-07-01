@@ -23,4 +23,5 @@ public class InvoiceConfigurationDto {
     private String gstTaxDetails;
     private String termsConditions;
     private Boolean active;
+    private String targetModule;
 }

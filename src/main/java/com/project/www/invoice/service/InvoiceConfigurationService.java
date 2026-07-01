@@ -10,5 +10,6 @@ public interface InvoiceConfigurationService {
     InvoiceConfigurationDto getConfigurationById(Long id);
     List<InvoiceConfigurationDto> getAllConfigurationsForTenant();
     InvoiceConfigurationDto getActiveConfigurationForTenant();
+    InvoiceConfigurationDto getActiveConfigurationForTenantAndModule(String targetModule);
     void activateConfiguration(Long id);
 }
