@@ -155,7 +155,8 @@ public class JwtFilter extends OncePerRequestFilter {
                     // Allow billing-related paths regardless of subscription status
                     // (so tenants can view/pay invoices even if subscription is expired)
                     boolean isBillingPath = path.startsWith("/tenants/") && (path.contains("/invoices") || path.contains("/installments"))
-                            || path.equals("/users/me") || path.startsWith("/users/me");
+                            || path.equals("/users/me") || path.startsWith("/users/me")
+                            || path.equals("/api/users/me") || path.startsWith("/api/users/me");
 
                     TenantContext.setCurrentTenant(tenantId);
                     TenantContext.setCurrentTenantCode(tenantCode);
