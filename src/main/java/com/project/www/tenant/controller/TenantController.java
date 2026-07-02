@@ -34,40 +34,40 @@ public class TenantController {
     private final TenantModuleService tenantModuleService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_CREATE)")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_CREATE')")
     public ResponseEntity<TenantResponse> createTenant(@Valid @RequestBody CreateTenantRequest request) {
         TenantResponse response = tenantService.createTenant(request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW)")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_VIEW')")
     public ResponseEntity<List<TenantResponse>> getAllTenants() {
         return ResponseEntity.ok(tenantService.getAllTenants());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW) or #id.equals(T(com.project.www.util.TenantContext).getCurrentTenant())")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_VIEW') or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
     public ResponseEntity<TenantResponse> getTenantById(@PathVariable Long id) {
         return ResponseEntity.ok(tenantService.getTenantById(id));
     }
 
     @PutMapping("/{id}/enable")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_ENABLE)")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_ENABLE')")
     public ResponseEntity<String> enableTenant(@PathVariable Long id) {
         tenantService.enableTenant(id);
         return ResponseEntity.ok("Tenant Enabled Successfully");
     }
 
     @PutMapping("/{id}/disable")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_DISABLE)")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_DISABLE')")
     public ResponseEntity<String> disableTenant(@PathVariable Long id) {
         tenantService.disableTenant(id);
         return ResponseEntity.ok("Tenant Disabled Successfully");
     }
 
     @GetMapping("/{id}/modules")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW)")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_VIEW')")
     public ResponseEntity<List<TenantModule>> getTenantModules(@PathVariable Long id) {
         return ResponseEntity.ok(tenantModuleService.getModulesForTenant(id));
     }
@@ -82,7 +82,7 @@ public class TenantController {
     }
 
     @PutMapping("/{id}/modules/{moduleName}/enable")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_ENABLE)")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_ENABLE')")
     public ResponseEntity<String> enableTenantModule(
             @PathVariable Long id, 
             @PathVariable String moduleName,
@@ -92,14 +92,14 @@ public class TenantController {
     }
 
     @PutMapping("/{id}/modules/{moduleName}/disable")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_DISABLE)")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_DISABLE')")
     public ResponseEntity<String> disableTenantModule(@PathVariable Long id, @PathVariable String moduleName) {
         tenantModuleService.disableModule(id, moduleName);
         return ResponseEntity.ok("Module Disabled Successfully");
     }
 
     @PutMapping("/{id}/modules/bulk")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_UPDATE) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE) or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_UPDATE') or @permissionEvaluator.hasPermission('SUBSCRIPTION_MANAGE') or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
     public ResponseEntity<String> saveBulkModules(@PathVariable Long id, @RequestBody com.project.www.tenant.dto.BulkModuleSaveRequest request) {
         String originalCode = com.project.www.util.TenantContext.getCurrentTenantCode();
         Long originalTenantId = com.project.www.util.TenantContext.getCurrentTenant();
@@ -115,26 +115,26 @@ public class TenantController {
     }
 
     @GetMapping("/{id}/invoices")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE) or #id.equals(T(com.project.www.util.TenantContext).getCurrentTenant())")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_VIEW') or @permissionEvaluator.hasPermission('SUBSCRIPTION_MANAGE') or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
     public ResponseEntity<List<com.project.www.tenant.entity.TenantInvoice>> getTenantInvoices(@PathVariable Long id) {
         return ResponseEntity.ok(tenantModuleService.getInvoicesForTenant(id));
     }
     @GetMapping("/{id}/invoices/{invoiceId}/installments")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE) or #id.equals(T(com.project.www.util.TenantContext).getCurrentTenant())")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_VIEW') or @permissionEvaluator.hasPermission('SUBSCRIPTION_MANAGE') or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
     public ResponseEntity<List<com.project.www.tenant.entity.TenantInvoiceInstallment>> getInvoiceInstallments(
             @PathVariable Long id, @PathVariable Long invoiceId) {
         return ResponseEntity.ok(tenantModuleService.getInstallmentsForInvoice(invoiceId));
     }
 
     @GetMapping("/{id}/invoices/{invoiceId}/items")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_VIEW) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE) or #id.equals(T(com.project.www.util.TenantContext).getCurrentTenant())")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_VIEW') or @permissionEvaluator.hasPermission('SUBSCRIPTION_MANAGE') or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
     public ResponseEntity<List<com.project.www.tenant.entity.TenantInvoiceItem>> getInvoiceItems(
             @PathVariable Long id, @PathVariable Long invoiceId) {
         return ResponseEntity.ok(tenantModuleService.getItemsForInvoice(invoiceId));
     }
 
     @PutMapping("/{id}/invoices/{invoiceId}/installments/{installmentId}/pay")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).TENANT_UPDATE) or hasAuthority(T(com.project.www.constants.CorePermissions).SUBSCRIPTION_MANAGE) or #id.equals(T(com.project.www.util.TenantContext).getCurrentTenant())")
+    @PreAuthorize("@permissionEvaluator.hasPermission('TENANT_UPDATE') or @permissionEvaluator.hasPermission('SUBSCRIPTION_MANAGE') or #id == T(com.project.www.util.TenantContext).getCurrentTenant()")
     public ResponseEntity<String> payInstallment(
             @PathVariable Long id, @PathVariable Long invoiceId, @PathVariable Long installmentId) {
         String originalCode = com.project.www.util.TenantContext.getCurrentTenantCode();

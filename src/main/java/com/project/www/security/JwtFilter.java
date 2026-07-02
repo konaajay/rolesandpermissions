@@ -157,24 +157,6 @@ public class JwtFilter extends OncePerRequestFilter {
                     boolean isBillingPath = path.startsWith("/tenants/") && (path.contains("/invoices") || path.contains("/installments"))
                             || path.equals("/users/me") || path.startsWith("/users/me");
 
-                    if (!isBillingPath) {
-                    if (tenant.getActive() == null || !tenant.getActive()) {
-                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Tenant inactive");
-                        return;
-                    }
-                    if (!"ACTIVE".equalsIgnoreCase(tenant.getStatus()) && !"TRIAL".equalsIgnoreCase(tenant.getStatus())) {
-                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
-                        return;
-                    }
-                    if (tenant.getSubscriptionEndDate() != null && java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
-                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription expired");
-                        return;
-                    }
-                    if (tenant.getSubscriptionStartDate() != null && java.time.LocalDate.now().isBefore(tenant.getSubscriptionStartDate())) {
-                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
-                        return;
-                    }
-                    }
                     TenantContext.setCurrentTenant(tenantId);
                     TenantContext.setCurrentTenantCode(tenantCode);
 
@@ -183,6 +165,31 @@ public class JwtFilter extends OncePerRequestFilter {
                         userDetails = userDetailsService.loadUserByUsername(email);
                     } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
                         logger.warn("JWT references non-existent user: " + email);
+                    }
+
+                    boolean isSuperAdmin = false;
+                    if (userDetails != null) {
+                        isSuperAdmin = userDetails.getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("ROLE_SYSTEM_SUPER_ADMIN"));
+                    }
+
+                    if (!isBillingPath && !isSuperAdmin) {
+                        if (tenant.getActive() == null || !tenant.getActive()) {
+                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Tenant inactive");
+                            return;
+                        }
+                        if (!"ACTIVE".equalsIgnoreCase(tenant.getStatus()) && !"TRIAL".equalsIgnoreCase(tenant.getStatus())) {
+                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
+                            return;
+                        }
+                        if (tenant.getSubscriptionEndDate() != null && java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
+                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription expired");
+                            return;
+                        }
+                        if (tenant.getSubscriptionStartDate() != null && java.time.LocalDate.now().isBefore(tenant.getSubscriptionStartDate())) {
+                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
+                            return;
+                        }
                     }
 
                     if (userDetails != null && jwtService.isTokenValid(jwt, userDetails.getUsername())) {

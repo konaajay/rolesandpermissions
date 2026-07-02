@@ -119,7 +119,11 @@ public class AuthApiController {
         activeTenantModuleNames.add("EMPLOYEE");
 
         if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
-            allModules.addAll(activeTenantModuleNames);
+            // Main system admins and super admins get access to all modules regardless of subscription status
+            allModules.addAll(java.util.Arrays.asList(
+                "CRM", "HRMS", "REVENUE", "TASKS", "SUPPORT_TICKETS", 
+                "MARKETING", "REPORTS", "VENDOR", "AFFILIATE", "SETTINGS", "ADMIN", "BILLING"
+            ));
         } else {
             if (user.getModules() != null) {
                 allModules.addAll(user.getModules());

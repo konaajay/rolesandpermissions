@@ -45,7 +45,9 @@ public class PermissionEvaluatorService {
         return auth.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(normalizedKey::equals);
+                .anyMatch(a -> a.equals(normalizedKey) || 
+                               a.equals("ROLE_SUPER_ADMIN") || 
+                               a.equals("SUPER_ADMIN"));
     }
 
     /**
