@@ -14,7 +14,7 @@ import java.util.List;
 import com.project.www.constants.ModulePricing;
 
 @RestController
-@RequestMapping("/api/subscriptions")
+@RequestMapping("/subscriptions")
 @RequiredArgsConstructor
 public class SubscriptionController {
 

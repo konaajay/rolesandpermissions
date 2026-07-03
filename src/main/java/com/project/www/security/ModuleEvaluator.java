@@ -2,10 +2,8 @@ package com.project.www.security;
 
 import com.project.www.tenant.repository.TenantModuleRepository;
 
-
 import com.project.www.tenant.entity.TenantModule;
 
-import com.project.www.tenant.repository.TenantModuleRepository;
 import com.project.www.util.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,14 +24,18 @@ public class ModuleEvaluator {
         }
 
         // Save original context just in case we need to read from master DB
-        // But TenantModule is in master DB and tenantRepository is connected to master DB?
-        // Wait, if tenantModule is an Entity in the main package, it connects to the active DataSource!
-        // To query TenantModule, we MUST clear the TenantContext, or it will query the tenant's DB!
-        
+        // But TenantModule is in master DB and tenantRepository is connected to master
+        // DB?
+        // Wait, if tenantModule is an Entity in the main package, it connects to the
+        // active DataSource!
+        // To query TenantModule, we MUST clear the TenantContext, or it will query the
+        // tenant's DB!
+
         String originalCode = TenantContext.getCurrentTenantCode();
         try {
             TenantContext.clear();
-            java.util.Optional<TenantModule> opt = tenantModuleRepository.findByTenantIdAndModuleName(tenantId, moduleName);
+            java.util.Optional<TenantModule> opt = tenantModuleRepository.findByTenantIdAndModuleName(tenantId,
+                    moduleName);
             if (opt.isPresent()) {
                 TenantModule m = opt.get();
                 if (m.getActive() == null || !m.getActive()) {

@@ -11,6 +11,8 @@ import com.project.www.tenant.repository.TenantInvoiceInstallmentRepository;
 import com.project.www.tenant.repository.TenantInvoiceItemRepository;
 import com.project.www.tenant.repository.TenantInvoiceRepository;
 import com.project.www.tenant.repository.TenantModuleRepository;
+import com.project.www.tenant.repository.SubscriptionPlanRepository;
+import com.project.www.tenant.entity.SubscriptionPlan;
 import com.project.www.tenant.service.TenantModuleService;
 import com.project.www.util.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class TenantModuleServiceImpl implements TenantModuleService {
     private final TenantInvoiceInstallmentRepository tenantInvoiceInstallmentRepository;
     private final com.project.www.tenant.repository.SubscriptionRepository subscriptionRepository;
     private final com.project.www.tenant.repository.TenantRepository tenantRepository;
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
 
     @Override
     public List<TenantModule> getModulesForTenant(Long tenantId) {
@@ -160,6 +163,17 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                     .build();
             subscriptionRepository.save(subscription);
 
+            // --- NEW LOGIC: Save a Custom Plan in subscription_plans as requested ---
+            SubscriptionPlan customPlan = SubscriptionPlan.builder()
+                    .name("Custom Plan - Tenant " + tenantId + " - " + System.currentTimeMillis())
+                    .description("Auto-generated custom plan for Tenant " + tenantId)
+                    .monthlyPrice(totalInvoiceAmount / (request.getNoOfInstallments() != null && request.getNoOfInstallments() > 0 ? request.getNoOfInstallments() : 12.0))
+                    .yearlyPrice(totalInvoiceAmount)
+                    .modules(requestedModules)
+                    .build();
+            subscriptionPlanRepository.save(customPlan);
+            // ------------------------------------------------------------------------
+
             // 4. Generate Invoice (if applicable)
             if (totalInvoiceAmount > 0) {          
             double subtotal = totalInvoiceAmount;
@@ -226,11 +240,19 @@ public class TenantModuleServiceImpl implements TenantModuleService {
             if ("INSTALLMENT".equalsIgnoreCase(request.getPaymentType()) && request.getNoOfInstallments() != null && request.getNoOfInstallments() > 0) {
                 double installmentAmt = request.getInstallmentAmount() != null ? request.getInstallmentAmount() : (grandTotal / request.getNoOfInstallments());
                 for (int i = 1; i <= request.getNoOfInstallments(); i++) {
+                    LocalDate dueDate = LocalDate.now().plusMonths(i - 1);
+                    if (request.getInstallmentDates() != null && request.getInstallmentDates().size() >= i) {
+                        try {
+                            dueDate = LocalDate.parse(request.getInstallmentDates().get(i - 1));
+                        } catch (Exception e) {
+                            // fallback
+                        }
+                    }
                     TenantInvoiceInstallment installment = TenantInvoiceInstallment.builder()
                             .invoiceId(invoice.getId())
                             .installmentNo(i)
                             .amount(installmentAmt)
-                            .dueDate(LocalDate.now().plusMonths(i - 1)) // e.g. first due now, next due next month
+                            .dueDate(dueDate)
                             .paid(false)
                             .build();
                     tenantInvoiceInstallmentRepository.save(installment);
@@ -246,6 +268,18 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                         .paid(false)
                         .build();
                 tenantInvoiceInstallmentRepository.save(installment);
+            }
+            // Update Tenant subscription type and dates
+            com.project.www.tenant.entity.Tenant tenantObj = tenantRepository.findById(tenantId).orElse(null);
+            if (tenantObj != null) {
+                tenantObj.setSubscriptionType(request.getPaymentType());
+                tenantObj.setSubscriptionStartDate(LocalDate.now());
+                if (request.getNoOfInstallments() != null && request.getNoOfInstallments() > 0) {
+                    tenantObj.setSubscriptionEndDate(LocalDate.now().plusMonths(request.getNoOfInstallments()));
+                } else {
+                    tenantObj.setSubscriptionEndDate(LocalDate.now().plusYears(1));
+                }
+                tenantRepository.save(tenantObj);
             }
 
             }
@@ -318,6 +352,13 @@ public class TenantModuleServiceImpl implements TenantModuleService {
                 invoice.setStatus("Partially Paid");
             }
             tenantInvoiceRepository.save(invoice);
+            
+            // Update Tenant status to ACTIVE if a payment is made
+            com.project.www.tenant.entity.Tenant tenant = tenantRepository.findById(invoice.getTenantId()).orElse(null);
+            if (tenant != null) {
+                tenant.setStatus("ACTIVE");
+                tenantRepository.save(tenant);
+            }
             
         } finally {
             TenantContext.setCurrentTenantCode(originalCode);

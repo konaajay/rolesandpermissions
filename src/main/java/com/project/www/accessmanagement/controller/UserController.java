@@ -102,7 +102,13 @@ public class UserController {
                 allModules.addAll(user.getModules());
             }
             if (allModules.isEmpty()) {
-                allPermissions.forEach(p -> allModules.add(p.split("_")[0]));
+                allPermissions.forEach(p -> {
+                    if (p.startsWith("SUPPORT_TICKETS")) {
+                        allModules.add("SUPPORT_TICKETS");
+                    } else {
+                        allModules.add(p.split("_")[0]);
+                    }
+                });
             }
             // Ensure regular users cannot see modules the tenant has lost access to
             allModules.retainAll(activeTenantModuleNames);

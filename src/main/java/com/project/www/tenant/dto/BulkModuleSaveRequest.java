@@ -20,4 +20,5 @@ public class BulkModuleSaveRequest {
     private Double gstPercentage;
     private String discountType; // FLAT, PERCENTAGE
     private Double discountValue;
+    private List<String> installmentDates;
 }

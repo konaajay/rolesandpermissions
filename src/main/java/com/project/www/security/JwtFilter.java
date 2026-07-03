@@ -28,16 +28,15 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final TenantRepository tenantRepository;
-    
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+            FilterChain filterChain) throws ServletException, IOException {
 
-        // Always clear context at the start of a request to prevent thread contamination
+        // Always clear context at the start of a request to prevent thread
+        // contamination
         TenantContext.clear();
 
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
@@ -119,16 +118,13 @@ public class JwtFilter extends OncePerRequestFilter {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                     if (jwtService.isTokenValid(jwt, userDetails.getUsername())) {
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(
-                                        userDetails,
-                                        null,
-                                        userDetails.getAuthorities()
-                                );
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
 
                         authToken.setDetails(
-                                new WebAuthenticationDetailsSource().buildDetails(request)
-                        );
+                                new WebAuthenticationDetailsSource().buildDetails(request));
 
                         logger.info("Authorities: " + userDetails.getAuthorities());
                         SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -152,11 +148,12 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
 
                 if (tenant != null) {
-                    // Allow billing-related paths regardless of subscription status
-                    // (so tenants can view/pay invoices even if subscription is expired)
-                    boolean isBillingPath = path.startsWith("/tenants/") && (path.contains("/invoices") || path.contains("/installments"))
+
+                    boolean isBillingPath = path.startsWith("/tenants/")
+                            && (path.contains("/invoices") || path.contains("/installments") || path.contains("/modules/bulk"))
                             || path.equals("/users/me") || path.startsWith("/users/me")
-                            || path.equals("/api/users/me") || path.startsWith("/api/users/me");
+                            || path.equals("/api/users/me") || path.startsWith("/api/users/me")
+                            || path.contains("/subscriptions/modules/pricing");
 
                     TenantContext.setCurrentTenant(tenantId);
                     TenantContext.setCurrentTenantCode(tenantCode);
@@ -171,7 +168,8 @@ public class JwtFilter extends OncePerRequestFilter {
                     boolean isSuperAdmin = false;
                     if (userDetails != null) {
                         isSuperAdmin = userDetails.getAuthorities().stream()
-                            .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("ROLE_SYSTEM_SUPER_ADMIN"));
+                                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN")
+                                        || a.getAuthority().equals("ROLE_SYSTEM_SUPER_ADMIN"));
                     }
 
                     if (!isBillingPath && !isSuperAdmin) {
@@ -179,38 +177,41 @@ public class JwtFilter extends OncePerRequestFilter {
                             sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Tenant inactive");
                             return;
                         }
-                        if (!"ACTIVE".equalsIgnoreCase(tenant.getStatus()) && !"TRIAL".equalsIgnoreCase(tenant.getStatus())) {
-                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
+                        if (!"ACTIVE".equalsIgnoreCase(tenant.getStatus())
+                                && !"TRIAL".equalsIgnoreCase(tenant.getStatus())) {
+                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                                    "Subscription not yet active");
                             return;
                         }
-                        if (tenant.getSubscriptionEndDate() != null && java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
+                        if (tenant.getSubscriptionEndDate() != null
+                                && java.time.LocalDate.now().isAfter(tenant.getSubscriptionEndDate())) {
                             sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription expired");
                             return;
                         }
-                        if (tenant.getSubscriptionStartDate() != null && java.time.LocalDate.now().isBefore(tenant.getSubscriptionStartDate())) {
-                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Subscription not yet active");
+                        if (tenant.getSubscriptionStartDate() != null
+                                && java.time.LocalDate.now().isBefore(tenant.getSubscriptionStartDate())) {
+                            sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                                    "Subscription not yet active");
                             return;
                         }
                     }
 
                     if (userDetails != null && jwtService.isTokenValid(jwt, userDetails.getUsername())) {
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(
-                                        userDetails,
-                                        null,
-                                        userDetails.getAuthorities()
-                                );
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
 
                         authToken.setDetails(
-                                new WebAuthenticationDetailsSource().buildDetails(request)
-                        );
+                                new WebAuthenticationDetailsSource().buildDetails(request));
 
                         logger.info("Authorities: " + userDetails.getAuthorities());
                         SecurityContextHolder.getContext().setAuthentication(authToken);
                         logger.info("Authentication set successfully for: " + email);
                     }
                 } else {
-                    logger.warn("Skipping authentication for user " + email + " - tenant " + tenantCode + " is not registered or is inactive.");
+                    logger.warn("Skipping authentication for user " + email + " - tenant " + tenantCode
+                            + " is not registered or is inactive.");
                 }
             }
 

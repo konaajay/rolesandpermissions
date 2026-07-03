@@ -192,7 +192,12 @@ public class AuthServiceImpl implements AuthService {
                 // have permissions for them
                 // But let's just extract modules from their active permissions
                 finalModules = permissions.stream()
-                        .map(p -> p.split("_")[0]) // roughly getting module from permission key
+                        .map(p -> {
+                            if (p.startsWith("SUPPORT_TICKETS")) {
+                                return "SUPPORT_TICKETS";
+                            }
+                            return p.split("_")[0];
+                        })
                         .filter(activeModules::contains)
                         .collect(Collectors.toSet());
             }

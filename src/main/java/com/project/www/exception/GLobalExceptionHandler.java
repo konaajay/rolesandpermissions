@@ -43,27 +43,22 @@ public class GLobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<?> handleRuntimeException(
-            RuntimeException ex
-    ) {
-
+    public ResponseEntity<?> handleRuntimeException(RuntimeException ex) {
         ex.printStackTrace();
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("message", ex.getMessage());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 
-        Map<String, Object> response =
-                new HashMap<>();
-
-        response.put("timestamp",
-                LocalDateTime.now());
-
-        response.put("message",
-                ex.getMessage());
-
-        response.put("status",
-                HttpStatus.BAD_REQUEST.value());
-
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.BAD_REQUEST
-        );
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleAllOtherExceptions(Exception ex) {
+        ex.printStackTrace();
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("message", "Internal Error: " + ex.getMessage());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

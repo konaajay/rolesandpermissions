@@ -70,6 +70,13 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("No tenant context found");
         }
 
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new RuntimeException("Password is required");
+        }
+        if (request.getPassword().length() < 8) {
+            throw new RuntimeException("Password must be at least 8 characters");
+        }
+
         boolean emailExists = userRepository.existsByEmailAndTenantId(request.getEmail(), tenantId);
         if (emailExists) {
             throw new RuntimeException("User email already exists under this tenant");
@@ -614,6 +621,8 @@ public class UserServiceImpl implements UserService {
             if (tenantId != null) {
                 String originalTenantCode = TenantContext.getCurrentTenantCode();
                 Long originalTenantId = TenantContext.getCurrentTenant();
+                
+                // Fetch modules from master database for both admin types
                 try {
                     TenantContext.clear();
                     org.springframework.transaction.support.TransactionTemplate tt = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
@@ -622,15 +631,38 @@ public class UserServiceImpl implements UserService {
                     userModules = tt.execute(status -> tenantModuleRepository.findByTenantIdAndActiveTrue(tenantId).stream()
                             .map(com.project.www.tenant.entity.TenantModule::getModuleName)
                             .collect(Collectors.toList()));
-                    
-                    java.util.List<Permission> allPerms = tt.execute(status -> permissionRepository.findAllByTenantId(tenantId).stream()
-                            .filter(Permission::getActive)
-                            .collect(Collectors.toList()));
-                    userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
-                    userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
                 } finally {
                     TenantContext.setCurrentTenant(originalTenantId);
                     TenantContext.setCurrentTenantCode(originalTenantCode);
+                }
+
+                // Fetch permissions (from master DB for SYSTEM_SUPER_ADMIN, from tenant DB for SUPER_ADMIN)
+                if ("SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName())) {
+                    try {
+                        TenantContext.clear();
+                        org.springframework.transaction.support.TransactionTemplate tt = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+                        tt.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                        
+                        java.util.List<Permission> allPerms = tt.execute(status -> permissionRepository.findAllByTenantId(tenantId).stream()
+                                .filter(Permission::getActive)
+                                .collect(Collectors.toList()));
+                        if (allPerms != null) {
+                            userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                            userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
+                        }
+                    } finally {
+                        TenantContext.setCurrentTenant(originalTenantId);
+                        TenantContext.setCurrentTenantCode(originalTenantCode);
+                    }
+                } else {
+                    // SUPER_ADMIN (Tenant Database)
+                    java.util.List<Permission> allPerms = permissionRepository.findAllByTenantId(tenantId).stream()
+                            .filter(Permission::getActive)
+                            .collect(Collectors.toList());
+                    if (allPerms != null) {
+                        userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                        userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
+                    }
                 }
             }
         } else {
