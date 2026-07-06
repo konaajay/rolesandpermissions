@@ -47,6 +47,10 @@ public class LandingPage {
     private java.util.List<String> features;
 
     private String ctaText;
+    
+    private String status;
+    private String campaignName;
+    private String couponCode;
 
     private LocalDateTime createdAt;
 
@@ -72,5 +76,8 @@ public class LandingPage {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        if (status == null) {
+            status = "DRAFT";
+        }
     }
 }

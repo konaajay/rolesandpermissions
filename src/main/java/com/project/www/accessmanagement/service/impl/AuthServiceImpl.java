@@ -63,10 +63,15 @@ public class AuthServiceImpl implements AuthService {
         try {
             TenantContext.clear(); // Ensure we query the master database
 
-            // 1. Locate user in global registry by email
-            com.project.www.accessmanagement.entity.GlobalUserRegistry registryEntry = globalUserRegistryRepository
-                    .findFirstByEmail(request.getEmail())
-                    .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+            // 1. Locate user in global registry by email and tenant code if provided
+            com.project.www.accessmanagement.entity.GlobalUserRegistry registryEntry;
+            if (originalTenantCode != null && !originalTenantCode.trim().isEmpty()) {
+                registryEntry = globalUserRegistryRepository.findByEmailAndTenantCode(request.getEmail(), originalTenantCode)
+                        .orElseThrow(() -> new RuntimeException("No account found with this email address in this workspace."));
+            } else {
+                registryEntry = globalUserRegistryRepository.findFirstByEmail(request.getEmail())
+                        .orElseThrow(() -> new RuntimeException("No account found with this email address."));
+            }
 
             if (!registryEntry.getActive()) {
                 throw new RuntimeException("User account is inactive.");

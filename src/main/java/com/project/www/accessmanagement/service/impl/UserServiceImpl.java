@@ -81,16 +81,10 @@ public class UserServiceImpl implements UserService {
         if (emailExists) {
             throw new RuntimeException("User email already exists under this tenant");
         }
-        boolean globalEmailExists;
+
         String ogCode = TenantContext.getCurrentTenantCode();
-        Long ogId = TenantContext.getCurrentTenant();
-        try {
-            TenantContext.clear();
-            globalEmailExists = globalUserRegistryRepository.existsByEmailAndTenantCode(request.getEmail(), ogCode);
-        } finally {
-            TenantContext.setCurrentTenant(ogId);
-            TenantContext.setCurrentTenantCode(ogCode);
-        }
+        boolean globalEmailExists = globalUserRegistrySyncService.existsByEmailAndTenantCode(request.getEmail(),
+                ogCode);
 
         if (globalEmailExists) {
             throw new RuntimeException("Email already exists in this workspace.");
@@ -215,7 +209,8 @@ public class UserServiceImpl implements UserService {
 
         if (request.getSupervisorUserId() != null && request.getSupervisorUserId() > 0) {
             User supervisor = userRepository.findByIdAndTenantId(request.getSupervisorUserId(), tenantId)
-                    .orElseThrow(() -> new RuntimeException("Supervisor user not found with ID: " + request.getSupervisorUserId()));
+                    .orElseThrow(() -> new RuntimeException(
+                            "Supervisor user not found with ID: " + request.getSupervisorUserId()));
             UserReporting reporting = UserReporting.builder()
                     .tenantId(tenantId)
                     .user(user)
@@ -228,7 +223,7 @@ public class UserServiceImpl implements UserService {
         String entityType = role.getName().toUpperCase();
         if ("LEAD".equals(entityType) || "EMPLOYEE".equals(entityType)) {
             String defaultPrefix = "LEAD".equals(entityType) ? "LEA" : "EMP";
-            
+
             IdFormatSetting format = idFormatSettingRepository.findByTenantIdAndEntityType(tenantId, entityType)
                     .orElseGet(() -> IdFormatSetting.builder()
                             .tenantId(tenantId)
@@ -251,7 +246,7 @@ public class UserServiceImpl implements UserService {
 
             format.setNextSequence(nextVal + 1);
             idFormatSettingRepository.save(format);
-            
+
             // Set it on user and save again
             user.setEmployeeId(generatedId);
             userRepository.save(user);
@@ -329,22 +324,24 @@ public class UserServiceImpl implements UserService {
         List<User> users;
 
         // If Super Admin, return all users
-        if (currentUser.getRole() != null && ("SUPER_ADMIN".equals(currentUser.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equals(currentUser.getRole().getName()))) {
+        if (currentUser.getRole() != null && ("SUPER_ADMIN".equals(currentUser.getRole().getName())
+                || "SYSTEM_SUPER_ADMIN".equals(currentUser.getRole().getName()))) {
             users = userRepository.findAllByTenantId(tenantId);
         } else {
             // Otherwise, recursively fetch all downstream reports
             users = new java.util.ArrayList<>();
             users.add(currentUser);
-            
+
             java.util.Set<Long> seenIds = new java.util.HashSet<>();
             seenIds.add(currentUser.getId());
-            
+
             java.util.Queue<Long> supervisorIds = new java.util.LinkedList<>();
             supervisorIds.add(currentUser.getId());
-            
+
             while (!supervisorIds.isEmpty()) {
                 Long currentSupId = supervisorIds.poll();
-                List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(currentSupId, tenantId);
+                List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(currentSupId,
+                        tenantId);
                 for (UserReporting report : reports) {
                     User subUser = report.getUser();
                     if (subUser != null && !seenIds.contains(subUser.getId())) {
@@ -395,13 +392,15 @@ public class UserServiceImpl implements UserService {
         user.setJoiningDate(request.getJoiningDate());
 
         if (request.getEmployeeTypeId() != null) {
-            user.setEmployeeType(employeeTypeRepository.findByIdAndTenantId(request.getEmployeeTypeId(), tenantId).orElse(null));
+            user.setEmployeeType(
+                    employeeTypeRepository.findByIdAndTenantId(request.getEmployeeTypeId(), tenantId).orElse(null));
         } else {
             user.setEmployeeType(null);
         }
 
         if (request.getDesignationId() != null) {
-            user.setDesignation(designationRepository.findByIdAndTenantId(request.getDesignationId(), tenantId).orElse(null));
+            user.setDesignation(
+                    designationRepository.findByIdAndTenantId(request.getDesignationId(), tenantId).orElse(null));
         } else {
             user.setDesignation(null);
         }
@@ -476,9 +475,11 @@ public class UserServiceImpl implements UserService {
 
         if (request.getSupervisorUserId() != null && request.getSupervisorUserId() > 0) {
             User supervisor = userRepository.findByIdAndTenantId(request.getSupervisorUserId(), tenantId)
-                    .orElseThrow(() -> new RuntimeException("Supervisor user not found with ID: " + request.getSupervisorUserId()));
-                    
-            java.util.List<UserReporting> existingList = userReportingRepository.findAllByUserIdAndTenantId(updated.getId(), tenantId);
+                    .orElseThrow(() -> new RuntimeException(
+                            "Supervisor user not found with ID: " + request.getSupervisorUserId()));
+
+            java.util.List<UserReporting> existingList = userReportingRepository
+                    .findAllByUserIdAndTenantId(updated.getId(), tenantId);
             if (existingList.isEmpty()) {
                 UserReporting reporting = UserReporting.builder()
                         .tenantId(tenantId)
@@ -490,7 +491,7 @@ public class UserServiceImpl implements UserService {
                 UserReporting reporting = existingList.get(0);
                 reporting.setSupervisorUser(supervisor);
                 userReportingRepository.save(reporting);
-                
+
                 // Clean up any extra records if they exist
                 if (existingList.size() > 1) {
                     for (int i = 1; i < existingList.size(); i++) {
@@ -617,37 +618,46 @@ public class UserServiceImpl implements UserService {
         java.util.List<String> userPermissions = new java.util.ArrayList<>();
         java.util.List<Long> userPermissionIds = new java.util.ArrayList<>();
 
-        if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()) || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
+        if (user.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName())
+                || "SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName()))) {
             if (tenantId != null) {
                 String originalTenantCode = TenantContext.getCurrentTenantCode();
                 Long originalTenantId = TenantContext.getCurrentTenant();
-                
+
                 // Fetch modules from master database for both admin types
                 try {
                     TenantContext.clear();
-                    org.springframework.transaction.support.TransactionTemplate tt = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
-                    tt.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-                    
-                    userModules = tt.execute(status -> tenantModuleRepository.findByTenantIdAndActiveTrue(tenantId).stream()
-                            .map(com.project.www.tenant.entity.TenantModule::getModuleName)
-                            .collect(Collectors.toList()));
+                    org.springframework.transaction.support.TransactionTemplate tt = new org.springframework.transaction.support.TransactionTemplate(
+                            transactionManager);
+                    tt.setPropagationBehavior(
+                            org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+                    userModules = tt
+                            .execute(status -> tenantModuleRepository.findByTenantIdAndActiveTrue(tenantId).stream()
+                                    .map(com.project.www.tenant.entity.TenantModule::getModuleName)
+                                    .collect(Collectors.toList()));
                 } finally {
                     TenantContext.setCurrentTenant(originalTenantId);
                     TenantContext.setCurrentTenantCode(originalTenantCode);
                 }
 
-                // Fetch permissions (from master DB for SYSTEM_SUPER_ADMIN, from tenant DB for SUPER_ADMIN)
+                // Fetch permissions (from master DB for SYSTEM_SUPER_ADMIN, from tenant DB for
+                // SUPER_ADMIN)
                 if ("SYSTEM_SUPER_ADMIN".equalsIgnoreCase(user.getRole().getName())) {
                     try {
                         TenantContext.clear();
-                        org.springframework.transaction.support.TransactionTemplate tt = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
-                        tt.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-                        
-                        java.util.List<Permission> allPerms = tt.execute(status -> permissionRepository.findAllByTenantId(tenantId).stream()
-                                .filter(Permission::getActive)
-                                .collect(Collectors.toList()));
+                        org.springframework.transaction.support.TransactionTemplate tt = new org.springframework.transaction.support.TransactionTemplate(
+                                transactionManager);
+                        tt.setPropagationBehavior(
+                                org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+                        java.util.List<Permission> allPerms = tt
+                                .execute(status -> permissionRepository.findAllByTenantId(tenantId).stream()
+                                        .filter(Permission::getActive)
+                                        .collect(Collectors.toList()));
                         if (allPerms != null) {
-                            userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                            userPermissions = allPerms.stream().map(Permission::getPermissionKey)
+                                    .collect(Collectors.toList());
                             userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
                         }
                     } finally {
@@ -660,7 +670,8 @@ public class UserServiceImpl implements UserService {
                             .filter(Permission::getActive)
                             .collect(Collectors.toList());
                     if (allPerms != null) {
-                        userPermissions = allPerms.stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                        userPermissions = allPerms.stream().map(Permission::getPermissionKey)
+                                .collect(Collectors.toList());
                         userPermissionIds = allPerms.stream().map(Permission::getId).collect(Collectors.toList());
                     }
                 }
@@ -670,12 +681,14 @@ public class UserServiceImpl implements UserService {
                 userModules.addAll(user.getModules());
             }
             if (user.getPermissions() != null) {
-                userPermissions = user.getPermissions().stream().map(Permission::getPermissionKey).collect(Collectors.toList());
+                userPermissions = user.getPermissions().stream().map(Permission::getPermissionKey)
+                        .collect(Collectors.toList());
                 userPermissionIds = user.getPermissions().stream().map(Permission::getId).collect(Collectors.toList());
             }
         }
-        
-        // Ensure core system modules are always enabled so the frontend displays settings/admin sections
+
+        // Ensure core system modules are always enabled so the frontend displays
+        // settings/admin sections
         if (!userModules.contains("ADMIN")) {
             userModules.add("ADMIN");
         }
@@ -725,16 +738,20 @@ public class UserServiceImpl implements UserService {
                 .workModeId(user.getWorkMode() != null ? user.getWorkMode().getId() : null)
                 .workModeName(user.getWorkMode() != null ? user.getWorkMode().getName() : null)
                 .entityIds(user.getEntities() != null
-                        ? user.getEntities().stream().map(com.project.www.tenant.entity.BusinessEntity::getId).collect(Collectors.toList())
+                        ? user.getEntities().stream().map(com.project.www.tenant.entity.BusinessEntity::getId)
+                                .collect(Collectors.toList())
                         : new java.util.ArrayList<>())
                 .entityNames(user.getEntities() != null
-                        ? user.getEntities().stream().map(com.project.www.tenant.entity.BusinessEntity::getCompanyName).collect(Collectors.toList())
+                        ? user.getEntities().stream().map(com.project.www.tenant.entity.BusinessEntity::getCompanyName)
+                                .collect(Collectors.toList())
                         : new java.util.ArrayList<>())
                 .departmentIds(user.getDepartments() != null
-                        ? user.getDepartments().stream().map(com.project.www.tenant.entity.Department::getId).collect(Collectors.toList())
+                        ? user.getDepartments().stream().map(com.project.www.tenant.entity.Department::getId)
+                                .collect(Collectors.toList())
                         : new java.util.ArrayList<>())
                 .departmentNames(user.getDepartments() != null
-                        ? user.getDepartments().stream().map(com.project.www.tenant.entity.Department::getDeptName).collect(Collectors.toList())
+                        ? user.getDepartments().stream().map(com.project.www.tenant.entity.Department::getDeptName)
+                                .collect(Collectors.toList())
                         : new java.util.ArrayList<>())
                 .build();
     }
@@ -760,36 +777,50 @@ public class UserServiceImpl implements UserService {
         }
 
         List<RoleHierarchy> hierarchies = roleHierarchyRepository.findAllByRoleIdAndTenantId(targetRoleId, tenantId);
-        if (hierarchies.isEmpty()) {
-            return java.util.Collections.emptyList();
-        }
-
         List<Long> reportsToRoleIds = hierarchies.stream()
                 .map(h -> h.getReportsToRole().getId())
                 .collect(Collectors.toList());
 
         List<User> users = userRepository.findAllByTenantId(tenantId);
         List<com.project.www.dto.SupervisorResponse> supervisors = new java.util.ArrayList<>();
+        
         for (User u : users) {
             if (!u.getActive()) {
                 continue;
             }
-            boolean matchesRole = false;
-            if (u.getRole() != null && reportsToRoleIds.contains(u.getRole().getId())) {
-                matchesRole = true;
+            
+            boolean isValidSupervisor = false;
+            
+            // A user is a valid supervisor if they have a SUPER_ADMIN or TENANT_ADMIN role
+            if (u.getRole() != null && ("SUPER_ADMIN".equalsIgnoreCase(u.getRole().getName()) || "TENANT_ADMIN".equalsIgnoreCase(u.getRole().getName()))) {
+                isValidSupervisor = true;
             } else if (u.getRoles() != null) {
                 for (Role r : u.getRoles()) {
-                    if (reportsToRoleIds.contains(r.getId())) {
-                        matchesRole = true;
+                    if ("SUPER_ADMIN".equalsIgnoreCase(r.getName()) || "TENANT_ADMIN".equalsIgnoreCase(r.getName())) {
+                        isValidSupervisor = true;
                         break;
                     }
                 }
             }
+            
+            // Or if their role explicitly matches the Role Hierarchy defined mappings
+            if (!isValidSupervisor) {
+                if (u.getRole() != null && reportsToRoleIds.contains(u.getRole().getId())) {
+                    isValidSupervisor = true;
+                } else if (u.getRoles() != null) {
+                    for (Role r : u.getRoles()) {
+                        if (reportsToRoleIds.contains(r.getId())) {
+                            isValidSupervisor = true;
+                            break;
+                        }
+                    }
+                }
+            }
 
-            if (matchesRole) {
+            if (isValidSupervisor) {
                 supervisors.add(com.project.www.dto.SupervisorResponse.builder()
                         .id(u.getId())
-                        .name(u.getFirstName() + " " + u.getLastName())
+                        .name(u.getFirstName() + " " + u.getLastName() + (u.getRole() != null ? " [" + u.getRole().getName() + "]" : ""))
                         .build());
             }
         }
@@ -810,8 +841,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByIdAndTenantId(currentUserId, tenantId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        com.project.www.accessmanagement.dto.AccessScopeResponse.AccessScopeResponseBuilder builder = 
-                com.project.www.accessmanagement.dto.AccessScopeResponse.builder()
+        com.project.www.accessmanagement.dto.AccessScopeResponse.AccessScopeResponseBuilder builder = com.project.www.accessmanagement.dto.AccessScopeResponse
+                .builder()
                 .loggedInUserId(user.getId())
                 .role(user.getRole() != null ? user.getRole().getName() : null);
 
@@ -837,11 +868,14 @@ public class UserServiceImpl implements UserService {
         return builder.build();
     }
 
-    private void collectAccessibleEmployeeIds(Long supervisorId, Long tenantId, java.util.Set<String> employeeIds, java.util.Set<Long> visitedUserIds) {
-        if (visitedUserIds.contains(supervisorId)) return;
+    private void collectAccessibleEmployeeIds(Long supervisorId, Long tenantId, java.util.Set<String> employeeIds,
+            java.util.Set<Long> visitedUserIds) {
+        if (visitedUserIds.contains(supervisorId))
+            return;
         visitedUserIds.add(supervisorId);
 
-        List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(supervisorId, tenantId);
+        List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(supervisorId,
+                tenantId);
         for (UserReporting report : reports) {
             User subordinate = report.getUser();
             if (subordinate.getEmployeeId() != null) {
@@ -862,7 +896,8 @@ public class UserServiceImpl implements UserService {
         userRepository.findByIdAndTenantId(supervisorId, tenantId)
                 .orElseThrow(() -> new RuntimeException("Supervisor not found"));
 
-        List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(supervisorId, tenantId);
+        List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(supervisorId,
+                tenantId);
 
         return reports.stream()
                 .map(UserReporting::getUser)

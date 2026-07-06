@@ -18,7 +18,7 @@ public class EmployeeTypeController {
     private final EmployeeTypeRepository repository;
 
     @GetMapping
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_EMPLOYEE_TYPES')")
     public ResponseEntity<List<EmployeeType>> getAll() {
         Long tenantId = TenantContext.getCurrentTenant();
         return ResponseEntity.ok(repository.findByTenantId(tenantId));
@@ -32,7 +32,7 @@ public class EmployeeTypeController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_EMPLOYEE_TYPES')")
     public ResponseEntity<EmployeeType> getById(@PathVariable Long id) {
         Long tenantId = TenantContext.getCurrentTenant();
         EmployeeType existing = repository.findByIdAndTenantId(id, tenantId)
@@ -41,7 +41,7 @@ public class EmployeeTypeController {
     }
 
     @PostMapping
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_EMPLOYEE_TYPES')")
     public ResponseEntity<EmployeeType> create(@RequestBody EmployeeType entity) {
         entity.setTenantId(TenantContext.getCurrentTenant());
         if (entity.getActive() == null) entity.setActive(true);
@@ -50,7 +50,7 @@ public class EmployeeTypeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_EMPLOYEE_TYPES')")
     public ResponseEntity<EmployeeType> update(@PathVariable Long id, @RequestBody EmployeeType req) {
         Long tenantId = TenantContext.getCurrentTenant();
         EmployeeType existing = repository.findByIdAndTenantId(id, tenantId)

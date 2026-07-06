@@ -356,6 +356,17 @@ public class DatabaseSeeder implements CommandLineRunner {
         java.util.List<Tenant> allTenants = tenantRepository.findAll();
         for (Tenant t : allTenants) {
             try {
+                // Ensure all modules are assigned to existing tenants
+                for (String mod : allModules) {
+                    if (!tenantModuleRepository.existsByTenantIdAndModuleNameAndActiveTrue(t.getId(), mod)) {
+                        tenantModuleRepository.save(TenantModule.builder()
+                                .tenantId(t.getId())
+                                .moduleName(mod)
+                                .active(true)
+                                .build());
+                    }
+                }
+
                 TenantContext.setCurrentTenant(t.getId());
                 TenantContext.setCurrentTenantCode(t.getCode());
 
@@ -364,6 +375,14 @@ public class DatabaseSeeder implements CommandLineRunner {
                         new String[] { "COMPANY_PROFILE", "UPDATE", "Update Company Profile" },
                         new String[] { "SETTINGS_MANAGE", "TEMPLATES", "Manage Templates" },
                         new String[] { "SETTINGS_MANAGE", "ONBOARDING", "Manage Onboarding" },
+                        new String[] { "SETTINGS_MANAGE", "DEPARTMENTS", "Manage Departments" },
+                        new String[] { "SETTINGS_MANAGE", "BUSINESS_ENTITIES", "Manage Business Entities" },
+                        new String[] { "SETTINGS_MANAGE", "WORK_MODES", "Manage Work Modes" },
+                        new String[] { "SETTINGS_MANAGE", "EMPLOYEE_TYPES", "Manage Employee Types" },
+                        new String[] { "SETTINGS_MANAGE", "DESIGNATIONS", "Manage Designations" },
+                        new String[] { "SETTINGS_MANAGE", "ID_FORMATS", "Manage ID Formats" },
+                        new String[] { "SETTINGS_MANAGE", "CERTIFICATES", "Manage Certificates" },
+                        new String[] { "SETTINGS_MANAGE", "INVOICES", "Manage Invoice Configurations" },
                         new String[] { "SUBSCRIPTION", "MANAGE", "Manage Billing and Subscriptions" },
                         new String[] { "USER", "VIEW", "Ability to view users" },
                         new String[] { "USER", "CREATE", "Ability to create new users" },

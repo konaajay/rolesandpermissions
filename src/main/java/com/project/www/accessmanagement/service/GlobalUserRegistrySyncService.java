@@ -89,6 +89,24 @@ public class GlobalUserRegistrySyncService {
         }
     }
 
+    /**
+     * Checks if an email exists globally for a specific tenant code.
+     */
+    public boolean existsByEmailAndTenantCode(String email, String tenantCode) {
+        String ogCode = TenantContext.getCurrentTenantCode();
+        Long ogId = TenantContext.getCurrentTenant();
+        try {
+            TenantContext.clear();
+            org.springframework.transaction.support.TransactionTemplate template = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+            template.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            template.setReadOnly(true);
+            return template.execute(status -> registryRepository.existsByEmailAndTenantCode(email, tenantCode));
+        } finally {
+            TenantContext.setCurrentTenant(ogId);
+            TenantContext.setCurrentTenantCode(ogCode);
+        }
+    }
+
     public void syncAllTenants(java.util.List<com.project.www.tenant.entity.Tenant> tenants, com.project.www.accessmanagement.repository.UserRepository userRepository) {
         log.info("Starting GlobalUserRegistry synchronization across {} tenants...", tenants.size());
         java.util.Map<String, java.util.List<String>> duplicateEmails = new java.util.HashMap<>();

@@ -80,5 +80,8 @@ public class AdminLandingPageController {
         page.setVideoUrl(request.getVideoUrl());
         page.setFeatures(request.getFeatures());
         page.setCtaText(request.getCtaText());
+        page.setStatus(request.getStatus());
+        page.setCampaignName(request.getCampaignName());
+        page.setCouponCode(request.getCouponCode());
     }
 }

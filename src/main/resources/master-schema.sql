@@ -700,6 +700,9 @@ CREATE TABLE `landing_pages` (
   `subtitle` varchar(255) DEFAULT NULL,
   `title` varchar(255) NOT NULL,
   `video_url` varchar(255) DEFAULT NULL,
+  `status` varchar(255) DEFAULT 'DRAFT',
+  `campaign_name` varchar(255) DEFAULT NULL,
+  `coupon_code` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_lp_slug` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

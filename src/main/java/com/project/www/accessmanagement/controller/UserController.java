@@ -46,7 +46,7 @@ public class UserController {
         return userService.getAllUsers();
     }
 
-    @GetMapping("/supervisors")
+    @GetMapping({"/supervisors", "/supervisors/"})
     @PreAuthorize("isAuthenticated()")
     public List<com.project.www.dto.SupervisorResponse> getSupervisors(
             @RequestParam(required = false) Long roleId,

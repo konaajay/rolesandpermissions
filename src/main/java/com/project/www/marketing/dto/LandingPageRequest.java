@@ -32,4 +32,7 @@ public class LandingPageRequest {
     private String videoUrl;
     private List<String> features;
     private String ctaText;
+    private String status;
+    private String campaignName;
+    private String couponCode;
 }

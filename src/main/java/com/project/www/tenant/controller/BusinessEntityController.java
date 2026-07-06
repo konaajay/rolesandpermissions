@@ -17,7 +17,7 @@ public class BusinessEntityController {
     private final BusinessEntityRepository repository;
 
     @GetMapping
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).COMPANY_PROFILE_VIEW)")
+    @PreAuthorize("hasAuthority('COMPANY_PROFILE_VIEW') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_BUSINESS_ENTITIES')")
     public List<BusinessEntity> getAll() {
         Long tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) throw new RuntimeException("No tenant context");
@@ -25,7 +25,7 @@ public class BusinessEntityController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasAuthority(T(com.project.www.constants.CorePermissions).COMPANY_PROFILE_VIEW)")
+    @PreAuthorize("hasAuthority('COMPANY_PROFILE_VIEW') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_BUSINESS_ENTITIES')")
     public List<BusinessEntity> getActive() {
         Long tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) throw new RuntimeException("No tenant context");

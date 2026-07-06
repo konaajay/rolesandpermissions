@@ -18,7 +18,7 @@ public class WorkModeController {
     private final WorkModeRepository repository;
 
     @GetMapping
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_WORK_MODES')")
     public ResponseEntity<List<WorkMode>> getAll() {
         Long tenantId = TenantContext.getCurrentTenant();
         return ResponseEntity.ok(repository.findByTenantId(tenantId));
@@ -32,7 +32,7 @@ public class WorkModeController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_WORK_MODES')")
     public ResponseEntity<WorkMode> getById(@PathVariable Long id) {
         Long tenantId = TenantContext.getCurrentTenant();
         WorkMode existing = repository.findByIdAndTenantId(id, tenantId)
@@ -41,7 +41,7 @@ public class WorkModeController {
     }
 
     @PostMapping
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_WORK_MODES')")
     public ResponseEntity<WorkMode> create(@RequestBody WorkMode entity) {
         entity.setTenantId(TenantContext.getCurrentTenant());
         if (entity.getActive() == null) entity.setActive(true);
@@ -50,7 +50,7 @@ public class WorkModeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS')")
+    @PreAuthorize("@permissionEvaluator.hasPermission('SETTINGS_MANAGE_SETTINGS') or @permissionEvaluator.hasPermission('SETTINGS_MANAGE_WORK_MODES')")
     public ResponseEntity<WorkMode> update(@PathVariable Long id, @RequestBody WorkMode req) {
         Long tenantId = TenantContext.getCurrentTenant();
         WorkMode existing = repository.findByIdAndTenantId(id, tenantId)
