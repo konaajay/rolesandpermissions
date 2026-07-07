@@ -23,13 +23,14 @@ import java.util.HashMap;
 import com.project.www.accessmanagement.repository.UserRepository;
 
 @RestController
-@RequestMapping({"/users", "/employees"})
+@RequestMapping({"/users", "/employees", "/api/users", "/api/employees", "/api/auth/users"})
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
     private final UserRepository userRepository;
     private final com.project.www.tenant.repository.TenantModuleRepository tenantModuleRepository;
+    private final com.project.www.accessmanagement.repository.UserReportingRepository userReportingRepository;
 
     @PostMapping
     @PreAuthorize("@moduleEvaluator.hasModule(T(com.project.www.constants.Modules).EMPLOYEE) and hasAuthority(T(com.project.www.constants.CorePermissions).USER_CREATE)")
@@ -193,5 +194,42 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public List<UserResponse> getDirectReports(@PathVariable Long id) {
         return userService.getDirectReports(id);
+    }
+
+    @GetMapping("/hierarchy/subordinates")
+    @PreAuthorize("isAuthenticated()")
+    public List<Long> getMySubordinateIds() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = userRepository.findFirstByEmailAndTenantId(authentication.getName(), com.project.www.util.TenantContext.getCurrentTenant())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return getSubordinateIds(currentUser.getId());
+    }
+
+    @GetMapping("/hierarchy/subordinates/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    public List<Long> getSubordinateIds(@PathVariable Long userId) {
+        Long tenantId = com.project.www.util.TenantContext.getCurrentTenant();
+        java.util.Set<Long> seenIds = new java.util.HashSet<>();
+        java.util.List<Long> result = new java.util.ArrayList<>();
+        
+        seenIds.add(userId);
+        result.add(userId); // Include the user themselves
+
+        java.util.Queue<Long> queue = new java.util.LinkedList<>();
+        queue.add(userId);
+
+        while (!queue.isEmpty()) {
+            Long currentId = queue.poll();
+            List<com.project.www.accessmanagement.entity.UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(currentId, tenantId);
+            for (com.project.www.accessmanagement.entity.UserReporting report : reports) {
+                User sub = report.getUser();
+                if (sub != null && !seenIds.contains(sub.getId())) {
+                    seenIds.add(sub.getId());
+                    result.add(sub.getId());
+                    queue.add(sub.getId());
+                }
+            }
+        }
+        return result;
     }
 }

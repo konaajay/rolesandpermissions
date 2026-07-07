@@ -343,11 +343,17 @@ public class UserServiceImpl implements UserService {
                 List<UserReporting> reports = userReportingRepository.findAllBySupervisorUserIdAndTenantId(currentSupId,
                         tenantId);
                 for (UserReporting report : reports) {
-                    User subUser = report.getUser();
-                    if (subUser != null && !seenIds.contains(subUser.getId())) {
-                        seenIds.add(subUser.getId());
-                        users.add(subUser);
-                        supervisorIds.add(subUser.getId());
+                    try {
+                        User subUser = report.getUser();
+                        if (subUser != null && !seenIds.contains(subUser.getId())) {
+                            // Trigger initialization to catch orphaned proxies
+                            subUser.getActive();
+                            seenIds.add(subUser.getId());
+                            users.add(subUser);
+                            supervisorIds.add(subUser.getId());
+                        }
+                    } catch (jakarta.persistence.EntityNotFoundException | org.hibernate.ObjectNotFoundException e) {
+                        System.err.println("Ignoring orphaned UserReporting record for missing user");
                     }
                 }
             }
