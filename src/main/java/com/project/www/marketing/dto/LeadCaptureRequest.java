@@ -46,6 +46,7 @@ public class LeadCaptureRequest {
     private Long linkId;
     private String sessionId;
     private String source; // e.g., "AFFILIATE", "PUBLIC_FORM"
+    private String coupon;
 
     public String getUtmTerm() { return utmTerm; }
     public void setUtmTerm(String utmTerm) { this.utmTerm = utmTerm; }
@@ -91,4 +92,7 @@ public class LeadCaptureRequest {
 
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
+
+    public String getCoupon() { return coupon; }
+    public void setCoupon(String coupon) { this.coupon = coupon; }
 }

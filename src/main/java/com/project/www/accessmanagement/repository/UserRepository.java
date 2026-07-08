@@ -19,8 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findAllByTenantId(Long tenantId);
 
     Optional<User> findFirstByEmail(String email);
-
-
+    
+    List<User> findByEmail(String email);
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE r.name = :roleName AND u.tenantId = :tenantId AND u.active = true")
     long countByRoleNameAndTenantIdAndActiveTrue(@org.springframework.data.repository.query.Param("roleName") String roleName, @org.springframework.data.repository.query.Param("tenantId") Long tenantId);
 

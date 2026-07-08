@@ -28,6 +28,7 @@ public class MarketingLead {
     private String utmCampaign;
     private String source;
     private String sessionId;
+    private String coupon;
 
     @CreationTimestamp
     @Column(updatable = false)

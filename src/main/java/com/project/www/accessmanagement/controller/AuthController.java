@@ -68,6 +68,14 @@ public class AuthController {
         return authService.register(request);
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.project.www.accessmanagement.repository.UserRepository userRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    private static java.util.Map<String, String> otpStore = new java.util.concurrent.ConcurrentHashMap<>();
+
     @PostMapping("/register-company")
     public org.springframework.http.ResponseEntity<java.util.Map<String, Object>> registerCompany(
             @jakarta.validation.Valid @RequestBody com.project.www.tenant.dto.CreateTenantRequest request
@@ -79,5 +87,65 @@ public class AuthController {
         responseMap.put("email", request.getAdminEmail());
         responseMap.put("password", request.getAdminPassword());
         return org.springframework.http.ResponseEntity.ok(responseMap);
+    }
+
+    @PostMapping("/forgot-password")
+    public org.springframework.http.ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.isEmpty()) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("message", "Email is required"));
+        }
+        
+        // Find user by email across tenants
+        java.util.List<com.project.www.accessmanagement.entity.User> users = userRepository.findByEmail(email);
+        if (users.isEmpty()) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("message", "User not found"));
+        }
+        
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+        otpStore.put(email, otp);
+        
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
+            msg.setTo(email);
+            msg.setSubject("Password Reset Verification Code");
+            msg.setText("Your OTP for password reset is: " + otp);
+            mailSender.send(msg);
+            return org.springframework.http.ResponseEntity.ok(java.util.Map.of("message", "OTP sent to your email"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("message", "Failed to send OTP: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public org.springframework.http.ResponseEntity<?> resetPasswordWithOtp(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
+        String newPassword = request.get("newPassword");
+        
+        if (email == null || otp == null || newPassword == null) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("message", "Missing required fields"));
+        }
+        
+        String storedOtp = otpStore.get(email);
+        if (storedOtp == null || !storedOtp.equals(otp)) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("message", "Invalid or expired OTP"));
+        }
+        
+        java.util.List<com.project.www.accessmanagement.entity.User> users = userRepository.findByEmail(email);
+        if (users.isEmpty()) {
+            return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("message", "User not found"));
+        }
+        
+        // Reset password for all accounts with this email
+        for (com.project.www.accessmanagement.entity.User user : users) {
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+        }
+        
+        otpStore.remove(email);
+        return org.springframework.http.ResponseEntity.ok(java.util.Map.of("message", "Password reset successfully"));
     }
 }
