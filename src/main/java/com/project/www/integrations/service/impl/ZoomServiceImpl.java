@@ -21,9 +21,9 @@ import com.project.www.integrations.exception.CredentialMissingException;
 import com.project.www.integrations.exception.IntegrationException;
 import com.project.www.integrations.repository.ExternalEventMappingRepository;
 import com.project.www.integrations.repository.TenantIntegrationRepository;
+import com.project.www.integrations.service.OAuthStateService;
 import com.project.www.integrations.service.*;
 import com.project.www.integrations.util.JsonUtil;
-import com.project.www.integrations.util.OAuthUtils;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +46,7 @@ public class ZoomServiceImpl implements ZoomService {
     private final TenantContextService tenantContextService;
     private final ExternalEventMappingRepository eventMappingRepository;
     private final RestTemplate restTemplate;
+    private final OAuthStateService oauthStateService;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -62,7 +63,7 @@ public class ZoomServiceImpl implements ZoomService {
         if (redirectUri == null || redirectUri.isBlank()) {
             throw new CredentialMissingException("Zoom redirect URI not configured");
         }
-        String state = tenantId + ":" + System.currentTimeMillis();
+        String state = oauthStateService.generateState(tenantId, ZOOM_CODE);
         String url = UriComponentsBuilder.fromUriString("https://zoom.us/oauth/authorize")
                 .queryParam("response_type", "code")
                 .queryParam("client_id", clientId)
@@ -74,9 +75,9 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public String handleCallback(String authCode, String state) {
-        Long tenantIdFromState = OAuthUtils.extractTenantId(state);
+        Long tenantIdFromState = oauthStateService.validateAndExtractTenantId(state, ZOOM_CODE);
         var ctx = tenantIntegrationResolver.resolveContext(tenantIdFromState, ZOOM_CODE);
         Long tiId = ctx.getTenantIntegration().getId();
         String clientId = credentialService.getDecryptedClientId(tiId);
@@ -130,7 +131,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public Map<String, Object> getStatus() {
         var ctx = tenantIntegrationResolver.resolveContext(ZOOM_CODE);
         return Map.of(
@@ -144,7 +145,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public Map<String, Object> createMeeting(ZoomMeetingRequest request) {
         String token = getAccessToken();
         Map<String, Object> meeting = Map.of(
@@ -189,7 +190,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public Map<String, Object> updateMeeting(String meetingId, ZoomMeetingRequest request) {
         String token = getAccessToken();
         Map<String, Object> meeting = Map.of(
@@ -212,7 +213,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void deleteMeeting(String meetingId) {
         String token = getAccessToken();
         Long tenantId = tenantContextService.getCurrentTenantId();
@@ -230,7 +231,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationTestResponse testConnection() {
         String token = getAccessToken();
         HttpHeaders headers = new HttpHeaders();
@@ -245,7 +246,7 @@ public class ZoomServiceImpl implements ZoomService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void disconnect() {
         integrationDisconnectService.disconnect(ZOOM_CODE);
     }

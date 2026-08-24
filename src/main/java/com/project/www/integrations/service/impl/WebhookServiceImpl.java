@@ -52,7 +52,7 @@ public class WebhookServiceImpl implements WebhookService {
     private final RestTemplate restTemplate;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public WebhookSubscriptionResponse create(WebhookSubscriptionRequest request) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         String secret = ApiKeyGenerator.generateApiSecret();
@@ -91,7 +91,7 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public List<WebhookSubscriptionResponse> list() {
         Long tenantId = tenantContextService.getCurrentTenantId();
         return subscriptionRepository.findByTenantId(tenantId).stream()
@@ -100,7 +100,7 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public WebhookSubscriptionResponse update(Long id, WebhookSubscriptionRequest request) {
         WebhookSubscription sub = findSubscription(id);
         sub.setName(request.getName());
@@ -115,7 +115,7 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void delete(Long id) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         WebhookSubscription sub = findSubscription(id);
@@ -135,13 +135,13 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void test(Long id) {
         deliverToSubscription(findSubscription(id), "test.event", Map.of("message", "Test webhook delivery"), "TEST", null);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Page<WebhookDeliveryLogResponse> getLogs(Long id, Pageable pageable) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         return deliveryLogRepository.findByTenantIdAndWebhookSubscriptionIdOrderByCreatedAtDesc(tenantId, id, pageable)
@@ -156,7 +156,7 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void retry(Long subscriptionId, Long logId) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         WebhookDeliveryLog log = deliveryLogRepository.findByTenantIdAndId(tenantId, logId)
@@ -173,7 +173,7 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void deliverEvent(String eventName, Map<String, Object> payload, String module, Long referenceId) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         List<WebhookSubscription> subs = subscriptionRepository.findByTenantIdAndEnabledTrue(tenantId);

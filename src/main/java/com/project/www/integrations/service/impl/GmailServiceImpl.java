@@ -32,7 +32,7 @@ public class GmailServiceImpl implements GmailService {
     private final RestTemplate restTemplate;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void sendEmail(GmailSendRequest request) {
         String token = googleOAuthService.getValidAccessToken();
         if (token == null || token.isBlank()) {

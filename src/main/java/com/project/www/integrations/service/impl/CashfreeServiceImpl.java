@@ -44,7 +44,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     private String productionBaseUrl;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void configure(CashfreeConfigureRequest request) {
         var ctx = tenantIntegrationResolver.resolveContext(CASHFREE_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -71,7 +71,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Map<String, Object> getStatus() {
         var ctx = tenantIntegrationResolver.resolveContext(CASHFREE_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -79,7 +79,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public Map<String, Object> createOrder(CashfreeCreateOrderRequest request) {
         var ctx = tenantIntegrationResolver.resolveContext(CASHFREE_CODE);
         Long tiId = ctx.getTenantIntegration().getId();
@@ -128,7 +128,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public Map<String, Object> createPaymentLink(CashfreePaymentLinkRequest request) {
         var ctx = tenantIntegrationResolver.resolveContext(CASHFREE_CODE);
         Long tiId = ctx.getTenantIntegration().getId();
@@ -154,7 +154,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public CashfreePaymentStatusResponse getPaymentStatus(String orderId) {
         var ctx = tenantIntegrationResolver.resolveContext(CASHFREE_CODE);
         Long tiId = ctx.getTenantIntegration().getId();
@@ -180,7 +180,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void handleWebhook(String payload) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         var ctx = tenantIntegrationResolver.resolveContext(CASHFREE_CODE);
@@ -266,7 +266,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void disconnect() {
         integrationDisconnectService.disconnect(CASHFREE_CODE);
     }

@@ -27,7 +27,7 @@ public class IntegrationSyncHistoryServiceImpl implements IntegrationSyncHistory
     private final TenantContextService tenantContextService;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void record(Long tenantId, Long tenantIntegrationId, String syncType, String status,
                        String message, int processed, int success, int failed) {
         LocalDateTime now = LocalDateTime.now();
@@ -46,7 +46,7 @@ public class IntegrationSyncHistoryServiceImpl implements IntegrationSyncHistory
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public List<SyncHistoryResponse> getSyncHistory(String integrationCode) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         TenantIntegration ti = tenantIntegrationRepository.findByTenantIdAndCode(tenantId, integrationCode.toUpperCase())

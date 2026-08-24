@@ -40,7 +40,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     private final IntegrationLogService logService;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public ApiKeyResponse create(ApiKeyCreateRequest request) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         String plainKey = ApiKeyGenerator.generateApiKey();
@@ -70,7 +70,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public List<ApiKeyResponse> list() {
         Long tenantId = tenantContextService.getCurrentTenantId();
         return apiKeyRepository.findByTenantId(tenantId).stream()
@@ -79,7 +79,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public ApiKeyResponse update(Long id, ApiKeyCreateRequest request) {
         ApiKey apiKey = findKey(id);
         apiKey.setKeyName(request.getKeyName());
@@ -94,7 +94,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public ApiKeyResponse regenerate(Long id) {
         ApiKey apiKey = findKey(id);
         String plainKey = ApiKeyGenerator.generateApiKey();
@@ -113,7 +113,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void revoke(Long id) {
         ApiKey apiKey = findKey(id);
         apiKey.setStatus(ApiKeyStatus.REVOKED);
@@ -125,7 +125,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Page<ApiKeyUsageLogResponse> getUsageLogs(Long id, Pageable pageable) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         findKey(id);

@@ -44,7 +44,7 @@ public class IntegrationServiceImpl implements IntegrationService {
     private String frontendUrl;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public List<IntegrationCardResponse> getAllIntegrations() {
         return definitionRepository.findByActiveTrue().stream()
                 .map(def -> toCard(def, tenantIntegrationResolver.findOrDefault(def)))
@@ -52,14 +52,14 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationDetailsResponse getIntegrationDetails(String code) {
         TenantIntegrationContext ctx = resolveContext(code);
         return toDetails(ctx);
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationDetailsResponse toggleIntegration(String code, IntegrationToggleRequest request) {
         TenantIntegrationContext ctx = resolveContext(code);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -76,7 +76,7 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationTestResponse testIntegration(String code) {
         String upper = code.toUpperCase();
         return switch (upper) {
@@ -87,7 +87,7 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationDetailsResponse configureIntegration(String code, IntegrationConfigureRequest request) {
         TenantIntegrationContext ctx = resolveContext(code);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -238,19 +238,19 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void disconnectIntegration(String code) {
         integrationDisconnectService.disconnect(code);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Page<IntegrationLogResponse> getIntegrationLogs(String code, Pageable pageable) {
         return logService.getLogs(code.toUpperCase(), pageable);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public List<SyncHistoryResponse> getSyncHistory(String code) {
         return syncHistoryService.getSyncHistory(code);
     }
@@ -276,7 +276,7 @@ public class IntegrationServiceImpl implements IntegrationService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public TenantIntegrationContext resolveContext(String code) {
         return tenantIntegrationResolver.resolveContext(code);
     }

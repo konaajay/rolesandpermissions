@@ -33,23 +33,8 @@ public class OAuthTokenRefreshScheduler {
     private final EncryptionService encryptionService;
     private final IntegrationLogService logService;
     private final TenantContextService tenantContextService;
-    private final RestTemplate restTemplate;
-
-    @Value("${google.client.id:}")
-    private String googleClientId;
-
-    @Value("${google.client.secret:}")
-    private String googleClientSecret;
-
-    @Value("${zoom.client.id:}")
-    private String zoomClientId;
-
-    @Value("${zoom.client.secret:}")
-    private String zoomClientSecret;
-
-    @Scheduled(fixedRate = 3600000)
+    private final RestTemplate restTemplate;@Scheduled(fixedRate = 3600000)
     public void refreshExpiringTokens() {
-        Long tenantId = tenantContextService.getCurrentTenantId();
         LocalDateTime threshold = LocalDateTime.now().plusMinutes(30);
         List<IntegrationCredential> expiring = credentialRepository.findAll().stream()
                 .filter(c -> c.getTokenExpiry() != null && c.getTokenExpiry().isBefore(threshold))
@@ -58,6 +43,7 @@ public class OAuthTokenRefreshScheduler {
 
         for (IntegrationCredential cred : expiring) {
             tenantIntegrationRepository.findById(cred.getTenantIntegrationId()).ifPresent(ti -> {
+                Long tenantId = ti.getTenantId();
                 try {
                     if ("GOOGLE".equals(ti.getCode())) {
                         refreshGoogle(cred, ti.getId(), tenantId);
@@ -74,11 +60,13 @@ public class OAuthTokenRefreshScheduler {
     }
 
     private void refreshGoogle(IntegrationCredential cred, Long tiId, Long tenantId) {
-        if (googleClientId.isBlank() || googleClientSecret.isBlank()) return;
+        String clientId = credentialService.getDecryptedClientId(tiId);
+        String clientSecret = credentialService.getDecryptedClientSecret(tiId);
+        if (clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) return;
         String refreshToken = encryptionService.decrypt(cred.getRefreshTokenEncrypted());
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("client_id", googleClientId);
-        body.add("client_secret", googleClientSecret);
+        body.add("client_id", clientId);
+        body.add("client_secret", clientSecret);
         body.add("refresh_token", refreshToken);
         body.add("grant_type", "refresh_token");
 
@@ -98,14 +86,16 @@ public class OAuthTokenRefreshScheduler {
     }
 
     private void refreshZoom(IntegrationCredential cred, Long tiId, Long tenantId) {
-        if (zoomClientId.isBlank() || zoomClientSecret.isBlank()) return;
+        String clientId = credentialService.getDecryptedClientId(tiId);
+        String clientSecret = credentialService.getDecryptedClientSecret(tiId);
+        if (clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) return;
         String refreshToken = encryptionService.decrypt(cred.getRefreshTokenEncrypted());
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "refresh_token");
         body.add("refresh_token", refreshToken);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(zoomClientId, zoomClientSecret);
+        headers.setBasicAuth(clientId, clientSecret);
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         ResponseEntity<Map> response = restTemplate.exchange("https://zoom.us/oauth/token",
                 HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);

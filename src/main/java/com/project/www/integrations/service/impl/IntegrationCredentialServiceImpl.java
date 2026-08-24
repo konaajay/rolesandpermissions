@@ -20,7 +20,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     private final EncryptionService encryptionService;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationCredential getOrCreate(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .orElseGet(() -> credentialRepository.save(IntegrationCredential.builder()
@@ -29,7 +29,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void saveApiKeySecret(Long tenantIntegrationId, String apiKey, String apiSecret) {
         IntegrationCredential cred = getOrCreate(tenantIntegrationId);
         if (apiKey != null && !apiKey.isBlank()) {
@@ -42,7 +42,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void saveClientCredentials(Long tenantIntegrationId, String clientId, String clientSecret) {
         IntegrationCredential cred = getOrCreate(tenantIntegrationId);
         if (clientId != null && !clientId.isBlank()) {
@@ -55,7 +55,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void saveOAuthCredentials(Long tenantIntegrationId, String clientId, String clientSecret, String redirectUri, String scopes) {
         IntegrationCredential cred = getOrCreate(tenantIntegrationId);
         if (clientId != null && !clientId.isBlank()) {
@@ -74,7 +74,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void saveAccessToken(Long tenantIntegrationId, String accessToken, String refreshToken, LocalDateTime expiry, String scopes) {
         IntegrationCredential cred = getOrCreate(tenantIntegrationId);
         if (accessToken != null) {
@@ -89,7 +89,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void clearTokens(Long tenantIntegrationId) {
         credentialRepository.findByTenantIntegrationId(tenantIntegrationId).ifPresent(cred -> {
             cred.setAccessTokenEncrypted(null);
@@ -100,13 +100,13 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Optional<IntegrationCredential> findByTenantIntegrationId(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getDecryptedRefreshToken(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(c -> encryptionService.decrypt(c.getRefreshTokenEncrypted()))
@@ -114,7 +114,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getDecryptedAccessToken(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(c -> encryptionService.decrypt(c.getAccessTokenEncrypted()))
@@ -122,7 +122,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public LocalDateTime getTokenExpiry(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(IntegrationCredential::getTokenExpiry)
@@ -130,7 +130,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getMaskedApiKey(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(c -> encryptionService.decrypt(c.getApiKeyEncrypted()))
@@ -139,7 +139,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getMaskedApiSecret(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(c -> c.getApiSecretEncrypted() != null ? "************" : null)
@@ -147,7 +147,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getDecryptedClientId(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(c -> encryptionService.decrypt(c.getClientIdEncrypted()))
@@ -155,7 +155,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getDecryptedClientSecret(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(c -> encryptionService.decrypt(c.getClientSecretEncrypted()))
@@ -163,7 +163,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getMaskedClientId(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(c -> encryptionService.decrypt(c.getClientIdEncrypted()))
@@ -172,7 +172,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getRedirectUri(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(IntegrationCredential::getRedirectUri)
@@ -180,7 +180,7 @@ public class IntegrationCredentialServiceImpl implements IntegrationCredentialSe
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getScopes(Long tenantIntegrationId) {
         return credentialRepository.findByTenantIntegrationId(tenantIntegrationId)
                 .map(IntegrationCredential::getScopes)

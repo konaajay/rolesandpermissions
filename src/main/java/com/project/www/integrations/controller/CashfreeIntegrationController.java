@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.project.www.integrations.dto.*;
 import com.project.www.integrations.service.CashfreeService;
@@ -13,8 +14,9 @@ import com.project.www.integrations.service.IntegrationLogService;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/integrations/cashfree")
+@RequestMapping("/integrations/cashfree")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN') or hasAuthority(T(com.project.www.integrations.config.IntegrationPermissions).PAYMENT_CONFIGURE)")
 public class CashfreeIntegrationController {
 
     private final CashfreeService cashfreeService;
@@ -49,6 +51,7 @@ public class CashfreeIntegrationController {
     }
 
     @PostMapping("/webhook")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponseDto<Void>> webhook(@RequestBody String payload) {
         cashfreeService.handleWebhook(payload);
         return ResponseEntity.ok(ApiResponseDto.success("Webhook processed", null));

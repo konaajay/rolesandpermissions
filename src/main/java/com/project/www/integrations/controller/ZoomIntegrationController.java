@@ -9,12 +9,14 @@ import org.springframework.web.bind.annotation.*;
 import com.project.www.integrations.dto.*;
 import com.project.www.integrations.service.IntegrationLogService;
 import com.project.www.integrations.service.ZoomService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/integrations/zoom")
+@RequestMapping("/integrations/zoom")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN') or hasAuthority(T(com.project.www.integrations.config.IntegrationPermissions).INTEGRATION_VIEW)")
 public class ZoomIntegrationController {
 
     private final ZoomService zoomService;
@@ -26,6 +28,7 @@ public class ZoomIntegrationController {
     }
 
     @GetMapping("/callback")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Void> callback(@RequestParam String code, @RequestParam(required = false) String state) {
         String redirect = zoomService.handleCallback(code, state);
         return ResponseEntity.status(302).header("Location", redirect).build();

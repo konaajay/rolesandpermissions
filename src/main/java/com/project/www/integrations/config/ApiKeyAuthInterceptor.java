@@ -9,7 +9,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import com.project.www.integrations.dto.ApiResponseDto;
 import com.project.www.integrations.entity.ApiKey;
 import com.project.www.integrations.service.ApiKeyService;
-import com.project.www.integrations.service.TenantContextHolder;
+import com.project.www.tenant.repository.TenantRepository;
+import com.project.www.util.TenantContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class ApiKeyAuthInterceptor implements HandlerInterceptor {
 
     private final ApiKeyService apiKeyService;
+    private final TenantRepository tenantRepository;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -41,7 +43,11 @@ public class ApiKeyAuthInterceptor implements HandlerInterceptor {
         try {
             ApiKey validKey = apiKeyService.validateExternalApiKey(apiKey, apiSecret, permission, endpoint, method, ipAddress);
             // Set tenant context for downstream handling
-            TenantContextHolder.setTenantId(validKey.getTenantId());
+            TenantContext.setCurrentTenant(validKey.getTenantId());
+            // Resolve the actual code for DB routing
+            tenantRepository.findById(validKey.getTenantId()).ifPresent(tenant -> {
+                TenantContext.setCurrentTenantCode(tenant.getCode());
+            });
             return true;
         } catch (Exception ex) {
             // Log optional details if needed (omitted for brevity)
@@ -55,6 +61,6 @@ public class ApiKeyAuthInterceptor implements HandlerInterceptor {
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-        TenantContextHolder.clear();
+        TenantContext.clear();
     }
 }

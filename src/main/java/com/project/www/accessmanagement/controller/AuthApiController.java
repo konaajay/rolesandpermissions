@@ -106,7 +106,18 @@ public class AuthApiController {
             user.getPermissions().forEach(p -> allPermissions.add(p.getPermissionKey()));
         }
         java.util.Set<String> allModules = new java.util.HashSet<>();
-        java.util.List<com.project.www.tenant.entity.TenantModule> activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        java.util.List<com.project.www.tenant.entity.TenantModule> activeTenantModules = new java.util.ArrayList<>();
+        String ogCode = com.project.www.util.TenantContext.getCurrentTenantCode();
+        Long ogId = com.project.www.util.TenantContext.getCurrentTenant();
+        try {
+            com.project.www.util.TenantContext.clear();
+            activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        } catch (Exception e) {
+            System.err.println("Failed to fetch tenant modules in getMe: " + e.getMessage());
+        } finally {
+            com.project.www.util.TenantContext.setCurrentTenantCode(ogCode);
+            com.project.www.util.TenantContext.setCurrentTenant(ogId);
+        }
         
         java.time.LocalDate today = java.time.LocalDate.now();
         java.util.Set<String> activeTenantModuleNames = activeTenantModules.stream()

@@ -10,7 +10,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @Table(name = "permissions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "tenantId", "permission_key" })
+        @UniqueConstraint(columnNames = { "tenant_id", "permission_key" })
 })
 public class Permission extends Auditable {
 
@@ -18,7 +18,7 @@ public class Permission extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "tenant_id", nullable = false)
     private Long tenantId;
 
     @Column(nullable = false)

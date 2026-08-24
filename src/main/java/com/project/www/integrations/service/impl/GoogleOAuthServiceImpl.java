@@ -18,9 +18,9 @@ import com.project.www.integrations.enums.IntegrationStatus;
 import com.project.www.integrations.exception.CredentialMissingException;
 import com.project.www.integrations.exception.IntegrationException;
 import com.project.www.integrations.repository.TenantIntegrationRepository;
+import com.project.www.integrations.service.OAuthStateService;
 import com.project.www.integrations.service.*;
 import com.project.www.integrations.util.JsonUtil;
-import com.project.www.integrations.util.OAuthUtils;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -44,6 +44,7 @@ public class GoogleOAuthServiceImpl implements GoogleOAuthService {
     private final TenantIntegrationRepository tenantIntegrationRepository;
     private final TenantContextService tenantContextService;
     private final RestTemplate restTemplate;
+    private final OAuthStateService oauthStateService;
 
     @Value("${google.client.id:}")
     private String clientId;
@@ -73,7 +74,7 @@ public class GoogleOAuthServiceImpl implements GoogleOAuthService {
             scopes = SCOPES; // fallback to default scopes
         }
         Long tenantId = tenantContextService.getCurrentTenantId();
-        String state = tenantId + ":" + System.currentTimeMillis();
+        String state = oauthStateService.generateState(tenantId, GOOGLE_CODE);
         String url = UriComponentsBuilder.fromUriString(AUTH_URL)
                 .queryParam("client_id", clientId)
                 .queryParam("redirect_uri", redirectUri)
@@ -89,10 +90,10 @@ public class GoogleOAuthServiceImpl implements GoogleOAuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public String handleCallback(String authCode, String state) {
         // Use DB-stored credentials for token exchange
-        Long tenantIdFromState = OAuthUtils.extractTenantId(state);
+        Long tenantIdFromState = oauthStateService.validateAndExtractTenantId(state, GOOGLE_CODE);
         TenantIntegrationContext ctx = tenantIntegrationResolver.resolveContext(tenantIdFromState, GOOGLE_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();
         String clientId = credentialService.getDecryptedClientId(ti.getId());
@@ -143,7 +144,7 @@ public class GoogleOAuthServiceImpl implements GoogleOAuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationTestResponse testConnection() {
         String token = getValidAccessToken();
         if (token == null || token.isBlank()) {
@@ -176,7 +177,7 @@ public class GoogleOAuthServiceImpl implements GoogleOAuthService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public String getValidAccessToken() {
         TenantIntegrationContext ctx = tenantIntegrationResolver.resolveContext(GOOGLE_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();

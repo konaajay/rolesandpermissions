@@ -21,7 +21,7 @@ public class IntegrationLogServiceImpl implements IntegrationLogService {
     private final TenantContextService tenantContextService;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void log(Long tenantId, Long tenantIntegrationId, String integrationCode, String eventName,
                     String action, String requestPayload, String responsePayload, String status,
                     Integer httpStatus, String errorMessage, int retryCount) {
@@ -41,7 +41,7 @@ public class IntegrationLogServiceImpl implements IntegrationLogService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Page<IntegrationLogResponse> getLogs(String integrationCode, Pageable pageable) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         return logRepository.findByTenantIdAndIntegrationCodeOrderByCreatedAtDesc(tenantId, integrationCode, pageable)

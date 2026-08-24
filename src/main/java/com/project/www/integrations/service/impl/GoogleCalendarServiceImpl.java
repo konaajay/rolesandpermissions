@@ -32,7 +32,7 @@ public class GoogleCalendarServiceImpl implements GoogleCalendarService {
     private final RestTemplate restTemplate;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public Map<String, Object> createEvent(GoogleCalendarEventRequest request) {
         String token = googleOAuthService.getValidAccessToken();
         if (token == null || token.isBlank()) {

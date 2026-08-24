@@ -59,6 +59,8 @@ public class SecurityConfig {
                                                                 "/api/auth/validate-token",
                                                                 "/api/auth/check-permission",
                                                                 "/api/leads/**",
+                                                                "/api/integrations/*/oauth/callback",
+                                                                "/api/integrations/*/webhook",
                                                                 "/error")
                                                 .permitAll()
                                                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")

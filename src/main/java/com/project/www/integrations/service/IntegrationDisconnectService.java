@@ -21,7 +21,7 @@ public class IntegrationDisconnectService {
     private final TenantIntegrationRepository tenantIntegrationRepository;
     private final TenantContextService tenantContextService;
 
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void disconnect(String code) {
         var ctx = tenantIntegrationResolver.resolveContext(code);
         TenantIntegration ti = ctx.getTenantIntegration();

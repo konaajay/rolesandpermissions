@@ -12,12 +12,14 @@ import com.project.www.integrations.dto.WebhookDeliveryLogResponse;
 import com.project.www.integrations.dto.WebhookSubscriptionRequest;
 import com.project.www.integrations.dto.WebhookSubscriptionResponse;
 import com.project.www.integrations.service.WebhookService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/integrations/webhooks")
+@RequestMapping("/integrations/webhooks")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN') or hasAuthority(T(com.project.www.integrations.config.IntegrationPermissions).INTEGRATION_WEBHOOK_MANAGE)")
 public class WebhookIntegrationController {
 
     private final WebhookService webhookService;

@@ -38,7 +38,7 @@ public class WhatsappServiceImpl implements WhatsappService {
     private final RestTemplate restTemplate;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void configure(WhatsappConfigureRequest request) {
         var ctx = tenantIntegrationResolver.resolveContext(WHATSAPP_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -68,7 +68,7 @@ public class WhatsappServiceImpl implements WhatsappService {
     }
 
     @Override
-@Transactional
+@Transactional("integrationTransactionManager")
     public Map<String, Object> getStatus() {
         var ctx = tenantIntegrationResolver.resolveContext(WHATSAPP_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -79,7 +79,7 @@ public class WhatsappServiceImpl implements WhatsappService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void sendMessage(WhatsappSendRequest request) {
         var ctx = tenantIntegrationResolver.resolveContext(WHATSAPP_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -118,7 +118,7 @@ public class WhatsappServiceImpl implements WhatsappService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public IntegrationTestResponse testConnection() {
         var ctx = tenantIntegrationResolver.resolveContext(WHATSAPP_CODE);
         TenantIntegration ti = ctx.getTenantIntegration();
@@ -136,7 +136,7 @@ public class WhatsappServiceImpl implements WhatsappService {
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void disconnect() {
         integrationDisconnectService.disconnect(WHATSAPP_CODE);
     }

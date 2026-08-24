@@ -8,12 +8,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.project.www.integrations.dto.*;
 import com.project.www.integrations.service.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/integrations/google")
+@RequestMapping("/integrations/google")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN') or hasAuthority(T(com.project.www.integrations.config.IntegrationPermissions).INTEGRATION_VIEW)")
 public class GoogleIntegrationController {
 
     private final GoogleOAuthService googleOAuthService;
@@ -29,6 +31,7 @@ public class GoogleIntegrationController {
     }
 
     @GetMapping("/oauth/callback")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Void> callback(@RequestParam String code, @RequestParam(required = false) String state) {
         String redirect = googleOAuthService.handleCallback(code, state);
         return ResponseEntity.status(302).header("Location", redirect).build();

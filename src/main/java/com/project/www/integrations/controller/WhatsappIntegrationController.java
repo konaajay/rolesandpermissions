@@ -9,12 +9,14 @@ import org.springframework.web.bind.annotation.*;
 import com.project.www.integrations.dto.*;
 import com.project.www.integrations.service.IntegrationLogService;
 import com.project.www.integrations.service.WhatsappService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/integrations/whatsapp")
+@RequestMapping("/integrations/whatsapp")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN') or hasAuthority(T(com.project.www.integrations.config.IntegrationPermissions).INTEGRATION_VIEW)")
 public class WhatsappIntegrationController {
 
     private final WhatsappService whatsappService;

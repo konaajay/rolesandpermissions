@@ -81,12 +81,14 @@ public class UserController {
         response.put("permissions", new java.util.ArrayList<>(allPermissions));
         java.util.Set<String> allModules = new java.util.HashSet<>();
         
-        List<com.project.www.tenant.entity.TenantModule> activeTenantModules;
+        List<com.project.www.tenant.entity.TenantModule> activeTenantModules = new java.util.ArrayList<>();
         String ogCode = com.project.www.util.TenantContext.getCurrentTenantCode();
         Long ogId = com.project.www.util.TenantContext.getCurrentTenant();
         try {
             com.project.www.util.TenantContext.clear();
             activeTenantModules = tenantModuleRepository.findByTenantIdAndActiveTrue(user.getTenantId());
+        } catch (Exception e) {
+            System.err.println("Failed to fetch tenant modules in getMe: " + e.getMessage());
         } finally {
             com.project.www.util.TenantContext.setCurrentTenantCode(ogCode);
             com.project.www.util.TenantContext.setCurrentTenant(ogId);

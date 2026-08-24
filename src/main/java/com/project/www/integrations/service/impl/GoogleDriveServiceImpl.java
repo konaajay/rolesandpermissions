@@ -29,7 +29,7 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
     private final RestTemplate restTemplate;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public GoogleDriveUploadResponse upload(MultipartFile file, String module, Long referenceId) {
         String token = googleOAuthService.getValidAccessToken();
         if (token == null || token.isBlank()) {

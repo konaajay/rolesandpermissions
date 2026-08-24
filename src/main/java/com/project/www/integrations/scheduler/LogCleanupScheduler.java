@@ -20,7 +20,7 @@ public class LogCleanupScheduler {
     private final IntegrationProperties integrationProperties;
 
     @Scheduled(cron = "0 0 2 * * *")
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void cleanupOldLogs() {
         int retentionDays = integrationProperties.getLogs().getRetentionDays();
         LocalDateTime cutoff = LocalDateTime.now().minusDays(retentionDays);

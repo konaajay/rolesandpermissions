@@ -27,7 +27,7 @@ public class TenantIntegrationResolver {
     /**
      * For listing integrations — does not insert rows (safe inside read-only transactions).
      */
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public TenantIntegration findOrDefault(IntegrationDefinition def) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         return tenantIntegrationRepository.findByTenantIdAndCode(tenantId, def.getCode())
@@ -42,13 +42,13 @@ public class TenantIntegrationResolver {
                         .build());
     }
 
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public TenantIntegrationContext resolveContext(String code) {
         Long tenantId = tenantContextService.getCurrentTenantId();
         return resolveContext(tenantId, code);
     }
 
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public TenantIntegrationContext resolveContext(Long tenantId, String code) {
         String upper = code.toUpperCase();
 

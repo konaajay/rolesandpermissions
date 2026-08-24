@@ -22,7 +22,7 @@ public class IntegrationSettingServiceImpl implements IntegrationSettingService 
     private final EncryptionService encryptionService;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void saveSetting(Long tenantIntegrationId, String key, String value, boolean encrypted) {
         if (key == null || value == null) {
             return;
@@ -40,7 +40,7 @@ public class IntegrationSettingServiceImpl implements IntegrationSettingService 
     }
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public void saveSettings(Long tenantIntegrationId, Map<String, String> settings) {
         if (settings == null) {
             return;
@@ -53,20 +53,20 @@ public class IntegrationSettingServiceImpl implements IntegrationSettingService 
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Optional<String> getSetting(Long tenantIntegrationId, String key) {
         return settingRepository.findByTenantIntegrationIdAndSettingKey(tenantIntegrationId, key)
                 .map(s -> s.getEncrypted() ? encryptionService.decrypt(s.getSettingValue()) : s.getSettingValue());
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public String getSettingOrDefault(Long tenantIntegrationId, String key, String defaultValue) {
         return getSetting(tenantIntegrationId, key).orElse(defaultValue);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(value = "integrationTransactionManager", readOnly = true)
     public Map<String, String> getAllSettings(Long tenantIntegrationId) {
         return settingRepository.findByTenantIntegrationId(tenantIntegrationId).stream()
                 .collect(Collectors.toMap(

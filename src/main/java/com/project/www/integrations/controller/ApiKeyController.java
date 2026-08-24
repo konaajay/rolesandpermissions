@@ -12,12 +12,14 @@ import com.project.www.integrations.dto.ApiKeyResponse;
 import com.project.www.integrations.dto.ApiKeyUsageLogResponse;
 import com.project.www.integrations.dto.ApiResponseDto;
 import com.project.www.integrations.service.ApiKeyService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/integrations/api-keys")
+@RequestMapping("/integrations/api-keys")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN') or hasAuthority(T(com.project.www.integrations.config.IntegrationPermissions).INTEGRATION_API_KEY_MANAGE)")
 public class ApiKeyController {
 
     private final ApiKeyService apiKeyService;

@@ -25,7 +25,7 @@ public class GoogleSheetsServiceImpl implements GoogleSheetsService {
     private final RestTemplate restTemplate;
 
     @Override
-    @Transactional
+    @Transactional("integrationTransactionManager")
     public Map<String, Object> export(GoogleSheetsExportRequest request) {
         String token = googleOAuthService.getValidAccessToken();
         if (token == null || token.isBlank()) {
