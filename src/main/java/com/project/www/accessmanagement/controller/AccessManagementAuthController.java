@@ -24,7 +24,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AccessManagementAuthController {
 
     private final AuthService authService;
     

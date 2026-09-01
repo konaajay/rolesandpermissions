@@ -117,7 +117,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 addColumnIfNotExists(conn, "rbac_db", "company_profiles", "header_image_url", "VARCHAR(500)");
                 addColumnIfNotExists(conn, "rbac_db", "company_profiles", "footer_image_url", "VARCHAR(500)");
                 addColumnIfNotExists(conn, "rbac_db", "employee_certificates", "custom_html", "TEXT");
-                
+
                 executeQuietly(conn, "CREATE TABLE IF NOT EXISTS `tenant_invoices` (" +
                         "`id` BIGINT NOT NULL AUTO_INCREMENT," +
                         "`tenant_id` BIGINT NOT NULL," +
@@ -232,49 +232,50 @@ public class DatabaseSeeder implements CommandLineRunner {
                             addColumnIfNotExists(tConn, t.getDbName(), "users", "work_mode_id", "BIGINT");
                             addColumnIfNotExists(tConn, t.getDbName(), "users", "joining_date", "DATE");
                             addColumnIfNotExists(tConn, t.getDbName(), "users", "employee_id", "VARCHAR(255)");
-                            
+
                             // Create tenant_invoices tables if they don't exist (for older tenant DBs)
                             tStmt.executeUpdate(
                                     "CREATE TABLE IF NOT EXISTS tenant_invoices (" +
-                                    "id BIGINT NOT NULL AUTO_INCREMENT," +
-                                    "tenant_id BIGINT NOT NULL," +
-                                    "invoice_number VARCHAR(255) NOT NULL," +
-                                    "invoice_type VARCHAR(255)," +
-                                    "invoice_date DATE," +
-                                    "due_date DATE," +
-                                    "status VARCHAR(255)," +
-                                    "payment_type VARCHAR(255)," +
-                                    "total_amount DOUBLE," +
-                                    "subtotal DOUBLE," +
-                                    "gst_amount DOUBLE," +
-                                    "cgst DOUBLE, sgst DOUBLE, igst DOUBLE, discount DOUBLE," +
-                                    "paid_amount DOUBLE, pending_amount DOUBLE," +
-                                    "customer_address TEXT, gstin VARCHAR(50)," +
-                                    "created_at DATETIME NOT NULL, updated_at DATETIME," +
-                                    "PRIMARY KEY (id), UNIQUE KEY uk_inv_num (invoice_number)" +
-                                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                                            "id BIGINT NOT NULL AUTO_INCREMENT," +
+                                            "tenant_id BIGINT NOT NULL," +
+                                            "invoice_number VARCHAR(255) NOT NULL," +
+                                            "invoice_type VARCHAR(255)," +
+                                            "invoice_date DATE," +
+                                            "due_date DATE," +
+                                            "status VARCHAR(255)," +
+                                            "payment_type VARCHAR(255)," +
+                                            "total_amount DOUBLE," +
+                                            "subtotal DOUBLE," +
+                                            "gst_amount DOUBLE," +
+                                            "cgst DOUBLE, sgst DOUBLE, igst DOUBLE, discount DOUBLE," +
+                                            "paid_amount DOUBLE, pending_amount DOUBLE," +
+                                            "customer_address TEXT, gstin VARCHAR(50)," +
+                                            "created_at DATETIME NOT NULL, updated_at DATETIME," +
+                                            "PRIMARY KEY (id), UNIQUE KEY uk_inv_num (invoice_number)" +
+                                            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
                             tStmt.executeUpdate(
                                     "CREATE TABLE IF NOT EXISTS tenant_invoice_items (" +
-                                    "id BIGINT NOT NULL AUTO_INCREMENT," +
-                                    "invoice_id BIGINT NOT NULL," +
-                                    "module_name VARCHAR(255) NOT NULL," +
-                                    "amount DOUBLE, quantity INT, unit_price DOUBLE, tax_rate DOUBLE, total DOUBLE," +
-                                    "extra_charges DOUBLE, start_date DATE, expiry_date DATE," +
-                                    "created_at DATETIME NOT NULL, updated_at DATETIME," +
-                                    "PRIMARY KEY (id)" +
-                                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                                            "id BIGINT NOT NULL AUTO_INCREMENT," +
+                                            "invoice_id BIGINT NOT NULL," +
+                                            "module_name VARCHAR(255) NOT NULL," +
+                                            "amount DOUBLE, quantity INT, unit_price DOUBLE, tax_rate DOUBLE, total DOUBLE,"
+                                            +
+                                            "extra_charges DOUBLE, start_date DATE, expiry_date DATE," +
+                                            "created_at DATETIME NOT NULL, updated_at DATETIME," +
+                                            "PRIMARY KEY (id)" +
+                                            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
                             tStmt.executeUpdate(
                                     "CREATE TABLE IF NOT EXISTS tenant_invoice_installments (" +
-                                    "id BIGINT NOT NULL AUTO_INCREMENT," +
-                                    "invoice_id BIGINT NOT NULL," +
-                                    "installment_no INT NOT NULL," +
-                                    "amount DOUBLE NOT NULL," +
-                                    "due_date DATE NOT NULL," +
-                                    "paid BIT(1) NOT NULL DEFAULT 0," +
-                                    "paid_date DATE," +
-                                    "created_at DATETIME NOT NULL, updated_at DATETIME," +
-                                    "PRIMARY KEY (id)" +
-                                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                                            "id BIGINT NOT NULL AUTO_INCREMENT," +
+                                            "invoice_id BIGINT NOT NULL," +
+                                            "installment_no INT NOT NULL," +
+                                            "amount DOUBLE NOT NULL," +
+                                            "due_date DATE NOT NULL," +
+                                            "paid BIT(1) NOT NULL DEFAULT 0," +
+                                            "paid_date DATE," +
+                                            "created_at DATETIME NOT NULL, updated_at DATETIME," +
+                                            "PRIMARY KEY (id)" +
+                                            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
                             executeQuietly(tConn, "ALTER TABLE tenant_invoices DROP COLUMN module_name");
                             addColumnIfNotExists(tConn, t.getDbName(), "tenant_invoices", "subtotal", "DOUBLE");
                             addColumnIfNotExists(tConn, t.getDbName(), "tenant_invoices", "gst_amount", "DOUBLE");
@@ -312,6 +313,22 @@ public class DatabaseSeeder implements CommandLineRunner {
                                     "CREATE TABLE IF NOT EXISTS coupon_courses (id BIGINT AUTO_INCREMENT PRIMARY KEY, coupon_id BIGINT NOT NULL, course_id BIGINT NOT NULL, FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
                             // Patch roles
+
+                            // Asset Lifecycle Patch
+                            addColumnIfNotExists(tConn, t.getDbName(), "requirement_items", "item_type",
+                                    "VARCHAR(20) DEFAULT 'ASSET'");
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS product_assignments (id BIGINT NOT NULL AUTO_INCREMENT, tenant_id BIGINT NOT NULL, received_product_id BIGINT NOT NULL, user_id BIGINT NOT NULL, quantity INT NOT NULL, assigned_at DATETIME(6) NOT NULL, assigned_by BIGINT NOT NULL, deleted BIT(1) NOT NULL DEFAULT b'0', created_at DATETIME(6) DEFAULT NULL, created_by BIGINT DEFAULT NULL, updated_at DATETIME(6) DEFAULT NULL, updated_by BIGINT DEFAULT NULL, PRIMARY KEY (id), KEY fk_assignment_product (received_product_id), KEY fk_assignment_user (user_id), CONSTRAINT fk_assignment_product FOREIGN KEY (received_product_id) REFERENCES received_products (id), CONSTRAINT fk_assignment_user FOREIGN KEY (user_id) REFERENCES users (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                            addColumnIfNotExists(tConn, t.getDbName(), "product_assignments", "status",
+                                    "VARCHAR(50) DEFAULT 'ASSIGNED'");
+                            addColumnIfNotExists(tConn, t.getDbName(), "product_assignments", "asset_identifier",
+                                    "VARCHAR(100) DEFAULT NULL");
+                            addColumnIfNotExists(tConn, t.getDbName(), "product_assignments",
+                                    "replaced_by_assignment_id", "BIGINT DEFAULT NULL");
+
+                            tStmt.executeUpdate(
+                                    "CREATE TABLE IF NOT EXISTS product_lifecycle_events (id BIGINT AUTO_INCREMENT PRIMARY KEY, tenant_id BIGINT NOT NULL, assignment_id BIGINT NOT NULL, event_type VARCHAR(50) NOT NULL, previous_status VARCHAR(50), new_status VARCHAR(50) NOT NULL, performed_by BIGINT NOT NULL, assigned_to BIGINT, description TEXT, created_at DATETIME NOT NULL, FOREIGN KEY (assignment_id) REFERENCES product_assignments(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
                             addColumnIfNotExists(tConn, t.getDbName(), "roles", "show_in_user_form",
                                     "BOOLEAN NOT NULL DEFAULT TRUE");
                             executeQuietly(tConn, "UPDATE roles SET show_in_user_form = 1 WHERE show_in_user_form = 0");
@@ -339,7 +356,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 "SETTINGS", "LEAVE", "REPORTS", "SUPPORT_TICKETS", "TASKS", "REVENUE"
         };
         for (String mod : allModules) {
-            if (!tenantModuleRepository.existsByTenantIdAndModuleNameAndActiveTrue(systemTenantId, mod)) {
+            if (!tenantModuleRepository.existsByTenantIdAndModuleName(systemTenantId, mod)) {
                 tenantModuleRepository.save(TenantModule.builder()
                         .tenantId(systemTenantId)
                         .moduleName(mod)
@@ -358,7 +375,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             try {
                 // Ensure all modules are assigned to existing tenants
                 for (String mod : allModules) {
-                    if (!tenantModuleRepository.existsByTenantIdAndModuleNameAndActiveTrue(t.getId(), mod)) {
+                    if (!tenantModuleRepository.existsByTenantIdAndModuleName(t.getId(), mod)) {
                         tenantModuleRepository.save(TenantModule.builder()
                                 .tenantId(t.getId())
                                 .moduleName(mod)
@@ -811,4 +828,3 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
     }
 }
-

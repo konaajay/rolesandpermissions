@@ -32,4 +32,7 @@ public class RequirementItem {
     private Integer quantity;
 
     private String unit;
+
+    @Column(name = "item_type")
+    private String itemType = "ASSET";
 }
